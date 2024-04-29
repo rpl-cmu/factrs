@@ -1,8 +1,6 @@
-mod variables;
-
 use nalgebra::Vector3;
-use variables::SO3;
-use variables::{LieGroup, Variable};
+use samrs::variables::SO3;
+use samrs::variables::{LieGroup, Variable};
 
 fn main() {
     let xi = Vector3::new(0.1, 0.2, 0.3);

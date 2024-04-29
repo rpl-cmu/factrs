@@ -1,4 +1,5 @@
-use super::base::{LieGroup, Variable};
+// TODO: Move this to base file, or maybe a core module with all the other traits?
+use crate::variables::{LieGroup, Variable};
 use nalgebra::{SVector, Vector4};
 
 pub struct SO3 {

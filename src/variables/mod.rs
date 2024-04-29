@@ -18,3 +18,6 @@ pub trait LieGroup: Variable {
 
     fn mul(&self, other: Self) -> Self;
 }
+
+pub mod so3;
+pub use so3::SO3;
