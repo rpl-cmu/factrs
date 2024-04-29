@@ -1,31 +1,19 @@
-use nalgebra::{SVector, Scalar, Vector3};
+mod variables;
 
-const DIM_MINE: usize = 3;
-trait Variable {
-    const DIM: usize;
-
-    fn identity() -> Self;
-
-    fn add(&self, other: &SVector<f32, DIM_MINE>) -> Self;
-
-    fn inverse(&self) -> Self;
-
-    fn clone(&self) -> Self;
-}
-
-trait LieGroup: Variable {
-    fn exp(delta: &SVector<f32, DIM_MINE>) -> Self;
-
-    fn log(&self) -> SVector<f32, DIM_MINE>;
-
-    fn mul(&self, other: Self) -> Self;
-
-    fn add(&self, other: &SVector<f32, DIM_MINE>) -> Self {
-        self.mul(Self::exp(other))
-    }
-}
+use nalgebra::Vector3;
+use variables::SO3;
+use variables::{LieGroup, Variable};
 
 fn main() {
-    // let v: SVector<f32, DIM> = SVector::zeros();
-    // println!("{v}");
+    let xi = Vector3::new(0.1, 0.2, 0.3);
+
+    let r = SO3::exp(&xi);
+    let xi_out = r.log();
+
+    println!("xi: {:?}", xi);
+    println!("xi_out: {:?}", xi_out);
+
+    let double = r.add(&xi);
+    let xi_double = double.log();
+    println!("xi_double: {:?}", xi_double);
 }
