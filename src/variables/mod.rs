@@ -1,23 +1,30 @@
-pub trait Variable: Sized {
+use std::ops::Mul;
+
+pub trait Variable: Sized + Clone {
     const DIM: usize;
     type TangentVec;
 
     fn identity() -> Self;
 
-    fn add(&self, delta: &Self::TangentVec) -> Self;
+    fn oplus(&self, delta: &Self::TangentVec) -> Self;
+
+    fn ominus(&self, other: &Self) -> Self::TangentVec;
 
     fn inverse(&self) -> Self;
-
-    fn clone(&self) -> Self;
 }
 
-pub trait LieGroup: Variable {
+pub trait LieGroup: Variable + Mul {
     fn exp(xi: &Self::TangentVec) -> Self;
 
     fn log(&self) -> Self::TangentVec;
-
-    fn mul(&self, other: Self) -> Self;
 }
+
+// ------------------------- Import all variable types ------------------------- //
+mod key;
+pub use key::*;
 
 pub mod so3;
 pub use so3::SO3;
+
+pub mod vector;
+pub use vector::*;

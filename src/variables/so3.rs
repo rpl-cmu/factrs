@@ -1,13 +1,15 @@
 // TODO: Move this to base file, or maybe a core module with all the other traits?
 use crate::variables::{LieGroup, Variable};
 use nalgebra::{SVector, Vector4};
+use std::ops::Mul;
 
+#[derive(Clone)]
 pub struct SO3 {
-    xyzw: Vector4<f32>,
+    xyzw: Vector4<f64>,
 }
 
 impl Variable for SO3 {
-    type TangentVec = SVector<f32, 3>;
+    type TangentVec = SVector<f64, 3>;
     const DIM: usize = 3;
 
     fn identity() -> Self {
@@ -22,14 +24,13 @@ impl Variable for SO3 {
         }
     }
 
-    fn clone(&self) -> Self {
-        return Self {
-            xyzw: self.xyzw.clone(),
-        };
+    fn oplus(&self, delta: &Self::TangentVec) -> Self {
+        let e = Self::exp(&delta);
+        self * &e
     }
 
-    fn add(&self, delta: &Self::TangentVec) -> Self {
-        self.mul(Self::exp(delta))
+    fn ominus(&self, other: &Self) -> Self::TangentVec {
+        (&self.inverse() * other).log()
     }
 }
 
@@ -62,8 +63,20 @@ impl LieGroup for SO3 {
         let norm_v = xi.norm();
         2.0 * xi * norm_v.atan2(w) / norm_v
     }
+}
 
-    fn mul(&self, other: Self) -> Self {
+impl Mul for SO3 {
+    type Output = SO3;
+
+    fn mul(self, other: Self) -> SO3 {
+        &self * &other
+    }
+}
+
+impl Mul for &SO3 {
+    type Output = SO3;
+
+    fn mul(self, other: Self) -> SO3 {
         let x0 = self.xyzw[0];
         let y0 = self.xyzw[1];
         let z0 = self.xyzw[2];
