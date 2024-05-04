@@ -1,15 +1,14 @@
 // TODO: Move this to base file, or maybe a core module with all the other traits?
-use crate::variables::{LieGroup, Variable};
-use nalgebra::{SVector, Vector4};
+use crate::variables::{LieGroup, Variable, VectorD};
+use nalgebra::{dvector, Vector4};
 use std::ops::Mul;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SO3 {
     xyzw: Vector4<f64>,
 }
 
 impl Variable for SO3 {
-    type TangentVec = SVector<f64, 3>;
     const DIM: usize = 3;
 
     fn identity() -> Self {
@@ -24,18 +23,18 @@ impl Variable for SO3 {
         }
     }
 
-    fn oplus(&self, delta: &Self::TangentVec) -> Self {
+    fn oplus(&self, delta: &VectorD) -> Self {
         let e = Self::exp(&delta);
         self * &e
     }
 
-    fn ominus(&self, other: &Self) -> Self::TangentVec {
-        (&self.inverse() * other).log()
+    fn ominus(&self, other: &Self) -> VectorD {
+        (&Variable::inverse(self) * other).log()
     }
 }
 
 impl LieGroup for SO3 {
-    fn exp(xi: &Self::TangentVec) -> Self {
+    fn exp(xi: &VectorD) -> Self {
         let mut xyzw = Vector4::zeros();
 
         let theta = xi.norm();
@@ -56,8 +55,8 @@ impl LieGroup for SO3 {
         SO3 { xyzw }
     }
 
-    fn log(&self) -> Self::TangentVec {
-        let xi = Self::TangentVec::new(self.xyzw[0], self.xyzw[1], self.xyzw[2]);
+    fn log(&self) -> VectorD {
+        let xi = dvector![self.xyzw[0], self.xyzw[1], self.xyzw[2]];
         let w = self.xyzw[3];
 
         let norm_v = xi.norm();
