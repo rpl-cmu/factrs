@@ -1,11 +1,89 @@
 // TODO: Move this to base file, or maybe a core module with all the other traits?
-use crate::variables::{LieGroup, Variable, VectorD};
-use nalgebra::{dvector, Vector4};
+use crate::variables::{LieGroup, Variable, Vector3, Vector4, VectorD};
+use nalgebra::dvector;
+use nalgebra::UnitQuaternion;
 use std::ops::Mul;
 
 #[derive(Clone, Debug)]
 pub struct SO3 {
-    xyzw: Vector4<f64>,
+    xyzw: Vector4,
+}
+
+impl SO3 {
+    pub fn from_vec(xyzw: Vector4) -> Self {
+        SO3 { xyzw }
+    }
+
+    pub fn from_xyzw(x: f64, y: f64, z: f64, w: f64) -> Self {
+        SO3 {
+            xyzw: Vector4::new(x, y, z, w),
+        }
+    }
+
+    pub fn from_matrix(mat: &nalgebra::Matrix3<f64>) -> Self {
+        let mut mat = mat.clone();
+        let trace = mat[(0, 0)] + mat[(1, 1)] + mat[(2, 2)];
+        let mut xyzw = Vector4::zeros();
+
+        if trace > 0.0 {
+            let s = 0.5 / (trace + 1.0).sqrt();
+            xyzw[3] = 0.25 / s;
+            xyzw[0] = (mat[(2, 1)] - mat[(1, 2)]) * s;
+            xyzw[1] = (mat[(0, 2)] - mat[(2, 0)]) * s;
+            xyzw[2] = (mat[(1, 0)] - mat[(0, 1)]) * s;
+        } else {
+            if mat[(0, 0)] > mat[(1, 1)] && mat[(0, 0)] > mat[(2, 2)] {
+                let s = 2.0 * (1.0 + mat[(0, 0)] - mat[(1, 1)] - mat[(2, 2)]).sqrt();
+                xyzw[3] = (mat[(2, 1)] - mat[(1, 2)]) / s;
+                xyzw[0] = 0.25 * s;
+                xyzw[1] = (mat[(0, 1)] + mat[(1, 0)]) / s;
+                xyzw[2] = (mat[(0, 2)] + mat[(2, 0)]) / s;
+            } else if mat[(1, 1)] > mat[(2, 2)] {
+                let s = 2.0 * (1.0 + mat[(1, 1)] - mat[(0, 0)] - mat[(2, 2)]).sqrt();
+                xyzw[3] = (mat[(0, 2)] - mat[(2, 0)]) / s;
+                xyzw[0] = (mat[(0, 1)] + mat[(1, 0)]) / s;
+                xyzw[1] = 0.25 * s;
+                xyzw[2] = (mat[(1, 2)] + mat[(2, 1)]) / s;
+            } else {
+                let s = 2.0 * (1.0 + mat[(2, 2)] - mat[(0, 0)] - mat[(1, 1)]).sqrt();
+                xyzw[3] = (mat[(1, 0)] - mat[(0, 1)]) / s;
+                xyzw[0] = (mat[(0, 2)] + mat[(2, 0)]) / s;
+                xyzw[1] = (mat[(1, 2)] + mat[(2, 1)]) / s;
+                xyzw[2] = 0.25 * s;
+            }
+        }
+
+        SO3 { xyzw }
+    }
+
+    pub fn to_matrix(&self) -> nalgebra::Matrix3<f64> {
+        let q = self.xyzw;
+        let q0 = q[3];
+        let q1 = q[0];
+        let q2 = q[1];
+        let q3 = q[2];
+
+        let mut mat = nalgebra::Matrix3::zeros();
+        mat[(0, 0)] = 1.0 - 2.0 * (q2 * q2 + q3 * q3);
+        mat[(0, 1)] = 2.0 * (q1 * q2 - q0 * q3);
+        mat[(0, 2)] = 2.0 * (q1 * q3 + q0 * q2);
+        mat[(1, 0)] = 2.0 * (q1 * q2 + q0 * q3);
+        mat[(1, 1)] = 1.0 - 2.0 * (q1 * q1 + q3 * q3);
+        mat[(1, 2)] = 2.0 * (q2 * q3 - q0 * q1);
+        mat[(2, 0)] = 2.0 * (q1 * q3 - q0 * q2);
+        mat[(2, 1)] = 2.0 * (q2 * q3 + q0 * q1);
+        mat[(2, 2)] = 1.0 - 2.0 * (q1 * q1 + q2 * q2);
+
+        mat
+    }
+
+    pub fn apply(&self, v: &Vector3) -> Vector3 {
+        let qv = Self::from_xyzw(v[0], v[1], v[2], 0.0);
+        let inv = self.inverse();
+
+        let v_rot = (&(&inv * &qv) * self).xyzw;
+        Vector3::new(v_rot[0], v_rot[1], v_rot[2])
+    }
 }
 
 impl Variable for SO3 {

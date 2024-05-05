@@ -1,8 +1,9 @@
 use crate::variables::{
     Variable, Vector1, Vector10, Vector2, Vector3, Vector4, Vector5, Vector6, Vector7, Vector8,
-    Vector9, VectorD, SO3,
+    Vector9, VectorD, SE3, SO3,
 };
-use std::convert::{From, TryFrom};
+use std::convert::{Into, TryFrom};
+use std::fmt;
 
 //
 /*
@@ -14,8 +15,11 @@ A subtrait *almost* works, but it enum-dispatch doesn't work with supertraits
 
 It would also be awesome if the macro could add any types to the enum, but I'm not sure that's possible
 */
+pub trait VariableEnumDispatch: Variable + Into<VariableEnum> + TryFrom<VariableEnum> {}
+
 pub enum VariableEnum {
     SO3(SO3),
+    SE3(SE3),
     Vector1(Vector1),
     Vector2(Vector2),
     Vector3(Vector3),
@@ -28,10 +32,30 @@ pub enum VariableEnum {
     Vector10(Vector10),
 }
 
+impl fmt::Display for VariableEnum {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            VariableEnum::SO3(_) => write!(f, "VariableEnum::SO3"),
+            VariableEnum::SE3(_) => write!(f, "VariableEnum::SE3"),
+            VariableEnum::Vector1(_) => write!(f, "VariableEnum::Vector1"),
+            VariableEnum::Vector2(_) => write!(f, "VariableEnum::Vector2"),
+            VariableEnum::Vector3(_) => write!(f, "VariableEnum::Vector3"),
+            VariableEnum::Vector4(_) => write!(f, "VariableEnum::Vector4"),
+            VariableEnum::Vector5(_) => write!(f, "VariableEnum::Vector5"),
+            VariableEnum::Vector6(_) => write!(f, "VariableEnum::Vector6"),
+            VariableEnum::Vector7(_) => write!(f, "VariableEnum::Vector7"),
+            VariableEnum::Vector8(_) => write!(f, "VariableEnum::Vector8"),
+            VariableEnum::Vector9(_) => write!(f, "VariableEnum::Vector9"),
+            VariableEnum::Vector10(_) => write!(f, "VariableEnum::Vector10"),
+        }
+    }
+}
+
 impl VariableEnum {
     pub fn dim(&self) -> usize {
         match self {
             VariableEnum::SO3(_) => SO3::DIM,
+            VariableEnum::SE3(_) => SE3::DIM,
             VariableEnum::Vector1(_) => Vector1::DIM,
             VariableEnum::Vector2(_) => Vector2::DIM,
             VariableEnum::Vector3(_) => Vector3::DIM,
@@ -48,6 +72,7 @@ impl VariableEnum {
     pub fn identity(&self) -> Self {
         match self {
             VariableEnum::SO3(_) => VariableEnum::SO3(SO3::identity()),
+            VariableEnum::SE3(_) => VariableEnum::SE3(SE3::identity()),
             VariableEnum::Vector1(_) => VariableEnum::Vector1(Vector1::identity()),
             VariableEnum::Vector2(_) => VariableEnum::Vector2(Vector2::identity()),
             VariableEnum::Vector3(_) => VariableEnum::Vector3(Vector3::identity()),
@@ -64,6 +89,7 @@ impl VariableEnum {
     pub fn inverse(&self) -> Self {
         match self {
             VariableEnum::SO3(so3) => VariableEnum::SO3(so3.inverse()),
+            VariableEnum::SE3(se3) => VariableEnum::SE3(se3.inverse()),
             VariableEnum::Vector1(v) => VariableEnum::Vector1(v.inverse()),
             VariableEnum::Vector2(v) => VariableEnum::Vector2(v.inverse()),
             VariableEnum::Vector3(v) => VariableEnum::Vector3(v.inverse()),
@@ -80,6 +106,7 @@ impl VariableEnum {
     pub fn oplus(&self, delta: &VectorD) -> Self {
         match self {
             VariableEnum::SO3(so3) => VariableEnum::SO3(so3.oplus(delta)),
+            VariableEnum::SE3(se3) => VariableEnum::SE3(se3.oplus(delta)),
             VariableEnum::Vector1(v) => VariableEnum::Vector1(v.oplus(delta)),
             VariableEnum::Vector2(v) => VariableEnum::Vector2(v.oplus(delta)),
             VariableEnum::Vector3(v) => VariableEnum::Vector3(v.oplus(delta)),
@@ -97,6 +124,7 @@ impl VariableEnum {
         // TODO: Should this return a result instead? In case the types don't match? Currently it just panics
         match self {
             VariableEnum::SO3(so3) => so3.ominus(other.try_into().unwrap()),
+            VariableEnum::SE3(se3) => se3.ominus(other.try_into().unwrap()),
             VariableEnum::Vector1(v) => v.ominus(other.try_into().unwrap()),
             VariableEnum::Vector2(v) => v.ominus(other.try_into().unwrap()),
             VariableEnum::Vector3(v) => v.ominus(other.try_into().unwrap()),
@@ -112,81 +140,50 @@ impl VariableEnum {
 }
 
 // ------------------------- Converting Variables -> VariableEnum ------------------------- //
-macro_rules! enum_from_var {
+// TODO: Define custom error type for this?
+macro_rules! enum_trait_impl {
     ( $e:path, $x:ty) => {
-        impl From<$x> for VariableEnum {
-            fn from(a: $x) -> Self {
-                $e(a)
-            }
-        }
-    };
-}
+        impl VariableEnumDispatch for $x {}
 
-enum_from_var!(VariableEnum::SO3, SO3);
-enum_from_var!(VariableEnum::Vector1, Vector1);
-enum_from_var!(VariableEnum::Vector2, Vector2);
-enum_from_var!(VariableEnum::Vector3, Vector3);
-enum_from_var!(VariableEnum::Vector4, Vector4);
-enum_from_var!(VariableEnum::Vector5, Vector5);
-enum_from_var!(VariableEnum::Vector6, Vector6);
-enum_from_var!(VariableEnum::Vector7, Vector7);
-enum_from_var!(VariableEnum::Vector8, Vector8);
-enum_from_var!(VariableEnum::Vector9, Vector9);
-enum_from_var!(VariableEnum::Vector10, Vector10);
-
-// TODO: Get ref working in the other direction?
-
-// ------------------------- Convert VariableEnum -> Variable ------------------------- //
-macro_rules! var_tryfrom_enum {
-    ( $x:ty, $e: path ) => {
         impl TryFrom<VariableEnum> for $x {
-            type Error = &'static str;
+            type Error = String;
 
             fn try_from(value: VariableEnum) -> Result<Self, Self::Error> {
                 match value {
                     $e(v) => Ok(v),
-                    _ => Err("fix me later"),
+                    _ => Err(format!("{} can't be turned into {}", value, stringify!($x))),
                 }
             }
         }
-    };
-}
 
-var_tryfrom_enum!(SO3, VariableEnum::SO3);
-var_tryfrom_enum!(Vector1, VariableEnum::Vector1);
-var_tryfrom_enum!(Vector2, VariableEnum::Vector2);
-var_tryfrom_enum!(Vector3, VariableEnum::Vector3);
-var_tryfrom_enum!(Vector4, VariableEnum::Vector4);
-var_tryfrom_enum!(Vector5, VariableEnum::Vector5);
-var_tryfrom_enum!(Vector6, VariableEnum::Vector6);
-var_tryfrom_enum!(Vector7, VariableEnum::Vector7);
-var_tryfrom_enum!(Vector8, VariableEnum::Vector8);
-var_tryfrom_enum!(Vector9, VariableEnum::Vector9);
-var_tryfrom_enum!(Vector10, VariableEnum::Vector10);
-
-macro_rules! var_tryfrom_enum_ref {
-    ( $x:ty, $e: path ) => {
         impl<'a> TryFrom<&'a VariableEnum> for &'a $x {
-            type Error = &'static str;
+            type Error = String;
 
             fn try_from(value: &'a VariableEnum) -> Result<Self, Self::Error> {
                 match value {
                     $e(v) => Ok(v),
-                    _ => Err("fix me later"),
+                    _ => Err(format!("{} can't be turned into {}", value, stringify!($x))),
                 }
+            }
+        }
+
+        impl Into<VariableEnum> for $x {
+            fn into(self) -> VariableEnum {
+                $e(self)
             }
         }
     };
 }
 
-var_tryfrom_enum_ref!(SO3, VariableEnum::SO3);
-var_tryfrom_enum_ref!(Vector1, VariableEnum::Vector1);
-var_tryfrom_enum_ref!(Vector2, VariableEnum::Vector2);
-var_tryfrom_enum_ref!(Vector3, VariableEnum::Vector3);
-var_tryfrom_enum_ref!(Vector4, VariableEnum::Vector4);
-var_tryfrom_enum_ref!(Vector5, VariableEnum::Vector5);
-var_tryfrom_enum_ref!(Vector6, VariableEnum::Vector6);
-var_tryfrom_enum_ref!(Vector7, VariableEnum::Vector7);
-var_tryfrom_enum_ref!(Vector8, VariableEnum::Vector8);
-var_tryfrom_enum_ref!(Vector9, VariableEnum::Vector9);
-var_tryfrom_enum_ref!(Vector10, VariableEnum::Vector10);
+enum_trait_impl!(VariableEnum::SO3, SO3);
+enum_trait_impl!(VariableEnum::SE3, SE3);
+enum_trait_impl!(VariableEnum::Vector1, Vector1);
+enum_trait_impl!(VariableEnum::Vector2, Vector2);
+enum_trait_impl!(VariableEnum::Vector3, Vector3);
+enum_trait_impl!(VariableEnum::Vector4, Vector4);
+enum_trait_impl!(VariableEnum::Vector5, Vector5);
+enum_trait_impl!(VariableEnum::Vector6, Vector6);
+enum_trait_impl!(VariableEnum::Vector7, Vector7);
+enum_trait_impl!(VariableEnum::Vector8, Vector8);
+enum_trait_impl!(VariableEnum::Vector9, Vector9);
+enum_trait_impl!(VariableEnum::Vector10, Vector10);

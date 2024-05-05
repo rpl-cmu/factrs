@@ -44,9 +44,12 @@ pub use key::*;
 // pub use values::Values;
 
 mod variable_enum;
-pub use variable_enum::VariableEnum;
+pub use variable_enum::{VariableEnum, VariableEnumDispatch};
 
 pub mod so3;
 pub use so3::SO3;
+
+pub mod se3;
+pub use se3::SE3;
 
 pub mod vector;

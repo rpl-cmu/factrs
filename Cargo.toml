@@ -10,4 +10,5 @@ path = "src/bin.rs"
 
 
 [dependencies]
+ahash = "0.8.11"
 nalgebra = "0.32.5"
