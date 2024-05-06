@@ -1,17 +1,10 @@
 use crate::variables::{Key, VariableEnum, VariableEnumDispatch};
 use ahash::AHashMap;
-use std::collections::hash_map::{Entry, OccupiedEntry, VacantEntry};
+use std::collections::hash_map::Entry;
+use std::fmt;
 
 pub struct Values {
     values: AHashMap<Key, VariableEnum>,
-}
-
-pub struct OccupiedError<'a, K, V> {
-    pub entry: OccupiedEntry<'a, K, V>,
-}
-
-pub struct VacantError<'a, K, V> {
-    pub entry: VacantEntry<'a, K, V>,
 }
 
 impl Values {
@@ -21,62 +14,54 @@ impl Values {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    pub fn entry(&mut self, key: Key) -> Entry<Key, VariableEnum> {
+        self.values.entry(key)
+    }
+
     // Possible errors:
     // - key already exists
-    pub fn insert<V: VariableEnumDispatch>(
-        &mut self,
-        key: Key,
-        value: V,
-    ) -> Result<&mut VariableEnum, OccupiedError<Key, VariableEnum>> {
+    pub fn insert<V: VariableEnumDispatch>(&mut self, key: Key, value: V) -> Option<VariableEnum> {
         let value: VariableEnum = value.into();
+        self.values.insert(key, value)
+    }
 
-        match self.values.entry(key) {
-            Entry::Occupied(entry) => Err(OccupiedError { entry }),
-            Entry::Vacant(entry) => {
-                let v = entry.insert(value);
-                Ok(v)
+    pub fn get(&self, key: &Key) -> Option<&VariableEnum> {
+        self.values.get(key)
+    }
+
+    pub fn get_mut(&mut self, key: &Key) -> Option<&mut VariableEnum> {
+        self.values.get_mut(key)
+    }
+
+    pub fn remove(&mut self, key: &Key) -> Option<VariableEnum> {
+        self.values.remove(key)
+    }
+}
+
+impl fmt::Display for Values {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if f.alternate() {
+            write!(f, "{{\n")?;
+            for (key, value) in self.values.iter() {
+                write!(f, "  {}: {},\n", key, value)?;
             }
+            write!(f, "}}")
+        } else {
+            write!(f, "{{")?;
+            for (key, value) in self.values.iter() {
+                write!(f, "{}: {}, ", key, value)?;
+            }
+            write!(f, "}}")
         }
     }
+}
 
-    // Possible errors:
-    // - key not found
-    // - key found but type mismatch
-    // pub fn update<V: VariableEnumDispatch>(
-    //     &mut self,
-    //     key: Key,
-    //     value: V,
-    // ) -> Result<V, VacantError<Key, VariableEnum>> {
-    //     let value: VariableEnum = value.into();
-
-    //     match self.values.entry(key) {
-    //         Entry::Vacant(entry) => Err(VacantError { entry }),
-    //         Entry::Occupied(mut entry) => {
-    //             let v: V = entry.insert(value).try_into();
-    //             Ok(v)
-    //         }
-    //     }
-    // }
-
-    // TODO: Clean up rest of these functions
-    // Possible issues:
-    // - key not found
-    // - key found but type mismatch
-    pub fn get<T: VariableEnumDispatch>(&self, key: &Key) -> Result<&T, Error> {
-        let val = self.values.get(key);
+impl fmt::Debug for Values {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
-
-    // Possible issues:
-    // - key not found
-    // - key found but type mismatch
-    // pub fn get_mut(&mut self, key: &Key) -> Option<&mut VariableEnum> {
-    //     self.values.get_mut(key)
-    // }
-
-    // Possible issues:
-    // - key not found
-    // - key found but type mismatch
-    // pub fn remove(&mut self, key: &Key) -> Option<VariableEnum> {
-    //     self.values.remove(key)
-    // }
 }

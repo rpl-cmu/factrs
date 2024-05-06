@@ -1,6 +1,7 @@
 // TODO: Move this to base file, or maybe a core module with all the other traits?
 use crate::variables::{LieGroup, Variable, Vector3, VectorD, SO3};
 use nalgebra::dvector;
+use std::fmt;
 use std::ops::Mul;
 
 #[derive(Clone, Debug)]
@@ -46,6 +47,7 @@ impl LieGroup for SE3 {
         let qv = xi / w;
         let qv = qv * w.sin();
         let qv = qv.push(w.cos());
+        let qv = Vector3::new(qv[0], qv[1], qv[2]);
 
         SE3 { rot: q, xyz: qv }
     }
@@ -55,7 +57,7 @@ impl LieGroup for SE3 {
         let w = xi.norm();
         let qv = self.xyz / w;
         let qv = qv * w.acos();
-        qv.append(&dvector![w])
+        dvector![qv[0], qv[1], qv[2]]
     }
 }
 
@@ -75,5 +77,11 @@ impl Mul for &SE3 {
             rot: &self.rot * &other.rot,
             xyz: &self.rot.apply(&other.xyz) + &self.xyz,
         }
+    }
+}
+
+impl fmt::Display for SE3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {}", self.rot, self.xyz)
     }
 }

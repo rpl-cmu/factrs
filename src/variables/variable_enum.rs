@@ -15,7 +15,7 @@ A subtrait *almost* works, but it enum-dispatch doesn't work with supertraits
 
 It would also be awesome if the macro could add any types to the enum, but I'm not sure that's possible
 */
-pub trait VariableEnumDispatch: Variable + Into<VariableEnum> + TryFrom<VariableEnum> {}
+pub trait VariableEnumDispatch: Into<VariableEnum> + TryFrom<VariableEnum> {}
 
 pub enum VariableEnum {
     SO3(SO3),
@@ -35,21 +35,23 @@ pub enum VariableEnum {
 impl fmt::Display for VariableEnum {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            VariableEnum::SO3(_) => write!(f, "VariableEnum::SO3"),
-            VariableEnum::SE3(_) => write!(f, "VariableEnum::SE3"),
-            VariableEnum::Vector1(_) => write!(f, "VariableEnum::Vector1"),
-            VariableEnum::Vector2(_) => write!(f, "VariableEnum::Vector2"),
-            VariableEnum::Vector3(_) => write!(f, "VariableEnum::Vector3"),
-            VariableEnum::Vector4(_) => write!(f, "VariableEnum::Vector4"),
-            VariableEnum::Vector5(_) => write!(f, "VariableEnum::Vector5"),
-            VariableEnum::Vector6(_) => write!(f, "VariableEnum::Vector6"),
-            VariableEnum::Vector7(_) => write!(f, "VariableEnum::Vector7"),
-            VariableEnum::Vector8(_) => write!(f, "VariableEnum::Vector8"),
-            VariableEnum::Vector9(_) => write!(f, "VariableEnum::Vector9"),
-            VariableEnum::Vector10(_) => write!(f, "VariableEnum::Vector10"),
+            VariableEnum::SO3(a) => write!(f, "{}", a),
+            VariableEnum::SE3(a) => write!(f, "{}", a),
+            VariableEnum::Vector1(a) => write!(f, "Vector1{:?}", a),
+            VariableEnum::Vector2(a) => write!(f, "Vector2{:?}", a),
+            VariableEnum::Vector3(a) => write!(f, "Vector3{:?}", a),
+            VariableEnum::Vector4(a) => write!(f, "Vector4{:?}", a),
+            VariableEnum::Vector5(a) => write!(f, "Vector5{:?}", a),
+            VariableEnum::Vector6(a) => write!(f, "Vector6{:?}", a),
+            VariableEnum::Vector7(a) => write!(f, "Vector7{:?}", a),
+            VariableEnum::Vector8(a) => write!(f, "Vector8{:?}", a),
+            VariableEnum::Vector9(a) => write!(f, "Vector9{:?}", a),
+            VariableEnum::Vector10(a) => write!(f, "Vector10{:?}", a),
         }
     }
 }
+
+impl VariableEnumDispatch for VariableEnum {}
 
 impl VariableEnum {
     pub fn dim(&self) -> usize {

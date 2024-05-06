@@ -40,8 +40,8 @@ pub trait LieGroup: Variable + Mul {
 mod key;
 pub use key::*;
 
-// mod values;
-// pub use values::Values;
+mod values;
+pub use values::Values;
 
 mod variable_enum;
 pub use variable_enum::{VariableEnum, VariableEnumDispatch};

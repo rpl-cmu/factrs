@@ -1,5 +1,5 @@
 // Similar to gtsam: https://github.com/borglab/gtsam/blob/develop/gtsam/inference/Key.cpp
-use std::fmt::{self, Display, Formatter};
+use std::fmt;
 use std::mem::size_of;
 
 // Char is stored in last CHR_BITS
@@ -27,8 +27,8 @@ impl Key {
     }
 }
 
-impl Display for Key {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+impl fmt::Display for Key {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}{}", self.chr(), self.idx())
     }
 }

@@ -1,7 +1,7 @@
 // TODO: Move this to base file, or maybe a core module with all the other traits?
 use crate::variables::{LieGroup, Variable, Vector3, Vector4, VectorD};
 use nalgebra::dvector;
-use nalgebra::UnitQuaternion;
+use std::fmt;
 use std::ops::Mul;
 
 #[derive(Clone, Debug)]
@@ -21,7 +21,6 @@ impl SO3 {
     }
 
     pub fn from_matrix(mat: &nalgebra::Matrix3<f64>) -> Self {
-        let mut mat = mat.clone();
         let trace = mat[(0, 0)] + mat[(1, 1)] + mat[(2, 2)];
         let mut xyzw = Vector4::zeros();
 
@@ -172,5 +171,15 @@ impl Mul for &SO3 {
         xyzw[3] = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1;
 
         SO3 { xyzw }
+    }
+}
+
+impl fmt::Display for SO3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "SO3({:.3}, {:.3}, {:.3}, {:.3})",
+            self.xyzw[0], self.xyzw[1], self.xyzw[2], self.xyzw[3]
+        )
     }
 }
