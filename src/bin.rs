@@ -13,12 +13,13 @@ fn main() {
     values.insert(X(0), r);
     values.insert(X(1), v);
     values.insert(X(2), e);
-
     println!("{:#?}", values);
 
-    let so3s: Vec<SO3> = values.clone().into();
+    let temp = values.get_mut(&X(0)).unwrap();
+    *temp = temp.oplus(&xi);
+
+    let so3s: Vec<SO3> = (&values).into();
     println!("{:#?}", so3s);
 
-    let vecs: Vec<Vector3> = values.into();
-    println!("{:?}", vecs);
+    println!("{:#?}", values);
 }

@@ -69,10 +69,23 @@ impl fmt::Debug for Values {
 macro_rules! values_into_vec {
     ($($variant:ident),*) => {
         $(
-            impl Into<Vec<variables::$variant>> for Values {
+            impl<'a> Into<Vec<variables::$variant>> for &Values {
                 fn into(self) -> Vec<variables::$variant> {
                     self.values
-                        .into_iter()
+                        .iter()
+                        .filter_map(|(_, value)| match value {
+                            VariableEnum::$variant(variant) => Some(variant),
+                            _ => None,
+                        })
+                        .cloned()
+                        .collect()
+                }
+            }
+
+            impl<'a> Into<Vec<&'a variables::$variant>> for &'a Values {
+                fn into(self) -> Vec<&'a variables::$variant> {
+                    self.values
+                        .iter()
                         .filter_map(|(_, value)| match value {
                             VariableEnum::$variant(variant) => Some(variant),
                             _ => None,
