@@ -10,7 +10,7 @@ const IDX_BITS: usize = KEY_BITS - CHR_BITS;
 const CHR_MASK: u64 = (char::MAX as u64) << IDX_BITS;
 const IDX_MASK: u64 = !CHR_MASK;
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Key(u64);
 
 impl Key {

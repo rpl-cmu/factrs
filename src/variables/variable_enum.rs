@@ -17,6 +17,7 @@ It would also be awesome if the macro could add any types to the enum, but I'm n
 */
 pub trait VariableEnumDispatch: Into<VariableEnum> + TryFrom<VariableEnum> {}
 
+#[derive(Clone)]
 pub enum VariableEnum {
     SO3(SO3),
     SE3(SE3),

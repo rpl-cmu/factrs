@@ -1,8 +1,10 @@
-use crate::variables::{Key, VariableEnum, VariableEnumDispatch};
+use crate::variables::{self, Key, VariableEnum, VariableEnumDispatch};
 use ahash::AHashMap;
 use std::collections::hash_map::Entry;
+use std::convert::Into;
 use std::fmt;
 
+#[derive(Clone)]
 pub struct Values {
     values: AHashMap<Key, VariableEnum>,
 }
@@ -22,8 +24,6 @@ impl Values {
         self.values.entry(key)
     }
 
-    // Possible errors:
-    // - key already exists
     pub fn insert<V: VariableEnumDispatch>(&mut self, key: Key, value: V) -> Option<VariableEnum> {
         let value: VariableEnum = value.into();
         self.values.insert(key, value)
@@ -65,3 +65,26 @@ impl fmt::Debug for Values {
         fmt::Display::fmt(self, f)
     }
 }
+
+macro_rules! values_into_vec {
+    ($($variant:ident),*) => {
+        $(
+            impl Into<Vec<variables::$variant>> for Values {
+                fn into(self) -> Vec<variables::$variant> {
+                    self.values
+                        .into_iter()
+                        .filter_map(|(_, value)| match value {
+                            VariableEnum::$variant(variant) => Some(variant),
+                            _ => None,
+                        })
+                        .collect()
+                }
+            }
+        )*
+    };
+}
+
+values_into_vec!(
+    SO3, SE3, Vector1, Vector2, Vector3, Vector4, Vector5, Vector6, Vector7, Vector8, Vector9,
+    Vector10
+);

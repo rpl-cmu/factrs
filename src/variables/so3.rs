@@ -4,7 +4,7 @@ use nalgebra::dvector;
 use std::fmt;
 use std::ops::Mul;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SO3 {
     xyzw: Vector4,
 }
@@ -181,5 +181,11 @@ impl fmt::Display for SO3 {
             "SO3({:.3}, {:.3}, {:.3}, {:.3})",
             self.xyzw[0], self.xyzw[1], self.xyzw[2], self.xyzw[3]
         )
+    }
+}
+
+impl fmt::Debug for SO3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }

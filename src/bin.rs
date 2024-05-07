@@ -14,5 +14,11 @@ fn main() {
     values.insert(X(1), v);
     values.insert(X(2), e);
 
-    println!("{:#?}", values)
+    println!("{:#?}", values);
+
+    let so3s: Vec<SO3> = values.clone().into();
+    println!("{:#?}", so3s);
+
+    let vecs: Vec<Vector3> = values.into();
+    println!("{:?}", vecs);
 }
