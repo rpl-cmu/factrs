@@ -55,7 +55,7 @@ impl LieGroup for SE3 {
     fn log(&self) -> VectorD {
         let xi = self.rot.log();
         let w = xi.norm();
-        let qv = self.xyz / w;
+        let qv = self.xyz.clone() / w;
         let qv = qv * w.acos();
         dvector![qv[0], qv[1], qv[2]]
     }
@@ -75,7 +75,7 @@ impl Mul for &SE3 {
     fn mul(self, other: Self) -> SE3 {
         SE3 {
             rot: &self.rot * &other.rot,
-            xyz: self.rot.apply(&other.xyz) + self.xyz,
+            xyz: self.rot.apply(&other.xyz) + self.xyz.clone(),
         }
     }
 }

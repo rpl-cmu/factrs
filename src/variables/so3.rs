@@ -56,11 +56,10 @@ impl SO3 {
     }
 
     pub fn to_matrix(&self) -> nalgebra::Matrix3<f64> {
-        let q = self.xyzw;
-        let q0 = q[3];
-        let q1 = q[0];
-        let q2 = q[1];
-        let q3 = q[2];
+        let q0 = self.xyzw[3];
+        let q1 = self.xyzw[0];
+        let q2 = self.xyzw[1];
+        let q3 = self.xyzw[2];
 
         let mut mat = nalgebra::Matrix3::zeros();
         mat[(0, 0)] = 1.0 - 2.0 * (q2 * q2 + q3 * q3);

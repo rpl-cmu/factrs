@@ -1,5 +1,4 @@
 // use ahash::AHashMap;
-use nalgebra::{DVector, SVector};
 use std::ops::Mul;
 
 // ------------------------- Import all variable types ------------------------- //
