@@ -1,6 +1,6 @@
 use nalgebra::dvector;
 use samrs::variables::SO3;
-use samrs::variables::{LieGroup, Values, VariableEnum, Vector3, X};
+use samrs::variables::{DispatchableVariable, LieGroup, Values, VariableEnum, Vector3, X};
 
 fn main() {
     let xi = dvector![0.1, 0.2, 0.3];
@@ -10,8 +10,8 @@ fn main() {
     let e: VariableEnum = r.clone().into();
 
     let mut values = Values::default();
-    values.insert(X(0), r);
-    values.insert(X(1), v);
+    values.insert(X(0), r.into());
+    values.insert(X(1), v.into());
     values.insert(X(2), e);
     println!("{:#?}", values);
 

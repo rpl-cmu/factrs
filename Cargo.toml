@@ -11,4 +11,6 @@ path = "src/bin.rs"
 
 [dependencies]
 ahash = "0.8.11"
+derive_more = "0.99.17"
+enum_dispatch = "0.3.13"
 nalgebra = "0.32.5"

@@ -2,25 +2,10 @@
 use nalgebra::{DVector, SVector};
 use std::ops::Mul;
 
-pub type Vector1 = SVector<f64, 1>;
-pub type Vector2 = SVector<f64, 2>;
-pub type Vector3 = SVector<f64, 3>;
-pub type Vector4 = SVector<f64, 4>;
-pub type Vector5 = SVector<f64, 5>;
-pub type Vector6 = SVector<f64, 6>;
-pub type Vector7 = SVector<f64, 7>;
-pub type Vector8 = SVector<f64, 8>;
-pub type Vector9 = SVector<f64, 9>;
-pub type Vector10 = SVector<f64, 10>;
-pub type VectorD = DVector<f64>;
-
 // ------------------------- Import all variable types ------------------------- //
-pub trait Variable: Sized + Clone {
-    const DIM: usize;
 
-    fn dim() -> usize {
-        Self::DIM
-    }
+pub trait Variable: Clone + Sized {
+    const DIM: usize;
 
     fn identity() -> Self;
 
@@ -44,7 +29,7 @@ mod values;
 pub use values::Values;
 
 mod variable_enum;
-pub use variable_enum::{VariableEnum, VariableEnumDispatch};
+pub use variable_enum::{DispatchableVariable, VariableEnum};
 
 pub mod so3;
 pub use so3::SO3;
@@ -53,3 +38,4 @@ pub mod se3;
 pub use se3::SE3;
 
 pub mod vector;
+pub use vector::*;

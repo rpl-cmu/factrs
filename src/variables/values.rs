@@ -1,4 +1,4 @@
-use crate::variables::{self, Key, VariableEnum, VariableEnumDispatch};
+use crate::variables::{self, DispatchableVariable, Key, VariableEnum};
 use ahash::AHashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Into;
@@ -22,8 +22,7 @@ impl Values {
         self.values.entry(key)
     }
 
-    pub fn insert<V: VariableEnumDispatch>(&mut self, key: Key, value: V) -> Option<VariableEnum> {
-        let value: VariableEnum = value.into();
+    pub fn insert(&mut self, key: Key, value: VariableEnum) -> Option<VariableEnum> {
         self.values.insert(key, value)
     }
 
