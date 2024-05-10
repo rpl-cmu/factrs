@@ -4,20 +4,18 @@ use std::collections::hash_map::Entry;
 use std::convert::Into;
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Values {
     values: AHashMap<Key, VariableEnum>,
 }
 
 impl Values {
-    pub fn new() -> Self {
-        Self {
-            values: AHashMap::new(),
-        }
-    }
-
     pub fn len(&self) -> usize {
         self.values.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
     }
 
     pub fn entry(&mut self, key: Key) -> Entry<Key, VariableEnum> {
@@ -45,9 +43,9 @@ impl Values {
 impl fmt::Display for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
-            write!(f, "{{\n")?;
+            writeln!(f, "{{")?;
             for (key, value) in self.values.iter() {
-                write!(f, "  {}: {},\n", key, value)?;
+                writeln!(f, "  {}: {},", key, value)?;
             }
             write!(f, "}}")
         } else {

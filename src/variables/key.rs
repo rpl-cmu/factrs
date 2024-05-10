@@ -4,7 +4,7 @@ use std::mem::size_of;
 
 // Char is stored in last CHR_BITS
 // Value is stored in the first IDX_BITS
-const KEY_BITS: usize = size_of::<u64>() * 8;
+const KEY_BITS: usize = u64::BITS as usize;
 const CHR_BITS: usize = size_of::<char>() * 8;
 const IDX_BITS: usize = KEY_BITS - CHR_BITS;
 const CHR_MASK: u64 = (char::MAX as u64) << IDX_BITS;

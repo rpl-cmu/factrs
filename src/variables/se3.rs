@@ -28,7 +28,7 @@ impl Variable for SE3 {
     }
 
     fn oplus(&self, delta: &VectorD) -> Self {
-        let e = Self::exp(&delta);
+        let e = Self::exp(delta);
         self * &e
     }
 
@@ -75,7 +75,7 @@ impl Mul for &SE3 {
     fn mul(self, other: Self) -> SE3 {
         SE3 {
             rot: &self.rot * &other.rot,
-            xyz: &self.rot.apply(&other.xyz) + &self.xyz,
+            xyz: self.rot.apply(&other.xyz) + self.xyz,
         }
     }
 }

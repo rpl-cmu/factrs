@@ -101,7 +101,7 @@ impl Variable for SO3 {
     }
 
     fn oplus(&self, delta: &VectorD) -> Self {
-        let e = Self::exp(&delta);
+        let e = Self::exp(delta);
         self * &e
     }
 

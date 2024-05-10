@@ -9,7 +9,7 @@ fn main() {
     let v = Vector3::new(1.0, 2.0, 3.0);
     let e: VariableEnum = r.clone().into();
 
-    let mut values = Values::new();
+    let mut values = Values::default();
     values.insert(X(0), r);
     values.insert(X(1), v);
     values.insert(X(2), e);
