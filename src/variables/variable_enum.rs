@@ -4,13 +4,13 @@ use crate::variables::{
 };
 use derive_more::Display;
 use enum_dispatch::enum_dispatch;
+use try_as::macros;
+use try_as::traits as try_as_traits;
 
 // This is a slightly modified version of Variable, just a little less convenient
 // However it is in the form we need for enum_dispatch
 #[enum_dispatch]
 pub trait DispatchableVariable {
-    // const DIM: usize;
-
     fn dim(&self) -> usize;
 
     fn identity(&self) -> Self;
@@ -23,7 +23,7 @@ pub trait DispatchableVariable {
     // fn ominus(&self, other: &Enum) -> VectorD;
 }
 
-// Default implementation for all of our variables
+// Blanket implementation implements it for all the variable trait
 impl<T: Variable> DispatchableVariable for T {
     fn identity(&self) -> Self {
         T::identity()
@@ -43,7 +43,7 @@ impl<T: Variable> DispatchableVariable for T {
 }
 
 #[enum_dispatch(DispatchableVariable)]
-#[derive(Clone, Display)]
+#[derive(Clone, Display, macros::TryAsRef)]
 pub enum VariableEnum {
     SO3,
     SE3,

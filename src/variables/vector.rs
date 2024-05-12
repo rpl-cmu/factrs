@@ -5,33 +5,20 @@ use nalgebra::{DVector, SVector};
 use std::ops;
 
 // This is a thin newtype around SVector b/c the way it prints is way too verbose
-// This is the only way I know to change that
+// This is the only way I've figured out how to change that
 #[derive(
     Clone,
-    Debug,
     derive_more::Add,
     derive_more::Sub,
     derive_more::Neg,
     derive_more::Div,
     derive_more::Mul,
+    derive_more::Deref,
+    derive_more::DerefMut,
 )]
 pub struct Vector<const N: usize>(SVector<f64, N>);
 
 // ------------------------- All ops not in derive_more ------------------------- //
-impl<const N: usize> ops::Deref for Vector<N> {
-    type Target = SVector<f64, N>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<const N: usize> ops::DerefMut for Vector<N> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 impl<const N: usize> ops::Neg for &Vector<N> {
     type Output = Vector<N>;
     fn neg(self) -> Self::Output {
@@ -47,13 +34,18 @@ impl<const N: usize> ops::Neg for &Vector<N> {
 // }
 
 impl<const N: usize> fmt::Display for Vector<N> {
-    // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Vector{}(", N)?;
         for i in 0..N - 1 {
             write!(f, "{}, ", self[i])?;
         }
         write!(f, "{})", self[N - 1])
+    }
+}
+
+impl<const N: usize> fmt::Debug for Vector<N> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 

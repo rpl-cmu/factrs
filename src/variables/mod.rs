@@ -1,8 +1,9 @@
-// use ahash::AHashMap;
 use std::ops::Mul;
 
 // ------------------------- Import all variable types ------------------------- //
 
+// TODO: Should I make it also make default a supertrait here?
+// And then use that for the default identity implementation?
 pub trait Variable: Clone + Sized {
     const DIM: usize;
 

@@ -227,6 +227,7 @@ dependencies = [
  "derive_more",
  "enum_dispatch",
  "nalgebra",
+ "try_as",
 ]
 
 [[package]]
@@ -269,6 +270,34 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "try_as"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44466cdfbcb0d961daea7451036fac107ad445d15247ef87a0bb8ca3f185a0db"
+dependencies = [
+ "try_as_macros",
+ "try_as_traits",
+]
+
+[[package]]
+name = "try_as_macros"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b0943c31ddbd57af5bb3a7361dde94ae6bf80f2c1a4bea1a0ed1370fbd4983d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+ "try_as_traits",
+]
+
+[[package]]
+name = "try_as_traits"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3dab5b4905b9a105531986fd65bd6a36d67fa881303307f116c1540397465641"
 
 [[package]]
 name = "typenum"
