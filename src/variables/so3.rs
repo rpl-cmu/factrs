@@ -30,26 +30,24 @@ impl SO3 {
             xyzw[0] = (mat[(2, 1)] - mat[(1, 2)]) * s;
             xyzw[1] = (mat[(0, 2)] - mat[(2, 0)]) * s;
             xyzw[2] = (mat[(1, 0)] - mat[(0, 1)]) * s;
+        } else if mat[(0, 0)] > mat[(1, 1)] && mat[(0, 0)] > mat[(2, 2)] {
+            let s = 2.0 * (1.0 + mat[(0, 0)] - mat[(1, 1)] - mat[(2, 2)]).sqrt();
+            xyzw[3] = (mat[(2, 1)] - mat[(1, 2)]) / s;
+            xyzw[0] = 0.25 * s;
+            xyzw[1] = (mat[(0, 1)] + mat[(1, 0)]) / s;
+            xyzw[2] = (mat[(0, 2)] + mat[(2, 0)]) / s;
+        } else if mat[(1, 1)] > mat[(2, 2)] {
+            let s = 2.0 * (1.0 + mat[(1, 1)] - mat[(0, 0)] - mat[(2, 2)]).sqrt();
+            xyzw[3] = (mat[(0, 2)] - mat[(2, 0)]) / s;
+            xyzw[0] = (mat[(0, 1)] + mat[(1, 0)]) / s;
+            xyzw[1] = 0.25 * s;
+            xyzw[2] = (mat[(1, 2)] + mat[(2, 1)]) / s;
         } else {
-            if mat[(0, 0)] > mat[(1, 1)] && mat[(0, 0)] > mat[(2, 2)] {
-                let s = 2.0 * (1.0 + mat[(0, 0)] - mat[(1, 1)] - mat[(2, 2)]).sqrt();
-                xyzw[3] = (mat[(2, 1)] - mat[(1, 2)]) / s;
-                xyzw[0] = 0.25 * s;
-                xyzw[1] = (mat[(0, 1)] + mat[(1, 0)]) / s;
-                xyzw[2] = (mat[(0, 2)] + mat[(2, 0)]) / s;
-            } else if mat[(1, 1)] > mat[(2, 2)] {
-                let s = 2.0 * (1.0 + mat[(1, 1)] - mat[(0, 0)] - mat[(2, 2)]).sqrt();
-                xyzw[3] = (mat[(0, 2)] - mat[(2, 0)]) / s;
-                xyzw[0] = (mat[(0, 1)] + mat[(1, 0)]) / s;
-                xyzw[1] = 0.25 * s;
-                xyzw[2] = (mat[(1, 2)] + mat[(2, 1)]) / s;
-            } else {
-                let s = 2.0 * (1.0 + mat[(2, 2)] - mat[(0, 0)] - mat[(1, 1)]).sqrt();
-                xyzw[3] = (mat[(1, 0)] - mat[(0, 1)]) / s;
-                xyzw[0] = (mat[(0, 2)] + mat[(2, 0)]) / s;
-                xyzw[1] = (mat[(1, 2)] + mat[(2, 1)]) / s;
-                xyzw[2] = 0.25 * s;
-            }
+            let s = 2.0 * (1.0 + mat[(2, 2)] - mat[(0, 0)] - mat[(1, 1)]).sqrt();
+            xyzw[3] = (mat[(1, 0)] - mat[(0, 1)]) / s;
+            xyzw[0] = (mat[(0, 2)] + mat[(2, 0)]) / s;
+            xyzw[1] = (mat[(1, 2)] + mat[(2, 1)]) / s;
+            xyzw[2] = 0.25 * s;
         }
 
         SO3 { xyzw }

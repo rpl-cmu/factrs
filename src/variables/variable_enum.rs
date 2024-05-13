@@ -5,7 +5,6 @@ use crate::variables::{
 use derive_more::Display;
 use enum_dispatch::enum_dispatch;
 use try_as::macros;
-use try_as::traits as try_as_traits;
 
 // This is a slightly modified version of Variable, just a little less convenient
 // However it is in the form we need for enum_dispatch

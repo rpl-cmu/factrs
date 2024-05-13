@@ -26,13 +26,6 @@ impl<const N: usize> ops::Neg for &Vector<N> {
     }
 }
 
-// impl<const N: usize> ops::Div for &Vector<N> {
-//     type Output = Vector<N>;
-//     fn div(self) -> Self::Output {
-//         Vector(-self.0)
-//     }
-// }
-
 impl<const N: usize> fmt::Display for Vector<N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Vector{}(", N)?;
@@ -56,21 +49,26 @@ impl<const N: usize> Vector<N> {
     }
 }
 
-// TODO: This needs to be cleaned up
-type TempVector3 = SVector<f64, 3>;
-impl Vector<3> {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
-        let temp = TempVector3::new(x, y, z);
-        Vector(temp)
-    }
-}
-type TempVector4 = SVector<f64, 4>;
-impl Vector<4> {
-    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
-        let temp = TempVector4::new(x, y, z, w);
-        Vector(temp)
-    }
-}
+// Modified from: https://docs.rs/nalgebra/latest/src/nalgebra/base/construction.rs.html#960-1103
+macro_rules! componentwise_constructors_impl(
+    ($($N: expr, [$($($args: ident),*);*] $(;)*)*) => {$(
+        impl Vector<$N> {
+            #[inline]
+            pub const fn new($($($args: f64),*),*) -> Self {
+                Vector(SVector::<f64, $N>::new($($($args),*),*))
+            }
+        }
+    )*}
+);
+
+componentwise_constructors_impl!(
+    1, [x;];
+    2, [x; y];
+    3, [x; y; z];
+    4, [x; y; z; w];
+    5, [x; y; z; w; a];
+    6, [x; y; z; w; a; b];
+);
 
 // ------------------------- Our needs ------------------------- //
 impl<const N: usize> Variable for Vector<N> {
