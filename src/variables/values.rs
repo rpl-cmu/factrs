@@ -37,7 +37,7 @@ impl<K: Key, V: Var> Values<K, V> {
         self.values.entry(key)
     }
 
-    pub fn insert(&mut self, key: K, value: impl Into<V>) -> Option<V> {
+    pub fn insert<T: Into<V>>(&mut self, key: K, value: T) -> Option<V> {
         self.values.insert(key, value.into())
     }
 

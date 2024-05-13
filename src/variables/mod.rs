@@ -1,8 +1,9 @@
+use std::fmt::Display;
 use std::ops::Mul;
 
 // ------------------------- Import all variable types ------------------------- //
 
-pub trait Variable: Clone + Sized {
+pub trait Variable: Clone + Sized + Display {
     const DIM: usize;
 
     fn identity() -> Self;
@@ -20,11 +21,11 @@ pub trait LieGroup: Variable + Mul {
     fn log(&self) -> VectorD;
 }
 
-mod key;
-pub use key::*;
+mod symbol;
+pub use symbol::*;
 
 mod values;
-pub use values::Values;
+pub use values::{Key, Values, Var};
 
 mod variable_enum;
 pub use variable_enum::{DispatchableVariable, VariableEnum};
