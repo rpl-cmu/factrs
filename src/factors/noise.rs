@@ -12,7 +12,7 @@ impl<const N: usize> NoiseModel for GaussianNoise<N> {
     const DIM: usize = N;
 
     fn whiten(&self, v: &VectorD) -> VectorD {
-        self.sqrt_cov * v
+        &self.sqrt_cov * v
     }
 }
 
@@ -45,6 +45,7 @@ impl<const N: usize> GaussianNoise<N> {
     pub fn from_matrix_cov(cov: &DMatrix<f64>) -> Self {
         // TODO: Double check if I want upper or lower triangular cholesky
         let sqrt_cov = cov
+            .clone()
             .cholesky()
             .expect("Cholesky failed when creating sqrt covariance.")
             .l();
