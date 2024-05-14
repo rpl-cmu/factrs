@@ -1,6 +1,7 @@
+use crate::dtype;
 use crate::traits::{LieGroup, Variable};
 use crate::variables::{Vector3, VectorD, SO3};
-use nalgebra::dvector;
+use nalgebra::{dvector, ComplexField, RealField};
 use std::fmt;
 use std::ops::Mul;
 

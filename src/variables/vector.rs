@@ -1,3 +1,4 @@
+use crate::dtype;
 use crate::traits::Variable;
 use core::fmt;
 use derive_more;
@@ -16,7 +17,7 @@ use std::ops;
     derive_more::Deref,
     derive_more::DerefMut,
 )]
-pub struct Vector<const N: usize>(SVector<f64, N>);
+pub struct Vector<const N: usize>(SVector<dtype, N>);
 
 // ------------------------- All ops not in derive_more ------------------------- //
 impl<const N: usize> ops::Neg for &Vector<N> {
@@ -54,8 +55,8 @@ macro_rules! componentwise_constructors_impl(
     ($($N: expr, [$($($args: ident),*);*] $(;)*)*) => {$(
         impl Vector<$N> {
             #[inline]
-            pub const fn new($($($args: f64),*),*) -> Self {
-                Vector(SVector::<f64, $N>::new($($($args),*),*))
+            pub const fn new($($($args: dtype),*),*) -> Self {
+                Vector(SVector::<dtype, $N>::new($($($args),*),*))
             }
         }
     )*}
@@ -102,4 +103,4 @@ pub type Vector7 = Vector<7>;
 pub type Vector8 = Vector<8>;
 pub type Vector9 = Vector<9>;
 pub type Vector10 = Vector<10>;
-pub type VectorD = DVector<f64>;
+pub type VectorD = DVector<dtype>;

@@ -1,3 +1,5 @@
+type dtype = num_dual::DualDVec64;
+
 pub mod factors;
 pub mod macros;
 pub mod traits;
