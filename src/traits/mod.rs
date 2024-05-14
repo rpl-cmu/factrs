@@ -22,17 +22,23 @@ pub trait Bundle {
 }
 
 pub trait Residual<B: Bundle>: Sized {
+    const DIM: usize;
+
+    fn dim(&self) -> usize {
+        Self::DIM
+    }
+
     fn residual_values(&self, v: &[&B::Variable]) -> VectorD;
 }
 
 pub trait Residual1<B: Bundle>: Residual<B>
 where
-    for<'a> &'a B::Variable: Into<Self::FIRST>,
+    for<'a> &'a B::Variable: TryInto<Self::FIRST>,
 {
     type FIRST: Variable;
 
     fn residual_values(&self, v: &[&B::Variable]) -> VectorD {
-        let x1: Self::FIRST = v[0].into();
+        let x1: Self::FIRST = v[0].try_into().unwrap();
         self.residual(&x1)
     }
 
@@ -40,6 +46,12 @@ where
 }
 
 pub trait NoiseModel {
+    const DIM: usize;
+
+    fn dim(&self) -> usize {
+        Self::DIM
+    }
+
     fn whiten(&self, v: &VectorD) -> VectorD;
 }
 

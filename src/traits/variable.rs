@@ -1,8 +1,8 @@
 use crate::variables::VectorD;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::ops::Mul;
 
-pub trait Variable: Clone + Sized + Display {
+pub trait Variable: Clone + Sized + Display + Debug {
     const DIM: usize;
 
     fn dim(&self) -> usize {

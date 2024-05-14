@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! make_enum_variable {
     ( $name:ident, $( $x:ident),*) => {
-        #[derive(Clone, derive_more::Display, derive_more::From, derive_more::TryInto)]
+        #[derive(Clone, Debug, derive_more::Display, derive_more::From, derive_more::TryInto)]
         #[try_into(owned, ref, ref_mut)]
         pub enum $name {
             $(
