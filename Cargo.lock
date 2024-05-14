@@ -62,18 +62,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "enum_dispatch"
-version = "0.3.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa18ce2bc66555b3218614519ac839ddb759a7d6720732f979ef8d13be147ecd"
-dependencies = [
- "once_cell",
- "proc-macro2",
- "quote",
- "syn 2.0.60",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -225,9 +213,7 @@ version = "0.1.0"
 dependencies = [
  "ahash",
  "derive_more",
- "enum_dispatch",
  "nalgebra",
- "try_as",
 ]
 
 [[package]]
@@ -270,31 +256,6 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
-
-[[package]]
-name = "try_as"
-version = "0.1.0"
-source = "git+https://github.com/contagon/try_as#a8d62b7c55a0301ebeb7532b908df8bd3592415c"
-dependencies = [
- "try_as_macros",
- "try_as_traits",
-]
-
-[[package]]
-name = "try_as_macros"
-version = "0.1.0"
-source = "git+https://github.com/contagon/try_as#a8d62b7c55a0301ebeb7532b908df8bd3592415c"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
- "try_as_traits",
-]
-
-[[package]]
-name = "try_as_traits"
-version = "0.1.0"
-source = "git+https://github.com/contagon/try_as#a8d62b7c55a0301ebeb7532b908df8bd3592415c"
 
 [[package]]
 name = "typenum"

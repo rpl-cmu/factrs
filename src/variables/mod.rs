@@ -1,34 +1,10 @@
-use std::fmt::Display;
-use std::ops::Mul;
-
 // ------------------------- Import all variable types ------------------------- //
-
-pub trait Variable: Clone + Sized + Display {
-    const DIM: usize;
-
-    fn identity() -> Self;
-
-    fn inverse(&self) -> Self;
-
-    fn oplus(&self, delta: &VectorD) -> Self;
-
-    fn ominus(&self, other: &Self) -> VectorD;
-}
-
-pub trait LieGroup: Variable + Mul {
-    fn exp(xi: &VectorD) -> Self;
-
-    fn log(&self) -> VectorD;
-}
 
 mod symbol;
 pub use symbol::*;
 
 mod values;
-pub use values::{Key, Values, Var};
-
-mod variable_enum;
-pub use variable_enum::{DispatchableVariable, VariableEnum};
+pub use values::Values;
 
 pub mod so3;
 pub use so3::SO3;
@@ -38,3 +14,21 @@ pub use se3::SE3;
 
 pub mod vector;
 pub use vector::*;
+
+use crate::make_enum_variable;
+use crate::traits::Variable;
+make_enum_variable!(
+    VariableEnum,
+    SO3,
+    SE3,
+    Vector1,
+    Vector2,
+    Vector3,
+    Vector4,
+    Vector5,
+    Vector6,
+    Vector7,
+    Vector8,
+    Vector9,
+    Vector10
+);

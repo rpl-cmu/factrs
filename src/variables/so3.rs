@@ -1,5 +1,6 @@
 // TODO: Move this to base file, or maybe a core module with all the other traits?
-use crate::variables::{LieGroup, Variable, Vector3, Vector4, VectorD};
+use crate::traits::{LieGroup, Variable};
+use crate::variables::{Vector3, Vector4, VectorD};
 use nalgebra::dvector;
 use std::fmt;
 use std::ops::Mul;

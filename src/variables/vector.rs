@@ -1,4 +1,4 @@
-use crate::variables::Variable;
+use crate::traits::Variable;
 use core::fmt;
 use derive_more;
 use nalgebra::{DVector, SVector};

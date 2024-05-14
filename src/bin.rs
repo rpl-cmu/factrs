@@ -1,6 +1,7 @@
 use nalgebra::dvector;
+use samrs::traits::{LieGroup, Variable};
 use samrs::variables::SO3;
-use samrs::variables::{DispatchableVariable, LieGroup, Symbol, Values, VariableEnum, Vector3, X};
+use samrs::variables::{Symbol, Values, VariableEnum, Vector3, X};
 
 fn main() {
     let xi = dvector![0.1, 0.2, 0.3];

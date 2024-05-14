@@ -1,26 +1,18 @@
-use crate::variables::DispatchableVariable;
 use ahash::AHashMap;
-use std::cmp;
 use std::collections::hash_map::Entry;
 use std::convert::Into;
 use std::default::Default;
 use std::fmt;
-use std::hash;
 use std::iter::IntoIterator;
-use try_as::traits::TryAsRef;
 
-// We can't add supertraits to DispatchableVariable, so we do it here instead
-pub trait Var: DispatchableVariable + fmt::Display + Clone {}
-impl<T: DispatchableVariable + fmt::Display + Clone> Var for T {}
-pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone {}
-impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone> Key for T {}
+use crate::traits::{Key, Variable};
 
 #[derive(Clone)]
-pub struct Values<K: Key, V: Var> {
+pub struct Values<K: Key, V: Variable> {
     values: AHashMap<K, V>,
 }
 
-impl<K: Key, V: Var> Values<K, V> {
+impl<K: Key, V: Variable> Values<K, V> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -37,12 +29,19 @@ impl<K: Key, V: Var> Values<K, V> {
         self.values.entry(key)
     }
 
-    pub fn insert<T: Into<V>>(&mut self, key: K, value: T) -> Option<V> {
+    pub fn insert(&mut self, key: K, value: impl Into<V>) -> Option<V> {
         self.values.insert(key, value.into())
     }
 
     pub fn get(&self, key: &K) -> Option<&V> {
         self.values.get(key)
+    }
+
+    pub fn get_multiple<'a>(&self, keys: impl IntoIterator<Item = &'a K>) -> Option<Vec<&V>>
+    where
+        K: 'a,
+    {
+        keys.into_iter().map(|key| self.values.get(key)).collect()
     }
 
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
@@ -59,11 +58,11 @@ impl<K: Key, V: Var> Values<K, V> {
 
     pub fn filter<'a, T: 'a>(&'a self) -> impl Iterator<Item = &'a T>
     where
-        V: TryAsRef<T>,
+        &'a V: TryInto<&'a T>,
     {
         self.values
             .iter()
-            .filter_map(|(_, value)| value.try_as_ref())
+            .filter_map(|(_, value)| value.try_into().ok())
     }
 
     pub fn into_filter<T>(self) -> impl Iterator<Item = T>
@@ -76,7 +75,7 @@ impl<K: Key, V: Var> Values<K, V> {
     }
 }
 
-impl<K: Key, V: Var> fmt::Display for Values<K, V> {
+impl<K: Key, V: Variable> fmt::Display for Values<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
             writeln!(f, "{{")?;
@@ -94,13 +93,13 @@ impl<K: Key, V: Var> fmt::Display for Values<K, V> {
     }
 }
 
-impl<K: Key, V: Var> fmt::Debug for Values<K, V> {
+impl<K: Key, V: Variable> fmt::Debug for Values<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
 }
 
-impl<K: Key, V: Var> IntoIterator for Values<K, V> {
+impl<K: Key, V: Variable> IntoIterator for Values<K, V> {
     type Item = (K, V);
     type IntoIter = std::collections::hash_map::IntoIter<K, V>;
 
@@ -109,7 +108,7 @@ impl<K: Key, V: Var> IntoIterator for Values<K, V> {
     }
 }
 
-impl<K: Key, V: Var> Default for Values<K, V> {
+impl<K: Key, V: Variable> Default for Values<K, V> {
     fn default() -> Self {
         Self {
             values: AHashMap::new(),
