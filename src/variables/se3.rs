@@ -1,17 +1,17 @@
 use crate::dtype;
-use crate::traits::{LieGroup, Variable};
+use crate::traits::{DualNum, LieGroup, Variable};
 use crate::variables::{Vector3, VectorD, SO3};
-use nalgebra::{dvector, ComplexField, RealField};
+use nalgebra::{dvector, ComplexField};
 use std::fmt;
 use std::ops::Mul;
 
 #[derive(Clone, Debug)]
-pub struct SE3 {
-    rot: SO3,
-    xyz: Vector3,
+pub struct SE3<D: DualNum<dtype> = dtype> {
+    rot: SO3<D>,
+    xyz: Vector3<D>,
 }
 
-impl Variable for SE3 {
+impl<D: DualNum<dtype>> Variable<D> for SE3<D> {
     const DIM: usize = 3;
 
     fn identity() -> Self {
@@ -28,52 +28,52 @@ impl Variable for SE3 {
         }
     }
 
-    fn oplus(&self, delta: &VectorD) -> Self {
+    fn oplus(&self, delta: &VectorD<D>) -> Self {
         let e = Self::exp(delta);
         self * &e
     }
 
-    fn ominus(&self, other: &Self) -> VectorD {
+    fn ominus(&self, other: &Self) -> VectorD<D> {
         (&Variable::inverse(self) * other).log()
     }
 }
 
-impl LieGroup for SE3 {
+impl<D: DualNum<dtype>> LieGroup<D> for SE3<D> {
     // TODO: Both of this functions need to be tested!
-    fn exp(xi: &VectorD) -> Self {
-        let xi = dvector![xi[0], xi[1], xi[2]];
+    fn exp(xi: &VectorD<D>) -> Self {
+        let xi = dvector![xi[0].clone(), xi[1].clone(), xi[2].clone()];
         let w = xi.norm();
         let q = SO3::exp(&xi);
 
-        let qv = xi / w;
-        let qv = qv * w.sin();
+        let qv = xi / w.clone();
+        let qv = qv * w.clone().sin();
         let qv = qv.push(w.cos());
-        let qv = Vector3::new(qv[0], qv[1], qv[2]);
+        let qv = Vector3::new(qv[0].clone(), qv[1].clone(), qv[2].clone());
 
         SE3 { rot: q, xyz: qv }
     }
 
-    fn log(&self) -> VectorD {
+    fn log(&self) -> VectorD<D> {
         let xi = self.rot.log();
         let w = xi.norm();
-        let qv = self.xyz.clone() / w;
+        let qv = self.xyz.clone() / w.clone();
         let qv = qv * w.acos();
-        dvector![qv[0], qv[1], qv[2]]
+        dvector![qv[0].clone(), qv[1].clone(), qv[2].clone()]
     }
 }
 
-impl Mul for SE3 {
-    type Output = SE3;
+impl<D: DualNum<dtype>> Mul for SE3<D> {
+    type Output = SE3<D>;
 
-    fn mul(self, other: Self) -> SE3 {
+    fn mul(self, other: Self) -> Self::Output {
         &self * &other
     }
 }
 
-impl Mul for &SE3 {
-    type Output = SE3;
+impl<D: DualNum<dtype>> Mul for &SE3<D> {
+    type Output = SE3<D>;
 
-    fn mul(self, other: Self) -> SE3 {
+    fn mul(self, other: Self) -> Self::Output {
         SE3 {
             rot: &self.rot * &other.rot,
             xyz: self.rot.apply(&other.xyz) + self.xyz.clone(),
@@ -81,7 +81,7 @@ impl Mul for &SE3 {
     }
 }
 
-impl fmt::Display for SE3 {
+impl<D: DualNum<dtype>> fmt::Display for SE3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {}", self.rot, self.xyz)
     }

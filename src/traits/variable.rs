@@ -1,8 +1,10 @@
+use crate::dtype;
+use crate::traits::DualNum;
 use crate::variables::VectorD;
 use std::fmt::{Debug, Display};
 use std::ops::Mul;
 
-pub trait Variable: Clone + Sized + Display + Debug {
+pub trait Variable<D: DualNum<dtype>>: Clone + Sized + Display + Debug {
     const DIM: usize;
 
     fn dim(&self) -> usize {
@@ -17,13 +19,13 @@ pub trait Variable: Clone + Sized + Display + Debug {
 
     fn inverse(&self) -> Self;
 
-    fn oplus(&self, delta: &VectorD) -> Self;
+    fn oplus(&self, delta: &VectorD<D>) -> Self;
 
-    fn ominus(&self, other: &Self) -> VectorD;
+    fn ominus(&self, other: &Self) -> VectorD<D>;
 }
 
-pub trait LieGroup: Variable + Mul {
-    fn exp(xi: &VectorD) -> Self;
+pub trait LieGroup<D: DualNum<dtype>>: Variable<D> + Mul {
+    fn exp(xi: &VectorD<D>) -> Self;
 
-    fn log(&self) -> VectorD;
+    fn log(&self) -> VectorD<D>;
 }

@@ -1,3 +1,4 @@
+use crate::dtype;
 use ahash::AHashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Into;
@@ -7,12 +8,15 @@ use std::iter::IntoIterator;
 
 use crate::traits::{Key, Variable};
 
+// Since we won't be passing dual numbers through any of this,
+// we can just use dtype rather than using generics with DualNum
+
 #[derive(Clone)]
-pub struct Values<K: Key, V: Variable> {
+pub struct Values<K: Key, V: Variable<dtype>> {
     values: AHashMap<K, V>,
 }
 
-impl<K: Key, V: Variable> Values<K, V> {
+impl<K: Key, V: Variable<dtype>> Values<K, V> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -75,7 +79,7 @@ impl<K: Key, V: Variable> Values<K, V> {
     }
 }
 
-impl<K: Key, V: Variable> fmt::Display for Values<K, V> {
+impl<K: Key, V: Variable<dtype>> fmt::Display for Values<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
             writeln!(f, "{{")?;
@@ -93,13 +97,13 @@ impl<K: Key, V: Variable> fmt::Display for Values<K, V> {
     }
 }
 
-impl<K: Key, V: Variable> fmt::Debug for Values<K, V> {
+impl<K: Key, V: Variable<dtype>> fmt::Debug for Values<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
 }
 
-impl<K: Key, V: Variable> IntoIterator for Values<K, V> {
+impl<K: Key, V: Variable<dtype>> IntoIterator for Values<K, V> {
     type Item = (K, V);
     type IntoIter = std::collections::hash_map::IntoIter<K, V>;
 
@@ -108,7 +112,7 @@ impl<K: Key, V: Variable> IntoIterator for Values<K, V> {
     }
 }
 
-impl<K: Key, V: Variable> Default for Values<K, V> {
+impl<K: Key, V: Variable<dtype>> Default for Values<K, V> {
     fn default() -> Self {
         Self {
             values: AHashMap::new(),

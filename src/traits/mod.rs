@@ -1,7 +1,13 @@
+use crate::dtype;
 use std::{cmp, fmt, hash};
+
+// Dual field
+pub trait DualNum<T>: RealField + num_dual::DualNum<T> {}
+impl<T, G: RealField + num_dual::DualNum<T>> DualNum<T> for G {}
 
 // Variable
 mod variable;
+use nalgebra::RealField;
 pub use variable::{LieGroup, Variable};
 
 // Key
@@ -15,7 +21,7 @@ use crate::variables::VectorD;
 // This eliminates any need for dynamic dispatch
 pub trait Bundle {
     type Key: Key;
-    type Variable: Variable;
+    type Variable: Variable<dtype>;
     type Robust;
     type Noise;
     type Residual;
@@ -29,20 +35,6 @@ pub trait Residual<B: Bundle>: Sized {
     }
 
     fn residual_values(&self, v: &[&B::Variable]) -> VectorD;
-}
-
-pub trait Residual1<B: Bundle>: Residual<B>
-where
-    for<'a> &'a B::Variable: TryInto<Self::FIRST>,
-{
-    type FIRST: Variable;
-
-    fn residual_values(&self, v: &[&B::Variable]) -> VectorD {
-        let x1: Self::FIRST = v[0].try_into().unwrap();
-        self.residual(&x1)
-    }
-
-    fn residual(&self, x1: &Self::FIRST) -> VectorD;
 }
 
 pub trait NoiseModel {

@@ -10,7 +10,7 @@ macro_rules! make_enum_variable {
         }
 
         // Implement the trait for each enum
-        impl Variable for $name {
+        impl Variable<dtype> for $name {
             const DIM: usize = 0;
 
             fn dim(&self) -> usize {

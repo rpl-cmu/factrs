@@ -1,6 +1,6 @@
 use samrs::traits::Variable;
 use samrs::variables::{Vector3, VectorD, SO3};
-use samrs::{self, make_enum_variable};
+use samrs::{self, dtype, make_enum_variable};
 
 make_enum_variable!(MyVariables, SO3, Vector3);
 

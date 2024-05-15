@@ -1,4 +1,5 @@
-type dtype = num_dual::DualDVec64;
+#[allow(non_camel_case_types)]
+pub type dtype = f64;
 
 pub mod factors;
 pub mod macros;
