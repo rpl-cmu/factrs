@@ -1,6 +1,7 @@
 use crate::dtype;
 use crate::traits::DualNum;
 use crate::variables::VectorD;
+use nalgebra::DMatrix;
 use std::fmt::{Debug, Display};
 use std::ops::Mul;
 
@@ -28,4 +29,6 @@ pub trait LieGroup<D: DualNum<dtype>>: Variable<D> + Mul {
     fn exp(xi: &VectorD<D>) -> Self;
 
     fn log(&self) -> VectorD<D>;
+
+    fn wedge(xi: &VectorD<D>) -> DMatrix<D>;
 }

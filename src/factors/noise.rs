@@ -1,7 +1,7 @@
 use crate::dtype;
 use crate::traits::NoiseModel;
 use crate::variables::VectorD;
-use nalgebra::{ComplexField, DMatrix};
+use nalgebra::DMatrix;
 use std::fmt;
 
 #[derive(Clone, Debug)]

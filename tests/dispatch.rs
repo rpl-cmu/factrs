@@ -7,10 +7,9 @@ make_enum_variable!(MyVariables, SO3, Vector3);
 #[test]
 fn dispatchable() {
     let unique: SO3 = Variable::identity();
-    let vec3: Vector3 = Variable::identity();
 
     println!("unique: {:?}", unique);
-    let test = MyVariables::SO3(unique.clone());
+    let _test = MyVariables::SO3(unique.clone());
 
-    let unique: MyVariables = MyVariables::from(unique);
+    let _unique: MyVariables = MyVariables::from(unique);
 }

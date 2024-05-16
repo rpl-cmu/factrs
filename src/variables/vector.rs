@@ -7,6 +7,7 @@ use std::ops;
 
 // This is a thin newtype around SVector b/c the way it prints is way too verbose
 // This is the only way I've figured out how to change that
+// TODO: Need derive more to work on references for operators as well
 #[derive(
     Clone,
     derive_more::Add,
@@ -17,7 +18,7 @@ use std::ops;
     derive_more::Deref,
     derive_more::DerefMut,
 )]
-pub struct Vector<const N: usize, D: DualNum<dtype>>(SVector<D, N>);
+pub struct Vector<const N: usize, D: DualNum<dtype>>(pub SVector<D, N>);
 
 // ------------------------- All ops not in derive_more ------------------------- //
 // impl<const N: usize> ops::Div<&dtype> for Vector<N> {
@@ -91,7 +92,7 @@ impl<const N: usize, D: DualNum<dtype>> Variable<D> for Vector<N, D> {
     }
 
     fn oplus(&self, delta: &VectorD<D>) -> Self {
-        Vector(self.0.clone() + delta)
+        Vector(&self.0 + delta)
     }
 
     fn ominus(&self, other: &Self) -> VectorD<D> {
