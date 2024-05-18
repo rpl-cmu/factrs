@@ -1,17 +1,17 @@
 use crate::dtype;
-use crate::traits::{DualNum, LieGroup, Variable};
-use crate::variables::{Vector, Vector3, VectorD, SO3};
+use crate::traits::{DualNum, DualVec, LieGroup, Variable};
+use crate::variables::{Vector, Vector3, Vector4, VectorD, SO3};
 use nalgebra as na;
 use std::fmt;
 use std::ops;
 
 #[derive(Clone, Debug)]
-pub struct SE3<D: DualNum<dtype> = dtype> {
+pub struct SE3<D: DualNum = dtype> {
     rot: SO3<D>,
     xyz: Vector3<D>,
 }
 
-impl<D: DualNum<dtype>> SE3<D> {
+impl<D: DualNum> SE3<D> {
     pub fn to_matrix(&self) -> na::Matrix4<D> {
         let mut mat = na::Matrix4::<D>::identity();
         mat.fixed_view_mut::<3, 3>(0, 0)
@@ -31,8 +31,9 @@ impl<D: DualNum<dtype>> SE3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> Variable<D> for SE3<D> {
+impl<D: DualNum> Variable<D> for SE3<D> {
     const DIM: usize = 3;
+    type Dual = SE3<DualVec>;
 
     fn identity() -> Self {
         SE3 {
@@ -56,9 +57,17 @@ impl<D: DualNum<dtype>> Variable<D> for SE3<D> {
     fn ominus(&self, other: &Self) -> VectorD<D> {
         (&Variable::inverse(self) * other).log()
     }
+
+    fn dual_self(&self) -> Self::Dual {
+        let xyzw: Vector4<DualVec> = Vector(self.rot.xyzw.map(|x| x.into()));
+        let xyz = Vector(self.xyz.0.map(|x| x.into()));
+
+        let rot = SO3 { xyzw };
+        SE3 { rot, xyz }
+    }
 }
 
-impl<D: DualNum<dtype>> LieGroup<D> for SE3<D> {
+impl<D: DualNum> LieGroup<D> for SE3<D> {
     // TODO: Both of this functions need to be tested!
     #[allow(non_snake_case)]
     fn exp(xi: &VectorD<D>) -> Self {
@@ -70,7 +79,7 @@ impl<D: DualNum<dtype>> LieGroup<D> for SE3<D> {
 
         let I = na::SMatrix::identity();
         let wx = SO3::wedge(&xi_rot);
-        let V = if w.clone().abs() < D::from(1e-6) {
+        let V = if w.clone() < D::from(1e-3) {
             I + &wx / D::from(2.0) + &wx * &wx / D::from(6.0) + &wx * &wx * &wx / D::from(24.0)
         } else {
             let A = w.clone().sin() / w.clone();
@@ -131,7 +140,7 @@ impl<D: DualNum<dtype>> LieGroup<D> for SE3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> ops::Mul for SE3<D> {
+impl<D: DualNum> ops::Mul for SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -139,7 +148,7 @@ impl<D: DualNum<dtype>> ops::Mul for SE3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> ops::Mul for &SE3<D> {
+impl<D: DualNum> ops::Mul for &SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -150,7 +159,7 @@ impl<D: DualNum<dtype>> ops::Mul for &SE3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> fmt::Display for SE3<D> {
+impl<D: DualNum> fmt::Display for SE3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {}", self.rot, self.xyz)
     }
@@ -197,7 +206,7 @@ mod tests {
     #[test]
     fn test_jacobian() {
         // Test jacobian of exp(log(x)) = x
-        fn compute<D: DualNum<dtype>>(v: VectorD<D>) -> VectorD<D> {
+        fn compute<D: DualNum>(v: VectorD<D>) -> VectorD<D> {
             let se3 = SE3::<D>::exp(&v);
             let mat = se3.to_matrix();
             let se3 = SE3::<D>::from_matrix(&mat);

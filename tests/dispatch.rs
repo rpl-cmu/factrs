@@ -1,4 +1,4 @@
-use samrs::traits::Variable;
+use samrs::traits::{DualNum, DualVec, Variable};
 use samrs::variables::{Vector3, VectorD, SO3};
 use samrs::{self, dtype, make_enum_variable};
 

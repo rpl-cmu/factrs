@@ -1,13 +1,21 @@
 use crate::dtype;
+use nalgebra::Dyn;
 use std::{cmp, fmt, hash};
 
 // Dual field
-pub trait DualNum<T>: RealField + num_dual::DualNum<T> {}
-impl<T, G: RealField + num_dual::DualNum<T>> DualNum<T> for G {}
+pub trait DualNum:
+    nalgebra::RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>
+{
+}
+impl<
+        G: nalgebra::RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>,
+    > DualNum for G
+{
+}
+pub type DualVec = num_dual::DualVec<dtype, dtype, nalgebra::Dyn>;
 
 // Variable
 mod variable;
-use nalgebra::RealField;
 pub use variable::{LieGroup, Variable};
 
 // Key

@@ -1,5 +1,5 @@
 use crate::dtype;
-use crate::traits::{DualNum, Variable};
+use crate::traits::{DualNum, DualVec, Variable};
 use core::fmt;
 use derive_more;
 use nalgebra::{DVector, SVector};
@@ -18,7 +18,7 @@ use std::ops;
     derive_more::Deref,
     derive_more::DerefMut,
 )]
-pub struct Vector<const N: usize, D: DualNum<dtype>>(pub SVector<D, N>);
+pub struct Vector<const N: usize, D: DualNum>(pub SVector<D, N>);
 
 // ------------------------- All ops not in derive_more ------------------------- //
 // impl<const N: usize> ops::Div<&dtype> for Vector<N> {
@@ -28,14 +28,14 @@ pub struct Vector<const N: usize, D: DualNum<dtype>>(pub SVector<D, N>);
 //     }
 // }
 
-impl<const N: usize, D: DualNum<dtype>> ops::Neg for &Vector<N, D> {
+impl<const N: usize, D: DualNum> ops::Neg for &Vector<N, D> {
     type Output = Vector<N, D>;
     fn neg(self) -> Self::Output {
         Vector(-self.0.clone())
     }
 }
 
-impl<const N: usize, D: DualNum<dtype>> fmt::Display for Vector<N, D> {
+impl<const N: usize, D: DualNum> fmt::Display for Vector<N, D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Vector{}(", N)?;
         for i in 0..N - 1 {
@@ -45,14 +45,14 @@ impl<const N: usize, D: DualNum<dtype>> fmt::Display for Vector<N, D> {
     }
 }
 
-impl<const N: usize, D: DualNum<dtype>> fmt::Debug for Vector<N, D> {
+impl<const N: usize, D: DualNum> fmt::Debug for Vector<N, D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
 }
 
 // ------------------------- A handful of static functions ------------------------- //
-impl<const N: usize, D: DualNum<dtype>> Vector<N, D> {
+impl<const N: usize, D: DualNum> Vector<N, D> {
     pub fn zeros() -> Self {
         Vector(SVector::zeros())
     }
@@ -61,7 +61,7 @@ impl<const N: usize, D: DualNum<dtype>> Vector<N, D> {
 // Modified from: https://docs.rs/nalgebra/latest/src/nalgebra/base/construction.rs.html#960-1103
 macro_rules! componentwise_constructors_impl(
     ($($N: expr, [$($($args: ident),*);*] $(;)*)*) => {$(
-        impl<D: DualNum<dtype>> Vector<$N,D> {
+        impl<D: DualNum> Vector<$N,D> {
             #[inline]
             pub const fn new($($($args: D),*),*) -> Self {
                 Vector(SVector::<D, $N>::new($($($args),*),*))
@@ -80,8 +80,9 @@ componentwise_constructors_impl!(
 );
 
 // ------------------------- Our needs ------------------------- //
-impl<const N: usize, D: DualNum<dtype>> Variable<D> for Vector<N, D> {
+impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
     const DIM: usize = N;
+    type Dual = Vector<N, DualVec>;
 
     fn identity() -> Self {
         Vector::zeros()
@@ -98,6 +99,10 @@ impl<const N: usize, D: DualNum<dtype>> Variable<D> for Vector<N, D> {
     fn ominus(&self, other: &Self) -> VectorD<D> {
         let diff = &self.0 - &other.0;
         DVector::from_iterator(Self::DIM, diff.iter().cloned())
+    }
+
+    fn dual_self(&self) -> Self::Dual {
+        Vector(self.0.map(|x| x.into()))
     }
 }
 

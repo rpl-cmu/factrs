@@ -1,16 +1,16 @@
 use crate::dtype;
-use crate::traits::{DualNum, LieGroup, Variable};
-use crate::variables::{Vector3, Vector4, VectorD};
+use crate::traits::{DualNum, DualVec, LieGroup, Variable};
+use crate::variables::{Vector, Vector3, Vector4, VectorD};
 use nalgebra as na;
 use std::fmt;
 use std::ops;
 
 #[derive(Clone)]
-pub struct SO3<D: DualNum<dtype> = dtype> {
-    xyzw: Vector4<D>,
+pub struct SO3<D: DualNum = dtype> {
+    pub xyzw: Vector4<D>,
 }
 
-impl<D: DualNum<dtype>> SO3<D> {
+impl<D: DualNum> SO3<D> {
     pub fn from_vec(xyzw: Vector4<D>) -> Self {
         SO3 { xyzw }
     }
@@ -79,17 +79,17 @@ impl<D: DualNum<dtype>> SO3<D> {
     }
 
     pub fn apply(&self, v: &Vector3<D>) -> Vector3<D> {
-        // let qv = Self::from_xyzw(v[0], v[1], v[2], (0.0).into());
-        // let inv = self.inverse();
+        let qv = Self::from_xyzw(v[0].clone(), v[1].clone(), v[2].clone(), (0.0).into());
+        let inv = self.inverse();
 
-        // let v_rot = (&(&inv * &qv) * self).xyzw;
-        // Vector3::new(v_rot[0], v_rot[1], v_rot[2])
-        v.clone()
+        let v_rot = (&(self * &qv) * &inv).xyzw;
+        Vector3::new(v_rot[0].clone(), v_rot[1].clone(), v_rot[2].clone())
     }
 }
 
-impl<D: DualNum<dtype>> Variable<D> for SO3<D> {
+impl<D: DualNum> Variable<D> for SO3<D> {
     const DIM: usize = 3;
+    type Dual = SO3<DualVec>;
 
     fn identity() -> Self {
         SO3 {
@@ -116,21 +116,23 @@ impl<D: DualNum<dtype>> Variable<D> for SO3<D> {
     fn ominus(&self, other: &Self) -> VectorD<D> {
         (&Variable::inverse(self) * other).log()
     }
+
+    fn dual_self(&self) -> Self::Dual {
+        let xyzw: Vector4<DualVec> = Vector(self.xyzw.map(|x| x.into()));
+        SO3 { xyzw }
+    }
 }
 
-impl<D: DualNum<dtype>> LieGroup<D> for SO3<D> {
+impl<D: DualNum> LieGroup<D> for SO3<D> {
     fn exp(xi: &VectorD<D>) -> Self {
         let mut xyzw = Vector4::zeros();
-        let one = D::from(1.0);
         let theta = xi.norm();
 
-        if theta < D::from(1e-2) {
-            let theta2 = theta.clone() * theta;
-            let six = D::from(6.0);
-            xyzw[0] = xi[0].clone() * (D::from(1.0) - theta2.clone() / six.clone());
-            xyzw[1] = xi[1].clone() * (D::from(1.0) - theta2.clone() / six.clone());
-            xyzw[2] = xi[2].clone() * (D::from(1.0) - theta2.clone() / six.clone());
-            xyzw[3] = one;
+        if theta < D::from(1e-3) {
+            xyzw[0] = xi[0].clone() * D::from(0.5);
+            xyzw[1] = xi[1].clone() * D::from(0.5);
+            xyzw[2] = xi[2].clone() * D::from(0.5);
+            xyzw[3] = D::from(1.0);
         } else {
             let theta_half = theta.clone() / D::from(2.0);
             let sin_theta = theta_half.clone().sin();
@@ -169,7 +171,7 @@ impl<D: DualNum<dtype>> LieGroup<D> for SO3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> ops::Mul for SO3<D> {
+impl<D: DualNum> ops::Mul for SO3<D> {
     type Output = SO3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -177,7 +179,7 @@ impl<D: DualNum<dtype>> ops::Mul for SO3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> ops::Mul for &SO3<D> {
+impl<D: DualNum> ops::Mul for &SO3<D> {
     type Output = SO3<D>;
 
     #[rustfmt::skip]
@@ -203,7 +205,7 @@ impl<D: DualNum<dtype>> ops::Mul for &SO3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> fmt::Display for SO3<D> {
+impl<D: DualNum> fmt::Display for SO3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -213,7 +215,7 @@ impl<D: DualNum<dtype>> fmt::Display for SO3<D> {
     }
 }
 
-impl<D: DualNum<dtype>> fmt::Debug for SO3<D> {
+impl<D: DualNum> fmt::Debug for SO3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
@@ -272,9 +274,23 @@ mod tests {
     }
 
     #[test]
+    fn rotate() {
+        // rotate a vector
+        let xi = na::dvector![0.0, 0.0, std::f64::consts::FRAC_PI_2];
+        let so3 = SO3::exp(&xi);
+        let v = Vector3::new(1.0, 0.0, 0.0);
+        let v_rot = so3.apply(&v);
+        println!("{:?}", v_rot);
+        println!("{}", so3.to_matrix());
+        assert!((v_rot[0] - 0.0).abs() < 1e-6);
+        assert!((v_rot[1] - 1.0).abs() < 1e-6);
+        assert!((v_rot[2] - 0.0).abs() < 1e-6);
+    }
+
+    #[test]
     fn test_jacobian() {
         // Test jacobian of exp(log(x)) = x
-        fn compute<D: DualNum<dtype>>(v: VectorD<D>) -> VectorD<D> {
+        fn compute<D: DualNum>(v: VectorD<D>) -> VectorD<D> {
             let so3 = SO3::<D>::exp(&v);
             let mat = so3.to_matrix();
             let so3 = SO3::<D>::from_matrix(&mat);
@@ -286,5 +302,41 @@ mod tests {
 
         assert!((x - v).norm() < 1e-6);
         assert!((na::DMatrix::identity(3, 3) - dx).norm() < 1e-6);
+    }
+
+    fn var_jacobian<G>(g: G, r: SO3) -> (na::DVector<f64>, na::DMatrix<f64>)
+    where
+        G: FnOnce(SO3<DualVec>) -> na::DVector<DualVec>,
+    {
+        let rot = r.dual(0, r.dim());
+
+        let out = g(rot);
+        let eps = na::DMatrix::from_rows(
+            out.map(|res| {
+                res.eps
+                    .unwrap_generic(na::Dyn(3), na::Const::<1>)
+                    .transpose()
+            })
+            .as_slice(),
+        );
+
+        (out.map(|r| r.re), eps)
+    }
+
+    #[test]
+    fn test_jacobian_again() {
+        fn rotate<D: DualNum>(r: SO3<D>) -> na::DVector<D> {
+            let v = Vector3::new(D::from(1.0), D::from(2.0), D::from(3.0));
+            let rotated = r.apply(&v).0;
+            na::dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
+        }
+
+        let r = SO3::exp(&na::dvector![0.1, 0.2, 0.3]);
+        let (_x, dx) = var_jacobian(rotate, r.clone());
+
+        let v = na::dvector!(1.0, 2.0, 3.0);
+        let dx_exp = -r.to_matrix() * SO3::wedge(&v);
+
+        assert!((dx - dx_exp).norm() < 1e-4);
     }
 }

@@ -15,7 +15,7 @@ pub use se3::SE3;
 pub mod vector;
 pub use vector::*;
 
-use crate::traits::Variable;
+use crate::traits::{DualNum, DualVec, Variable};
 use crate::{dtype, make_enum_variable};
 make_enum_variable!(
     VariableEnum,
