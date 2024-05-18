@@ -1,49 +1,48 @@
 use crate::dtype;
+use crate::linalg::{MatrixX, VectorX};
 use crate::traits::NoiseModel;
-use crate::variables::VectorD;
-use nalgebra::DMatrix;
 use std::fmt;
 
 #[derive(Clone, Debug)]
 pub struct GaussianNoise<const N: usize> {
-    sqrt_cov: DMatrix<dtype>,
+    sqrt_cov: MatrixX<dtype>,
 }
 
 impl<const N: usize> NoiseModel for GaussianNoise<N> {
     const DIM: usize = N;
 
-    fn whiten(&self, v: &VectorD) -> VectorD {
+    fn whiten(&self, v: &VectorX) -> VectorX {
         &self.sqrt_cov * v
     }
 }
 
 impl<const N: usize> GaussianNoise<N> {
     pub fn from_scalar_sigma(sigma: dtype) -> Self {
-        let sqrt_cov = DMatrix::<dtype>::from_diagonal_element(N, N, sigma);
+        let sqrt_cov = MatrixX::<dtype>::from_diagonal_element(N, N, sigma);
         Self { sqrt_cov }
     }
 
     pub fn from_scalar_cov(cov: dtype) -> Self {
-        let sqrt_cov = DMatrix::<dtype>::from_diagonal_element(N, N, cov.sqrt());
+        let sqrt_cov = MatrixX::<dtype>::from_diagonal_element(N, N, cov.sqrt());
         Self { sqrt_cov }
     }
 
-    pub fn from_diag_sigma(sigma: &VectorD) -> Self {
-        let sqrt_cov = DMatrix::<dtype>::from_diagonal(sigma);
+    pub fn from_diag_sigma(sigma: &VectorX) -> Self {
+        let sqrt_cov = MatrixX::<dtype>::from_diagonal(sigma);
         Self { sqrt_cov }
     }
 
-    pub fn from_diag_cov(cov: &VectorD) -> Self {
-        let sqrt_cov = DMatrix::<dtype>::from_diagonal(&cov.map(|x| x.sqrt()));
+    pub fn from_diag_cov(cov: &VectorX) -> Self {
+        let sqrt_cov = MatrixX::<dtype>::from_diagonal(&cov.map(|x| x.sqrt()));
         Self { sqrt_cov }
     }
 
-    pub fn from_matrix_sigma(sigma: &DMatrix<dtype>) -> Self {
+    pub fn from_matrix_sigma(sigma: &MatrixX<dtype>) -> Self {
         let sqrt_cov = sigma.clone();
         Self { sqrt_cov }
     }
 
-    pub fn from_matrix_cov(cov: &DMatrix<dtype>) -> Self {
+    pub fn from_matrix_cov(cov: &MatrixX<dtype>) -> Self {
         // TODO: Double check if I want upper or lower triangular cholesky
         let sqrt_cov = cov
             .clone()

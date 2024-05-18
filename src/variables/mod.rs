@@ -13,10 +13,11 @@ pub mod se3;
 pub use se3::SE3;
 
 pub mod vector;
-pub use vector::*;
+pub use crate::linalg::{
+    Vector1, Vector10, Vector2, Vector3, Vector4, Vector5, Vector6, Vector7, Vector8, Vector9,
+};
 
-use crate::traits::{DualNum, DualVec, Variable};
-use crate::{dtype, make_enum_variable};
+use crate::make_enum_variable;
 make_enum_variable!(
     VariableEnum,
     SO3,

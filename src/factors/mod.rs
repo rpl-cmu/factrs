@@ -3,7 +3,6 @@ pub use noise::*;
 
 use crate::make_enum_noise;
 use crate::traits::NoiseModel;
-use crate::variables::VectorD;
 make_enum_noise!(
     NoiseModelEnum,
     GaussianNoise1,

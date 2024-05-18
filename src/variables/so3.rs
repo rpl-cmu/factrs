@@ -1,7 +1,6 @@
 use crate::dtype;
+use crate::linalg::{dvector, Matrix3, MatrixX, Vector3, Vector4, VectorX};
 use crate::traits::{DualNum, DualVec, LieGroup, Variable};
-use crate::variables::{Vector, Vector3, Vector4, VectorD};
-use nalgebra as na;
 use std::fmt;
 use std::ops;
 
@@ -21,7 +20,7 @@ impl<D: DualNum> SO3<D> {
         }
     }
 
-    pub fn from_matrix(mat: &nalgebra::Matrix3<D>) -> Self {
+    pub fn from_matrix(mat: &Matrix3<D>) -> Self {
         let trace = mat[(0, 0)].clone() + mat[(1, 1)].clone() + mat[(2, 2)].clone();
         let mut xyzw = Vector4::zeros();
         let zero = D::from(0.0);
@@ -108,23 +107,24 @@ impl<D: DualNum> Variable<D> for SO3<D> {
         }
     }
 
-    fn oplus(&self, delta: &VectorD<D>) -> Self {
+    fn oplus(&self, delta: &VectorX<D>) -> Self {
         let e = Self::exp(delta);
         self * &e
     }
 
-    fn ominus(&self, other: &Self) -> VectorD<D> {
+    fn ominus(&self, other: &Self) -> VectorX<D> {
         (&Variable::inverse(self) * other).log()
     }
 
     fn dual_self(&self) -> Self::Dual {
-        let xyzw: Vector4<DualVec> = Vector(self.xyzw.map(|x| x.into()));
-        SO3 { xyzw }
+        SO3 {
+            xyzw: self.xyzw.dual_self(),
+        }
     }
 }
 
 impl<D: DualNum> LieGroup<D> for SO3<D> {
-    fn exp(xi: &VectorD<D>) -> Self {
+    fn exp(xi: &VectorX<D>) -> Self {
         let mut xyzw = Vector4::zeros();
         let theta = xi.norm();
 
@@ -145,9 +145,9 @@ impl<D: DualNum> LieGroup<D> for SO3<D> {
         SO3 { xyzw }
     }
 
-    fn log(&self) -> VectorD<D> {
+    fn log(&self) -> VectorX<D> {
         // TODO: Any small angle check needed in here?
-        let xi = na::dvector![
+        let xi = dvector![
             self.xyzw[0].clone(),
             self.xyzw[1].clone(),
             self.xyzw[2].clone()
@@ -158,8 +158,8 @@ impl<D: DualNum> LieGroup<D> for SO3<D> {
         (xi / norm_v.clone()) * norm_v.atan2(w) * D::from(2.0)
     }
 
-    fn wedge(xi: &VectorD<D>) -> na::DMatrix<D> {
-        let mut xi_hat = na::DMatrix::zeros(3, 3);
+    fn wedge(xi: &VectorX<D>) -> MatrixX<D> {
+        let mut xi_hat = MatrixX::zeros(3, 3);
         xi_hat[(0, 1)] = -xi[2].clone();
         xi_hat[(0, 2)] = xi[1].clone();
         xi_hat[(1, 0)] = xi[2].clone();
@@ -224,13 +224,14 @@ impl<D: DualNum> fmt::Debug for SO3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::linalg::{Const, Dyn};
     use crate::traits::DualNum;
     use num_dual::jacobian;
 
     #[test]
     fn exp_lop() {
         // exp -> log should give back original vector
-        let xi = na::dvector![0.1, 0.2, 0.3];
+        let xi = dvector![0.1, 0.2, 0.3];
         let so3 = SO3::exp(&xi);
         let log = so3.log();
         println!("xi {xi:?}, {log:?}");
@@ -240,7 +241,7 @@ mod tests {
     #[test]
     fn matrix() {
         // to_matrix -> from_matrix should give back original vector
-        let xi = na::dvector![0.1, 0.2, 0.3];
+        let xi = dvector![0.1, 0.2, 0.3];
         let so3_og = SO3::exp(&xi);
         let mat = so3_og.to_matrix();
 
@@ -253,7 +254,7 @@ mod tests {
     #[test]
     fn multiply() {
         // multiply two small x-only angles should give back double angle
-        let xi = na::dvector![0.5, 0.0, 0.0];
+        let xi = dvector![0.5, 0.0, 0.0];
         let so3 = SO3::exp(&xi);
         let double = &so3 * &so3;
         let xi_double = double.log();
@@ -264,7 +265,7 @@ mod tests {
     #[test]
     fn inverse() {
         // multiply with inverse should give back identity
-        let xi = na::dvector![0.1, 0.2, 0.3];
+        let xi = dvector![0.1, 0.2, 0.3];
         let so3 = SO3::<f64>::exp(&xi);
         let so3_inv = so3.inverse();
         let so3_res = &so3 * &so3_inv;
@@ -276,7 +277,7 @@ mod tests {
     #[test]
     fn rotate() {
         // rotate a vector
-        let xi = na::dvector![0.0, 0.0, std::f64::consts::FRAC_PI_2];
+        let xi = dvector![0.0, 0.0, std::f64::consts::FRAC_PI_2];
         let so3 = SO3::exp(&xi);
         let v = Vector3::new(1.0, 0.0, 0.0);
         let v_rot = so3.apply(&v);
@@ -290,34 +291,30 @@ mod tests {
     #[test]
     fn test_jacobian() {
         // Test jacobian of exp(log(x)) = x
-        fn compute<D: DualNum>(v: VectorD<D>) -> VectorD<D> {
+        fn compute<D: DualNum>(v: VectorX<D>) -> VectorX<D> {
             let so3 = SO3::<D>::exp(&v);
             let mat = so3.to_matrix();
             let so3 = SO3::<D>::from_matrix(&mat);
             so3.log()
         }
 
-        let v = na::dvector![0.1, 0.2, 0.3];
+        let v = dvector![0.1, 0.2, 0.3];
         let (x, dx) = jacobian(compute, v.clone());
 
         assert!((x - v).norm() < 1e-6);
-        assert!((na::DMatrix::identity(3, 3) - dx).norm() < 1e-6);
+        assert!((MatrixX::identity(3, 3) - dx).norm() < 1e-6);
     }
 
-    fn var_jacobian<G>(g: G, r: SO3) -> (na::DVector<f64>, na::DMatrix<f64>)
+    fn var_jacobian<G>(g: G, r: SO3) -> (VectorX<f64>, MatrixX<f64>)
     where
-        G: FnOnce(SO3<DualVec>) -> na::DVector<DualVec>,
+        G: FnOnce(SO3<DualVec>) -> VectorX<DualVec>,
     {
         let rot = r.dual(0, r.dim());
 
         let out = g(rot);
-        let eps = na::DMatrix::from_rows(
-            out.map(|res| {
-                res.eps
-                    .unwrap_generic(na::Dyn(3), na::Const::<1>)
-                    .transpose()
-            })
-            .as_slice(),
+        let eps = MatrixX::from_rows(
+            out.map(|res| res.eps.unwrap_generic(Dyn(3), Const::<1>).transpose())
+                .as_slice(),
         );
 
         (out.map(|r| r.re), eps)
@@ -325,16 +322,16 @@ mod tests {
 
     #[test]
     fn test_jacobian_again() {
-        fn rotate<D: DualNum>(r: SO3<D>) -> na::DVector<D> {
+        fn rotate<D: DualNum>(r: SO3<D>) -> VectorX<D> {
             let v = Vector3::new(D::from(1.0), D::from(2.0), D::from(3.0));
-            let rotated = r.apply(&v).0;
-            na::dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
+            let rotated = r.apply(&v);
+            dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
         }
 
-        let r = SO3::exp(&na::dvector![0.1, 0.2, 0.3]);
+        let r = SO3::exp(&dvector![0.1, 0.2, 0.3]);
         let (_x, dx) = var_jacobian(rotate, r.clone());
 
-        let v = na::dvector!(1.0, 2.0, 3.0);
+        let v = dvector!(1.0, 2.0, 3.0);
         let dx_exp = -r.to_matrix() * SO3::wedge(&v);
 
         assert!((dx - dx_exp).norm() < 1e-4);

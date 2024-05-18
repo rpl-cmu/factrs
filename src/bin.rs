@@ -1,4 +1,4 @@
-use nalgebra::dvector;
+use samrs::linalg::dvector;
 use samrs::traits::{LieGroup, Variable};
 use samrs::variables::SO3;
 use samrs::variables::{Symbol, Values, VariableEnum, Vector3, X};

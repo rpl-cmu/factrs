@@ -1,7 +1,6 @@
+use crate::linalg::{Const, Dyn, MatrixX, VectorX};
 use crate::traits::{DualNum, DualVec};
-use crate::variables::VectorD;
-use nalgebra as na;
-use nalgebra::DMatrix;
+
 use std::fmt::{Debug, Display};
 use std::ops::Mul;
 
@@ -21,17 +20,16 @@ pub trait Variable<D: DualNum>: Clone + Sized + Display + Debug {
 
     fn inverse(&self) -> Self;
 
-    fn oplus(&self, delta: &VectorD<D>) -> Self;
+    fn oplus(&self, delta: &VectorX<D>) -> Self;
 
-    fn ominus(&self, other: &Self) -> VectorD<D>;
+    fn ominus(&self, other: &Self) -> VectorX<D>;
 
     fn dual_self(&self) -> Self::Dual;
 
-    fn dual_tangent(&self, idx: usize, total: usize) -> VectorD<DualVec> {
-        let mut tv: VectorD<DualVec> = VectorD::zeros(self.dim());
+    fn dual_tangent(&self, idx: usize, total: usize) -> VectorX<DualVec> {
+        let mut tv: VectorX<DualVec> = VectorX::zeros(self.dim());
         for (i, tvi) in tv.iter_mut().enumerate() {
-            tvi.eps =
-                num_dual::Derivative::derivative_generic(na::Dyn(total), na::Const::<1>, idx + i);
+            tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
         }
         tv
     }
@@ -42,9 +40,9 @@ pub trait Variable<D: DualNum>: Clone + Sized + Display + Debug {
 }
 
 pub trait LieGroup<D: DualNum>: Variable<D> + Mul {
-    fn exp(xi: &VectorD<D>) -> Self;
+    fn exp(xi: &VectorX<D>) -> Self;
 
-    fn log(&self) -> VectorD<D>;
+    fn log(&self) -> VectorX<D>;
 
-    fn wedge(xi: &VectorD<D>) -> DMatrix<D>;
+    fn wedge(xi: &VectorX<D>) -> MatrixX<D>;
 }

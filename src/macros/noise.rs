@@ -21,7 +21,7 @@ macro_rules! make_enum_noise {
                 }
             }
 
-            fn whiten(&self, v: &VectorD) -> VectorD {
+            fn whiten(&self, v: &$crate::linalg::VectorX) -> $crate::linalg::VectorX {
                 match self {
                     $(
                         $name::$x(x) => x.whiten(v),

@@ -84,13 +84,13 @@ impl<K: Key, V: Variable<dtype>> fmt::Display for Values<K, V> {
         if f.alternate() {
             writeln!(f, "{{")?;
             for (key, value) in self.values.iter() {
-                writeln!(f, "  {}: {},", key, value)?;
+                writeln!(f, "  {}: {:?},", key, value)?;
             }
             write!(f, "}}")
         } else {
             write!(f, "{{")?;
             for (key, value) in self.values.iter() {
-                write!(f, "{}: {}, ", key, value)?;
+                write!(f, "{}: {:?}, ", key, value)?;
             }
             write!(f, "}}")
         }

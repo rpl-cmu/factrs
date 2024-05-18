@@ -1,18 +1,17 @@
 use crate::dtype;
-use nalgebra::Dyn;
+use crate::linalg::{Dyn, RealField};
 use std::{cmp, fmt, hash};
 
 // Dual field
 pub trait DualNum:
-    nalgebra::RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>
+    RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>
 {
 }
-impl<
-        G: nalgebra::RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>,
-    > DualNum for G
+impl<G: RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>> DualNum
+    for G
 {
 }
-pub type DualVec = num_dual::DualVec<dtype, dtype, nalgebra::Dyn>;
+pub type DualVec = num_dual::DualVec<dtype, dtype, Dyn>;
 
 // Variable
 mod variable;
@@ -22,7 +21,7 @@ pub use variable::{LieGroup, Variable};
 pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone {}
 impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone> Key for T {}
 
-use crate::variables::VectorD;
+use crate::linalg::VectorX;
 
 // ------------------------- TODO: Rest of this is all WIP ------------------------- //
 // Holds the enums optimize over
@@ -55,7 +54,7 @@ pub trait Residual<B: Bundle>: Sized {
         Self::DIM
     }
 
-    fn residual(&self, v: &[&B::Variable]) -> VectorD;
+    fn residual(&self, v: &[&B::Variable]) -> VectorX;
 }
 
 struct PriorResidual<V: Variable<dtype>> {
@@ -68,7 +67,7 @@ where
     B::Variable: TryInto<V>,
 {
     const DIM: usize = V::DIM;
-    fn residual(&self, v: &[&B::Variable]) -> VectorD {
+    fn residual(&self, v: &[&B::Variable]) -> VectorX {
         let x1: V = unpack::<V, B>(v[0].clone());
         x1.ominus(&self.prior)
     }
@@ -81,16 +80,16 @@ pub trait NoiseModel {
         Self::DIM
     }
 
-    fn whiten(&self, v: &VectorD) -> VectorD;
+    fn whiten(&self, v: &VectorX) -> VectorX;
 }
 
 pub trait RobustCost {
-    fn cost(&self, v: &VectorD) -> f64;
+    fn cost(&self, v: &VectorX) -> f64;
 }
 
-struct Factor<B: Bundle> {
-    keys: Vec<B::Key>,
-    residual: B::Residual,
-    noise: B::Noise,
-    robust: B::Robust,
-}
+// pub struct Factor<B: Bundle> {
+//     keys: Vec<B::Key>,
+//     residual: B::Residual,
+//     noise: B::Noise,
+//     robust: B::Robust,
+// }
