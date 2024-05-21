@@ -57,13 +57,13 @@ impl<D: DualNum> SO3<D> {
         SO3 { xyzw }
     }
 
-    pub fn to_matrix(&self) -> nalgebra::Matrix3<D> {
+    pub fn to_matrix(&self) -> Matrix3<D> {
         let q0 = self.xyzw[3].clone();
         let q1 = self.xyzw[0].clone();
         let q2 = self.xyzw[1].clone();
         let q3 = self.xyzw[2].clone();
 
-        let mut mat = nalgebra::Matrix3::zeros();
+        let mut mat = Matrix3::zeros();
         mat[(0, 0)] = D::from(1.0) - (q2.clone() * q2.clone() + q3.clone() * q3.clone()) * 2.0;
         mat[(0, 1)] = (q1.clone() * q2.clone() - q0.clone() * q3.clone()) * 2.0;
         mat[(0, 2)] = (q1.clone() * q3.clone() + q0.clone() * q2.clone()) * 2.0;
@@ -146,10 +146,14 @@ impl<D: DualNum> LieGroup<D> for SO3<D> {
         let w = self.xyzw[3].clone();
 
         let norm_v = xi.norm();
-        (xi / norm_v.clone()) * norm_v.atan2(w) * D::from(2.0)
+        if norm_v < D::from(1e-3) {
+            xi * D::from(2.0)
+        } else {
+            (xi / norm_v.clone()) * norm_v.atan2(w) * D::from(2.0)
+        }
     }
 
-    fn wedge(xi: &VectorX<D>) -> MatrixX<D> {
+    fn hat(xi: &VectorX<D>) -> MatrixX<D> {
         let mut xi_hat = MatrixX::zeros(3, 3);
         xi_hat[(0, 1)] = -xi[2].clone();
         xi_hat[(0, 2)] = xi[1].clone();
@@ -159,6 +163,26 @@ impl<D: DualNum> LieGroup<D> for SO3<D> {
         xi_hat[(2, 1)] = xi[0].clone();
 
         xi_hat
+    }
+
+    fn adjoint(&self) -> MatrixX<D> {
+        let q0 = self.xyzw[3].clone();
+        let q1 = self.xyzw[0].clone();
+        let q2 = self.xyzw[1].clone();
+        let q3 = self.xyzw[2].clone();
+
+        let mut mat = MatrixX::zeros(3, 3);
+        mat[(0, 0)] = D::from(1.0) - (q2.clone() * q2.clone() + q3.clone() * q3.clone()) * 2.0;
+        mat[(0, 1)] = (q1.clone() * q2.clone() - q0.clone() * q3.clone()) * 2.0;
+        mat[(0, 2)] = (q1.clone() * q3.clone() + q0.clone() * q2.clone()) * 2.0;
+        mat[(1, 0)] = (q1.clone() * q2.clone() + q0.clone() * q3.clone()) * 2.0;
+        mat[(1, 1)] = D::from(1.0) - (q1.clone() * q1.clone() + q3.clone() * q3.clone()) * 2.0;
+        mat[(1, 2)] = (q2.clone() * q3.clone() - q0.clone() * q1.clone()) * 2.0;
+        mat[(2, 0)] = (q1.clone() * q3.clone() - q0.clone() * q2.clone()) * 2.0;
+        mat[(2, 1)] = (q2.clone() * q3.clone() + q0.clone() * q1.clone()) * 2.0;
+        mat[(2, 2)] = D::from(1.0) - (q1.clone() * q1.clone() + q2.clone() * q2.clone()) * 2.0;
+
+        mat
     }
 }
 
@@ -323,7 +347,7 @@ mod tests {
         let (_x, dx) = var_jacobian(rotate, r.clone());
 
         let v = dvector!(1.0, 2.0, 3.0);
-        let dx_exp = -r.to_matrix() * SO3::wedge(&v);
+        let dx_exp = -r.to_matrix() * SO3::hat(&v);
 
         assert!((dx - dx_exp).norm() < 1e-4);
     }

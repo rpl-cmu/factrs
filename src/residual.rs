@@ -52,7 +52,7 @@ mod test {
     use crate::{
         linalg::{dvector, Matrix3},
         traits::LieGroup,
-        variables::{Vector3, SO3},
+        variables::{Vector3, Vector6, SE3, SO3},
     };
 
     #[test]
@@ -67,21 +67,52 @@ mod test {
         println!("jac: {:}", jac);
 
         assert_eq!(res, Vector3::zeros());
-        assert_eq!(jac, Matrix3::identity());
+        assert_eq!(jac, -Matrix3::identity());
     }
 
     #[test]
     fn prior_so3() {
+        // It would be preferable to test this when prior != x0
+        // But I don't believe the jacobian actually has a closed form solution
         let prior = SO3::exp(&dvector![0.1, 0.2, 0.3]);
         let prior_residual = PriorResidual::new(&prior);
 
-        let x1 = SO3::identity();
-        let (res, jac) = prior_residual.residual_jacobian(&[x1]);
+        let x1 = prior.clone();
+        let (res, jac) = prior_residual.residual_jacobian(&[x1.clone()]);
 
         println!("res: {:}", res);
         println!("jac: {:}", jac);
 
-        assert_eq!(res, Vector3::zeros());
-        assert_eq!(jac, Matrix3::identity());
+        // This is a first order approximation of the jacobian
+        let jac_exp = -prior.minus(&x1).adjoint();
+
+        assert!((res - Vector3::zeros()).norm() < 1e-4);
+        assert!((jac - jac_exp).norm() < 1e-4);
+    }
+
+    #[test]
+    fn prior_se3() {
+        // TODO: This still seems off for SE3.
+        // When rotations are included, the bottom left of Jacobian is off by negative
+        // When they aren't included, the bottom left of Jacobian is off by factor of 2 and negative
+
+        // It would be preferable to test this when prior != x0
+        // But I don't believe the derivative actually has a closed form solution
+        let prior = SE3::exp(&dvector![1e-3, 0.0, 0.0, 1.0, 2.0, 3.0]);
+
+        let prior_residual = PriorResidual::new(&prior);
+
+        let x1 = SE3::identity();
+        let (res, jac) = prior_residual.residual_jacobian(&[x1.clone()]);
+
+        // This is a first order approximation of the jacobian
+        let jac_exp = -prior.minus(&x1).adjoint();
+
+        println!("res: {:}", res);
+        println!("jac: {:}", jac);
+        println!("jac_exp: {:}", jac_exp);
+
+        assert!((res - Vector6::zeros()).norm() < 1e-4);
+        assert!((jac - jac_exp).norm() < 1e-4);
     }
 }

@@ -31,7 +31,7 @@ impl<D: DualNum> SE3<D> {
 }
 
 impl<D: DualNum> Variable<D> for SE3<D> {
-    const DIM: usize = 3;
+    const DIM: usize = 6;
     type Dual = SE3<DualVec>;
 
     fn identity() -> Self {
@@ -42,9 +42,10 @@ impl<D: DualNum> Variable<D> for SE3<D> {
     }
 
     fn inverse(&self) -> Self {
+        let inv = self.rot.inverse();
         SE3 {
-            rot: self.rot.inverse(),
-            xyz: -&self.rot.apply(&self.xyz),
+            xyz: -&inv.apply(&self.xyz),
+            rot: inv,
         }
     }
 
@@ -69,7 +70,7 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
         let rot = SO3::<D>::exp(&xi_rot);
 
         let I = Matrix3::identity();
-        let wx = SO3::wedge(&xi_rot);
+        let wx = SO3::hat(&xi_rot);
         let V = if w.clone() < D::from(1e-3) {
             I + &wx / D::from(2.0) + &wx * &wx / D::from(6.0) + &wx * &wx * &wx / D::from(24.0)
         } else {
@@ -87,13 +88,12 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
     fn log(&self) -> VectorX<D> {
         let mut xi = VectorX::zeros(6);
         let xi_theta = self.rot.log();
-        xi.as_mut_slice()[0..3].clone_from_slice(xi_theta.as_slice());
 
-        let w = xi.norm();
+        let w = xi_theta.norm();
         let I = Matrix3::identity();
-        let wx = SO3::wedge(&xi_theta);
+        let wx = SO3::hat(&xi_theta);
 
-        let V: Matrix3<D> = if w.clone().abs() < D::from(1e-6) {
+        let V: Matrix3<D> = if w.clone().abs() < D::from(1e-2) {
             I + &wx / D::from(2.0) + &wx * &wx / D::from(6.0) + &wx * &wx * &wx / D::from(24.0)
         } else {
             let A = w.clone().sin() / w.clone();
@@ -103,15 +103,16 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
             I + &wx * &wx * B + &wx * &wx * &wx * C
         };
 
-        let Vinv = V.try_inverse().unwrap();
-        let xyz = Vinv * self.xyz.clone();
+        let Vinv = V.try_inverse().expect("V is not invertible");
+        let xyz = &Vinv * &self.xyz;
 
+        xi.as_mut_slice()[0..3].clone_from_slice(xi_theta.as_slice());
         xi.as_mut_slice()[3..6].clone_from_slice(xyz.as_slice());
 
         xi
     }
 
-    fn wedge(xi: &VectorX<D>) -> MatrixX<D> {
+    fn hat(xi: &VectorX<D>) -> MatrixX<D> {
         let mut mat = MatrixX::<D>::zeros(4, 4);
         mat[(0, 1)] = -xi[2].clone();
         mat[(0, 2)] = xi[1].clone();
@@ -123,6 +124,24 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
         mat[(0, 3)] = xi[3].clone();
         mat[(1, 3)] = xi[4].clone();
         mat[(2, 3)] = xi[5].clone();
+
+        mat
+    }
+
+    fn adjoint(&self) -> MatrixX<D> {
+        let mut mat = MatrixX::<D>::zeros(Self::DIM, Self::DIM);
+        let xyz = dvector![
+            self.xyz[0].clone(),
+            self.xyz[1].clone(),
+            self.xyz[2].clone()
+        ];
+
+        let r_mat = self.rot.to_matrix();
+        let t_r_mat = &SO3::hat(&xyz) * &r_mat;
+
+        mat.fixed_view_mut::<3, 3>(0, 0).copy_from(&r_mat);
+        mat.fixed_view_mut::<3, 3>(3, 3).copy_from(&r_mat);
+        mat.fixed_view_mut::<3, 3>(3, 0).copy_from(&t_r_mat);
 
         mat
     }

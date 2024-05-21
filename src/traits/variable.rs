@@ -28,6 +28,7 @@ pub trait Variable<D: DualNum>: Clone + Sized + Display + Debug {
     // Conversion to dual space
     fn dual_self(&self) -> Self::Dual;
 
+    // Create tangent vector w/ duals set up properly
     fn dual_tangent(&self, idx: usize, total: usize) -> VectorX<DualVec> {
         let mut tv: VectorX<DualVec> = VectorX::zeros(self.dim());
         for (i, tvi) in tv.iter_mut().enumerate() {
@@ -35,6 +36,7 @@ pub trait Variable<D: DualNum>: Clone + Sized + Display + Debug {
         }
         tv
     }
+    // Applies the tangent vector in dual space
     fn dual(&self, idx: usize, total: usize) -> Self::Dual {
         self.dual_self().oplus(&self.dual_tangent(idx, total))
     }
@@ -45,5 +47,7 @@ pub trait LieGroup<D: DualNum>: Variable<D> + Mul {
 
     fn log(&self) -> VectorX<D>;
 
-    fn wedge(xi: &VectorX<D>) -> MatrixX<D>;
+    fn hat(xi: &VectorX<D>) -> MatrixX<D>;
+
+    fn adjoint(&self) -> MatrixX<D>;
 }
