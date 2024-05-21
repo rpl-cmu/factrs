@@ -14,12 +14,20 @@ impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
         -self
     }
 
+    fn minus(&self, other: &Self) -> Self {
+        self - other
+    }
+
+    fn plus(&self, other: &Self) -> Self {
+        self + other
+    }
+
     fn oplus(&self, delta: &VectorX<D>) -> Self {
         self + delta
     }
 
     fn ominus(&self, other: &Self) -> VectorX<D> {
-        let diff = self - other;
+        let diff = self.minus(other);
         VectorX::from_iterator(Self::DIM, diff.iter().cloned())
     }
 

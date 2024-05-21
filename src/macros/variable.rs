@@ -58,6 +58,24 @@ macro_rules! make_enum_variable {
                 }
             }
 
+            fn minus(&self, other: &Self) -> Self {
+                match (self, other) {
+                    $(
+                        ($name::$x(x1), $name::$x(x2)) => $name::$x(x1.minus(x2)),
+                    )*
+                    _ => panic!("Cannot subtract different types"),
+                }
+            }
+
+            fn plus(&self, other: &Self) -> Self {
+                match (self, other) {
+                    $(
+                        ($name::$x(x1), $name::$x(x2)) => $name::$x(x1.plus(x2)),
+                    )*
+                    _ => panic!("Cannot add different types"),
+                }
+            }
+
             fn oplus(&self, delta: &$crate::linalg::VectorX<D>) -> Self {
                 match self {
                     $(

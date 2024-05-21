@@ -1,7 +1,7 @@
-use crate::dtype;
 use crate::linalg::{dvector, Matrix3, Matrix4, MatrixX, Vector3, VectorX};
 use crate::traits::{DualNum, DualVec, LieGroup, Variable};
 use crate::variables::SO3;
+use crate::{dtype, liegroup_operators};
 use std::fmt;
 use std::ops;
 
@@ -48,25 +48,14 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         }
     }
 
-    fn oplus(&self, delta: &VectorX<D>) -> Self {
-        let e = Self::exp(delta);
-        self * &e
-    }
-
-    fn ominus(&self, other: &Self) -> VectorX<D> {
-        println!("self: {}", self);
-        println!("other: {}", other);
-        let delta = &self.inverse() * other;
-        println!("delta: {}", delta);
-        (&Variable::inverse(self) * other).log()
-    }
-
     fn dual_self(&self) -> Self::Dual {
         SE3 {
             rot: self.rot.dual_self(),
             xyz: self.xyz.dual_self(),
         }
     }
+
+    liegroup_operators!();
 }
 
 impl<D: DualNum> LieGroup<D> for SE3<D> {

@@ -1,6 +1,6 @@
-use crate::dtype;
 use crate::linalg::{dvector, Matrix3, MatrixX, Vector3, Vector4, VectorX};
 use crate::traits::{DualNum, DualVec, LieGroup, Variable};
+use crate::{dtype, liegroup_operators};
 use std::fmt;
 use std::ops;
 
@@ -91,9 +91,7 @@ impl<D: DualNum> Variable<D> for SO3<D> {
     type Dual = SO3<DualVec>;
 
     fn identity() -> Self {
-        SO3 {
-            xyzw: Vector4::new(D::from(0.0), D::from(0.0), D::from(0.0), D::from(1.0)),
-        }
+        SO3 { xyzw: Vector4::w() }
     }
 
     fn inverse(&self) -> Self {
@@ -107,20 +105,13 @@ impl<D: DualNum> Variable<D> for SO3<D> {
         }
     }
 
-    fn oplus(&self, delta: &VectorX<D>) -> Self {
-        let e = Self::exp(delta);
-        self * &e
-    }
-
-    fn ominus(&self, other: &Self) -> VectorX<D> {
-        (&Variable::inverse(self) * other).log()
-    }
-
     fn dual_self(&self) -> Self::Dual {
         SO3 {
             xyzw: self.xyzw.dual_self(),
         }
     }
+
+    liegroup_operators!();
 }
 
 impl<D: DualNum> LieGroup<D> for SO3<D> {

@@ -1,5 +1,5 @@
 use crate::dtype;
-use crate::linalg::{Dyn, RealField};
+use crate::linalg::{Dyn, RealField, VectorX};
 use std::{cmp, fmt, hash};
 
 // Dual field
@@ -21,7 +21,8 @@ pub use variable::{LieGroup, Variable};
 pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone {}
 impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone> Key for T {}
 
-use crate::linalg::VectorX;
+mod residuals;
+pub use residuals::Residual;
 
 // ------------------------- TODO: Rest of this is all WIP ------------------------- //
 // Holds the enums optimize over
@@ -31,48 +32,8 @@ pub trait Bundle: Sized {
     type Variable: Variable<dtype>;
     type Robust: RobustCost;
     type Noise: NoiseModel;
-    type Residual: Residual<Self>;
+    type Residual: Residual<Self::Variable>;
 }
-
-pub fn unpack<V: Variable<dtype>, B: Bundle>(b: B::Variable) -> V
-where
-    B::Variable: TryInto<V>,
-{
-    b.try_into().unwrap_or_else(|_| {
-        panic!(
-            "Failed to convert {} to {} in residual",
-            std::any::type_name::<B::Variable>(),
-            std::any::type_name::<V>()
-        )
-    })
-}
-
-pub trait Residual<B: Bundle>: Sized {
-    const DIM: usize;
-
-    fn dim(&self) -> usize {
-        Self::DIM
-    }
-
-    fn residual(&self, v: &[&B::Variable]) -> VectorX;
-}
-
-struct PriorResidual<V: Variable<dtype>> {
-    prior: V,
-}
-
-impl<B: Bundle, V: Variable<dtype>> Residual<B> for PriorResidual<V>
-where
-    for<'a> &'a B::Variable: TryInto<V>,
-    B::Variable: TryInto<V>,
-{
-    const DIM: usize = V::DIM;
-    fn residual(&self, v: &[&B::Variable]) -> VectorX {
-        let x1: V = unpack::<V, B>(v[0].clone());
-        x1.ominus(&self.prior)
-    }
-}
-
 pub trait NoiseModel {
     const DIM: usize;
 
