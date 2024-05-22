@@ -149,7 +149,7 @@ impl<D: DualNum> LieGroup<D> for SO3<D> {
         if norm_v < D::from(1e-3) {
             xi * D::from(2.0)
         } else {
-            (xi / norm_v.clone()) * norm_v.atan2(w) * D::from(2.0)
+            xi * norm_v.clone().atan2(w) * D::from(2.0) / norm_v
         }
     }
 
@@ -171,6 +171,7 @@ impl<D: DualNum> LieGroup<D> for SO3<D> {
         let q2 = self.xyzw[1].clone();
         let q3 = self.xyzw[2].clone();
 
+        // Same as to_matrix function of SO3 -> Just avoiding copying from Matrix3 to MatrixD
         let mut mat = MatrixX::zeros(3, 3);
         mat[(0, 0)] = D::from(1.0) - (q2.clone() * q2.clone() + q3.clone() * q3.clone()) * 2.0;
         mat[(0, 1)] = (q1.clone() * q2.clone() - q0.clone() * q3.clone()) * 2.0;

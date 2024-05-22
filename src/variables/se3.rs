@@ -36,7 +36,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
 
     fn identity() -> Self {
         SE3 {
-            rot: SO3::<D>::identity(),
+            rot: Variable::identity(),
             xyz: Variable::identity(),
         }
     }
@@ -66,20 +66,24 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
         let xi_rot = dvector![xi[0].clone(), xi[1].clone(), xi[2].clone()];
         let xyz = Vector3::new(xi[3].clone(), xi[4].clone(), xi[5].clone());
 
-        let w = xi_rot.norm();
-        let rot = SO3::<D>::exp(&xi_rot);
+        let w2 = xi_rot.norm_squared();
 
+        let B;
+        let C;
+        if w2.clone() < D::from(1e-5) {
+            B = D::from(0.5);
+            C = D::from(1.0 / 6.0);
+        } else {
+            let w = w2.clone().sqrt();
+            let A = w.clone().sin() / w.clone();
+            B = (D::from(1.0) - w.clone().cos()) / w2.clone();
+            C = (D::from(1.0) - A) / w2.clone();
+        };
         let I = Matrix3::identity();
         let wx = SO3::hat(&xi_rot);
-        let V = if w.clone() < D::from(1e-3) {
-            I + &wx / D::from(2.0) + &wx * &wx / D::from(6.0) + &wx * &wx * &wx / D::from(24.0)
-        } else {
-            let A = w.clone().sin() / w.clone();
-            let B = (D::from(1.0) - w.clone().cos()) / (w.clone() * w.clone());
-            let C = (D::from(1.0) - A) / (w.clone() * w.clone());
+        let V = I + &wx * B + &wx * &wx * C;
 
-            I + &wx * &wx * B + &wx * &wx * &wx * C
-        };
+        let rot = SO3::<D>::exp(&xi_rot);
 
         SE3 { rot, xyz: V * xyz }
     }
@@ -89,19 +93,23 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
         let mut xi = VectorX::zeros(6);
         let xi_theta = self.rot.log();
 
-        let w = xi_theta.norm();
+        let w2 = xi_theta.norm_squared();
+
+        let B;
+        let C;
+        if w2.clone() < D::from(1e-5) {
+            B = D::from(0.5);
+            C = D::from(1.0 / 6.0);
+        } else {
+            let w = w2.clone().sqrt();
+            let A = w.clone().sin() / w.clone();
+            B = (D::from(1.0) - w.clone().cos()) / w2.clone();
+            C = (D::from(1.0) - A) / w2.clone();
+        };
+
         let I = Matrix3::identity();
         let wx = SO3::hat(&xi_theta);
-
-        let V: Matrix3<D> = if w.clone().abs() < D::from(1e-2) {
-            I + &wx / D::from(2.0) + &wx * &wx / D::from(6.0) + &wx * &wx * &wx / D::from(24.0)
-        } else {
-            let A = w.clone().sin() / w.clone();
-            let B = (D::from(1.0) - w.clone().cos()) / (w.clone() * w.clone());
-            let C = (D::from(1.0) - A) / (w.clone() * w.clone());
-
-            I + &wx * &wx * B + &wx * &wx * &wx * C
-        };
+        let V = I + &wx * B + &wx * &wx * C;
 
         let Vinv = V.try_inverse().expect("V is not invertible");
         let xyz = &Vinv * &self.xyz;
