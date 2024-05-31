@@ -1,10 +1,11 @@
+use crate::dtype;
 use crate::linalg::{Const, Dyn, MatrixX, VectorX};
 use crate::traits::{DualNum, DualVec};
 
 use std::fmt::{Debug, Display};
 use std::ops::Mul;
 
-pub trait Variable<D: DualNum>: Clone + Sized + Display + Debug {
+pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     const DIM: usize;
     type Dual: Variable<DualVec>;
 

@@ -1,13 +1,19 @@
 use crate::linalg::VectorX;
-use crate::traits::{DualVec, Residual, Variable};
+use crate::traits::{Bundle, DualVec, Residual, Variable};
 use crate::{dtype, unpack};
 
+// https://github.com/rust-lang/rust/issues/38078#issuecomment-1672202401
+pub type BundleDual<B> = <<B as Bundle>::Variable as Variable>::Dual;
+
 // Prior Variable
-pub struct PriorResidual<P: Variable<dtype>> {
+// TODO: this needs to be typedef'd to Bundle I believe
+// Need to prove here, not in enum, that our VariableEnum can be turned into P
+#[derive(Clone, Debug, derive_more::Display)]
+pub struct PriorResidual<P: Variable> {
     prior: P::Dual,
 }
 
-impl<P: Variable<dtype>> PriorResidual<P> {
+impl<P: Variable> PriorResidual<P> {
     pub fn new(prior: &P) -> Self {
         Self {
             prior: prior.dual_self(),
@@ -15,11 +21,11 @@ impl<P: Variable<dtype>> PriorResidual<P> {
     }
 }
 
-impl<P: Variable<dtype>, V: Variable<dtype>> Residual<V> for PriorResidual<P>
+impl<P: Variable, V: Variable> Residual<V> for PriorResidual<P>
 where
     V::Dual: TryInto<P::Dual>,
 {
-    const DIM: usize = V::DIM;
+    const DIM: usize = P::DIM;
 
     fn residual(&self, v: &[V::Dual]) -> VectorX<DualVec> {
         let x1: P::Dual = unpack(v[0].clone());
@@ -28,15 +34,16 @@ where
 }
 
 // Between Variable
-pub struct BetweenResidual<P: Variable<dtype>> {
+#[derive(Clone, Debug, derive_more::Display)]
+pub struct BetweenResidual<P: Variable> {
     delta: P::Dual,
 }
 
-impl<P: Variable<dtype>, V: Variable<dtype>> Residual<V> for BetweenResidual<P>
+impl<P: Variable, V: Variable> Residual<V> for BetweenResidual<P>
 where
     V::Dual: TryInto<P::Dual>,
 {
-    const DIM: usize = V::DIM;
+    const DIM: usize = P::DIM;
 
     fn residual(&self, v: &[V::Dual]) -> VectorX<DualVec> {
         let x1: P::Dual = unpack(v[0].clone());

@@ -10,7 +10,7 @@ macro_rules! make_enum_noise {
         }
 
         // Implement the trait for each enum
-        impl NoiseModel for $name {
+        impl $crate::traits::NoiseModel for $name {
             const DIM: usize = 0;
 
             fn dim(&self) -> usize {

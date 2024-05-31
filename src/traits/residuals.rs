@@ -1,9 +1,12 @@
 use crate::dtype;
 use crate::linalg::{Const, Dyn, MatrixX, VectorX};
-use crate::traits::{DualVec, Variable};
+use crate::traits::{Bundle, DualVec, Variable};
+
+// https://github.com/rust-lang/rust/issues/38078#issuecomment-1672202401
+pub type BundleDual<B> = <<B as Bundle>::Variable as Variable>::Dual;
 
 // TODO: generic on bundle instead??
-pub trait Residual<V: Variable<dtype>>: Sized {
+pub trait Residual<V: Variable>: Sized {
     const DIM: usize;
 
     fn dim(&self) -> usize {
@@ -13,7 +16,7 @@ pub trait Residual<V: Variable<dtype>>: Sized {
     // TODO: Would be nice if this was generic over dtypes, but it'll probably mostly be used with dual vecs
     fn residual(&self, v: &[V::Dual]) -> VectorX<DualVec>;
 
-    fn residual_jacobian(&self, v: &[V]) -> (VectorX<dtype>, MatrixX<dtype>) {
+    fn residual_jacobian(&self, v: &[V]) -> (VectorX, MatrixX) {
         let dim = v.iter().map(|x| x.dim()).sum();
         let duals: Vec<V::Dual> = v
             .iter()
@@ -34,7 +37,7 @@ pub trait Residual<V: Variable<dtype>>: Sized {
         (res.map(|r| r.re), eps)
     }
 
-    fn residual_jacobian_numerical(&self, v: &[V]) -> (VectorX<dtype>, MatrixX<dtype>) {
+    fn residual_jacobian_numerical(&self, v: &[V]) -> (VectorX, MatrixX) {
         let eps = 1e-6;
         let dim = v.iter().map(|x| x.dim()).sum();
         let duals: Vec<V::Dual> = v
@@ -47,7 +50,7 @@ pub trait Residual<V: Variable<dtype>>: Sized {
             .collect();
 
         let fx: VectorX<DualVec> = self.residual(&duals);
-        let mut jac: MatrixX<dtype> = MatrixX::zeros(Self::DIM, dim);
+        let mut jac: MatrixX = MatrixX::zeros(Self::DIM, dim);
 
         let mut curr_dim = 0;
         for i in 0..v.len() {

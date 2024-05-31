@@ -7,7 +7,6 @@ pub type dtype = f32;
 pub mod factors;
 pub mod linalg;
 pub mod macros;
-pub mod residual;
 pub mod traits;
 pub mod variables;
 // struct DefaultBundle;
