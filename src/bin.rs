@@ -1,5 +1,5 @@
 use samrs::linalg::dvector;
-use samrs::traits::{LieGroup, Variable};
+use samrs::traits::Variable;
 use samrs::variables::SO3;
 use samrs::variables::{Symbol, Values, VariableEnum, Vector3, X};
 

@@ -42,7 +42,7 @@ where
     fn residual(&self, v: &[V::Dual]) -> VectorX<DualVec> {
         let x1: P::Dual = unpack(v[0].clone());
         let x2: P::Dual = unpack(v[1].clone());
-        (x1.plus(&self.delta)).ominus(&x2)
+        (x1.compose(&self.delta)).ominus(&x2)
     }
 }
 
@@ -52,7 +52,6 @@ mod test {
     use super::*;
     use crate::{
         linalg::{dvector, Matrix3},
-        traits::LieGroup,
         variables::{Vector3, SE3, SO3},
     };
 

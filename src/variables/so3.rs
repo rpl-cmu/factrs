@@ -1,6 +1,6 @@
+use crate::dtype;
 use crate::linalg::{dvector, Matrix3, MatrixX, Vector3, Vector4, VectorX};
 use crate::traits::{DualNum, DualVec, LieGroup, Variable};
-use crate::{dtype, liegroup_operators};
 use std::fmt;
 use std::ops;
 
@@ -105,16 +105,34 @@ impl<D: DualNum> Variable<D> for SO3<D> {
         }
     }
 
-    fn dual_self(&self) -> Self::Dual {
-        SO3 {
-            xyzw: self.xyzw.dual_self(),
-        }
+    fn compose(&self, other: &Self) -> Self {
+        let x0 = self.xyzw[0].clone();
+        let y0 = self.xyzw[1].clone();
+        let z0 = self.xyzw[2].clone();
+        let w0 = self.xyzw[3].clone();
+
+        let x1 = other.xyzw[0].clone();
+        let y1 = other.xyzw[1].clone();
+        let z1 = other.xyzw[2].clone();
+        let w1 = other.xyzw[3].clone();
+
+        // Compute the product of the two quaternions, term by term
+        let mut xyzw = Vector4::zeros();
+        xyzw[0] = w0.clone() * x1.clone() + x0.clone() * w1.clone() + y0.clone() * z1.clone()
+            - z0.clone() * y1.clone();
+        xyzw[1] = w0.clone() * y1.clone() - x0.clone() * z1.clone()
+            + y0.clone() * w1.clone()
+            + z0.clone() * x1.clone();
+        xyzw[2] = w0.clone() * z1.clone() + x0.clone() * y1.clone() - y0.clone() * x1.clone()
+            + z0.clone() * w1.clone();
+        xyzw[3] = w0.clone() * w1.clone()
+            - x0.clone() * x1.clone()
+            - y0.clone() * y1.clone()
+            - z0.clone() * z1.clone();
+
+        SO3 { xyzw }
     }
 
-    liegroup_operators!();
-}
-
-impl<D: DualNum> LieGroup<D> for SO3<D> {
     fn exp(xi: &VectorX<D>) -> Self {
         let mut xyzw = Vector4::zeros();
         let theta = xi.norm();
@@ -153,6 +171,14 @@ impl<D: DualNum> LieGroup<D> for SO3<D> {
         }
     }
 
+    fn dual_self(&self) -> Self::Dual {
+        SO3 {
+            xyzw: self.xyzw.dual_self(),
+        }
+    }
+}
+
+impl<D: DualNum> LieGroup<D> for SO3<D> {
     fn hat(xi: &VectorX<D>) -> MatrixX<D> {
         let mut xi_hat = MatrixX::zeros(3, 3);
         xi_hat[(0, 1)] = -xi[2].clone();
@@ -191,33 +217,15 @@ impl<D: DualNum> ops::Mul for SO3<D> {
     type Output = SO3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
-        &self * &other
+        self.compose(&other)
     }
 }
 
 impl<D: DualNum> ops::Mul for &SO3<D> {
     type Output = SO3<D>;
 
-    #[rustfmt::skip]
     fn mul(self, other: Self) -> Self::Output {
-        let x0 = self.xyzw[0].clone();
-        let y0 = self.xyzw[1].clone();
-        let z0 = self.xyzw[2].clone();
-        let w0 = self.xyzw[3].clone();
-
-        let x1 = other.xyzw[0].clone();
-        let y1 = other.xyzw[1].clone();
-        let z1 = other.xyzw[2].clone();
-        let w1 = other.xyzw[3].clone();
-
-        // Compute the product of the two quaternions, term by term
-        let mut xyzw = Vector4::zeros();
-        xyzw[0] = w0.clone() * x1.clone() + x0.clone() * w1.clone() + y0.clone() * z1.clone() - z0.clone() * y1.clone();
-        xyzw[1] = w0.clone() * y1.clone() - x0.clone() * z1.clone() + y0.clone() * w1.clone() + z0.clone() * x1.clone();
-        xyzw[2] = w0.clone() * z1.clone() + x0.clone() * y1.clone() - y0.clone() * x1.clone() + z0.clone() * w1.clone();
-        xyzw[3] = w0.clone() * w1.clone() - x0.clone() * x1.clone() - y0.clone() * y1.clone() - z0.clone() * z1.clone();
-
-        SO3 { xyzw }
+        self.compose(other)
     }
 }
 

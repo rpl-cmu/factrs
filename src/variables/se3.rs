@@ -1,7 +1,7 @@
+use crate::dtype;
 use crate::linalg::{dvector, Matrix3, Matrix4, MatrixX, Vector3, VectorX};
 use crate::traits::{DualNum, DualVec, LieGroup, Variable};
 use crate::variables::SO3;
-use crate::{dtype, liegroup_operators};
 use std::fmt;
 use std::ops;
 
@@ -41,6 +41,13 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         }
     }
 
+    fn compose(&self, other: &Self) -> Self {
+        SE3 {
+            rot: &self.rot * &other.rot,
+            xyz: self.rot.apply(&other.xyz) + self.xyz.clone(),
+        }
+    }
+
     fn inverse(&self) -> Self {
         let inv = self.rot.inverse();
         SE3 {
@@ -49,18 +56,6 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         }
     }
 
-    fn dual_self(&self) -> Self::Dual {
-        SE3 {
-            rot: self.rot.dual_self(),
-            xyz: self.xyz.dual_self(),
-        }
-    }
-
-    liegroup_operators!();
-}
-
-impl<D: DualNum> LieGroup<D> for SE3<D> {
-    // TODO: Both of this functions need to be tested!
     #[allow(non_snake_case)]
     fn exp(xi: &VectorX<D>) -> Self {
         let xi_rot = dvector![xi[0].clone(), xi[1].clone(), xi[2].clone()];
@@ -120,6 +115,15 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
         xi
     }
 
+    fn dual_self(&self) -> Self::Dual {
+        SE3 {
+            rot: self.rot.dual_self(),
+            xyz: self.xyz.dual_self(),
+        }
+    }
+}
+
+impl<D: DualNum> LieGroup<D> for SE3<D> {
     fn hat(xi: &VectorX<D>) -> MatrixX<D> {
         let mut mat = MatrixX::<D>::zeros(4, 4);
         mat[(0, 1)] = -xi[2].clone();
@@ -159,7 +163,7 @@ impl<D: DualNum> ops::Mul for SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
-        &self * &other
+        self.compose(&other)
     }
 }
 
@@ -167,10 +171,7 @@ impl<D: DualNum> ops::Mul for &SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
-        SE3 {
-            rot: &self.rot * &other.rot,
-            xyz: self.rot.apply(&other.xyz) + self.xyz.clone(),
-        }
+        self.compose(other)
     }
 }
 

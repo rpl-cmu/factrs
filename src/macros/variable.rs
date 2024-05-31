@@ -42,14 +42,6 @@ macro_rules! make_enum_variable {
                 panic!("Cannot call static identity on enum")
             }
 
-            fn identity_enum(&self) -> Self {
-                match self {
-                    $(
-                        $name::$x(_) => $name::$x($x::identity()),
-                    )*
-                }
-            }
-
             fn inverse(&self) -> Self {
                 match self {
                     $(
@@ -58,39 +50,24 @@ macro_rules! make_enum_variable {
                 }
             }
 
-            fn minus(&self, other: &Self) -> Self {
+            fn compose(&self, other: &Self) -> Self {
                 match (self, other) {
                     $(
-                        ($name::$x(x1), $name::$x(x2)) => $name::$x(x1.minus(x2)),
+                        ($name::$x(x), $name::$x(y)) => $name::$x(x.compose(y)),
                     )*
-                    _ => panic!("Cannot subtract different types"),
+                    _ => panic!("Cannot compose different types"),
                 }
             }
 
-            fn plus(&self, other: &Self) -> Self {
-                match (self, other) {
-                    $(
-                        ($name::$x(x1), $name::$x(x2)) => $name::$x(x1.plus(x2)),
-                    )*
-                    _ => panic!("Cannot add different types"),
-                }
+            fn exp(_delta: &$crate::linalg::VectorX<D>) -> Self {
+                panic!("Cannot call static exp on enum")
             }
 
-            fn oplus(&self, delta: &$crate::linalg::VectorX<D>) -> Self {
+            fn log(&self) -> $crate::linalg::VectorX<D> {
                 match self {
                     $(
-                        $name::$x(x) => $name::$x(x.oplus(delta)),
+                        $name::$x(x) => x.log(),
                     )*
-                }
-            }
-
-            fn ominus(&self, other: &Self) -> $crate::linalg::VectorX<D> {
-                match (self, other) {
-                    $(
-                        ($name::$x(x1), $name::$x(x2)) => x1.ominus(x2),
-                    )*
-                    _ => panic!("Cannot subtract different types"),
-
                 }
             }
 
@@ -98,6 +75,23 @@ macro_rules! make_enum_variable {
                 match self {
                     $(
                         $name::$x(x) => $name::<$crate::traits::DualVec>::$x(x.dual_self()),
+                    )*
+                }
+            }
+
+            // Overrides for various enum helpers
+            fn identity_enum(&self) -> Self {
+                match self {
+                    $(
+                        $name::$x(_) => $name::$x($x::identity()),
+                    )*
+                }
+            }
+
+            fn oplus(&self, delta: &$crate::linalg::VectorX<D>) -> Self {
+                match self {
+                    $(
+                        $name::$x(x) => $name::$x(x.oplus(delta)),
                     )*
                 }
             }

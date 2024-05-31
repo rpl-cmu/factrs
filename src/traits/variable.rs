@@ -3,31 +3,36 @@ use crate::linalg::{Const, Dyn, MatrixX, VectorX};
 use crate::traits::{DualNum, DualVec};
 
 use std::fmt::{Debug, Display};
-use std::ops::Mul;
 
 pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     const DIM: usize;
     type Dual: Variable<DualVec>;
 
-    fn dim(&self) -> usize {
-        Self::DIM
-    }
+    // Group operations
     fn identity() -> Self;
-    fn identity_enum(&self) -> Self {
-        Self::identity()
-    }
     fn inverse(&self) -> Self;
-
-    // Stays in the manifold
-    fn minus(&self, other: &Self) -> Self;
-    fn plus(&self, other: &Self) -> Self;
-
-    // Moves into vector space
-    fn oplus(&self, delta: &VectorX<D>) -> Self;
-    fn ominus(&self, other: &Self) -> VectorX<D>;
+    fn compose(&self, other: &Self) -> Self;
+    fn exp(delta: &VectorX<D>) -> Self; // trivial if linear (just itself)
+    fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
     // Conversion to dual space
     fn dual_self(&self) -> Self::Dual;
+
+    // Helpers for enum
+    fn dim(&self) -> usize {
+        Self::DIM
+    }
+    fn identity_enum(&self) -> Self {
+        Self::identity()
+    }
+
+    // Moves to and from vector space
+    fn oplus(&self, delta: &VectorX<D>) -> Self {
+        self.compose(&Self::exp(delta))
+    }
+    fn ominus(&self, other: &Self) -> VectorX<D> {
+        (other.inverse().compose(self)).log()
+    }
 
     // Create tangent vector w/ duals set up properly
     fn dual_tangent(&self, idx: usize, total: usize) -> VectorX<DualVec> {
@@ -43,11 +48,7 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
-pub trait LieGroup<D: DualNum>: Variable<D> + Mul {
-    fn exp(xi: &VectorX<D>) -> Self;
-
-    fn log(&self) -> VectorX<D>;
-
+pub trait LieGroup<D: DualNum>: Variable<D> {
     fn hat(xi: &VectorX<D>) -> MatrixX<D>;
 
     fn adjoint(&self) -> MatrixX<D>;
