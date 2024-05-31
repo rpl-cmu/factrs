@@ -80,6 +80,8 @@ macro_rules! make_enum_variable {
             }
 
             // Overrides for various enum helpers
+            // For some of these, they work fine without this, but
+            // it's preferable we delegate to underlying implementation to reduce # of matches we have to do
             fn identity_enum(&self) -> Self {
                 match self {
                     $(
@@ -92,6 +94,31 @@ macro_rules! make_enum_variable {
                 match self {
                     $(
                         $name::$x(x) => $name::$x(x.oplus(delta)),
+                    )*
+                }
+            }
+
+            fn ominus(&self, other: &Self) -> $crate::linalg::VectorX<D> {
+                match (self, other) {
+                    $(
+                        ($name::$x(x), $name::$x(y)) => x.ominus(y),
+                    )*
+                    _ => panic!("Cannot ominus different types"),
+                }
+            }
+
+            fn dual_tangent(&self, idx: usize, total: usize) -> $crate::linalg::VectorX<$crate::traits::DualVec> {
+                match self {
+                    $(
+                        $name::$x(x) => x.dual_tangent(idx, total),
+                    )*
+                }
+            }
+
+            fn dual(&self, idx: usize, total: usize) -> Self::Dual {
+                match self {
+                    $(
+                        $name::$x(x) => $name::$x(x.dual(idx, total)),
                     )*
                 }
             }

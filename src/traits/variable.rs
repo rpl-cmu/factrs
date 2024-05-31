@@ -12,6 +12,7 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn identity() -> Self;
     fn inverse(&self) -> Self;
     fn compose(&self, other: &Self) -> Self;
+    // Make exp/log consume their arguments?
     fn exp(delta: &VectorX<D>) -> Self; // trivial if linear (just itself)
     fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
@@ -28,10 +29,18 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
 
     // Moves to and from vector space
     fn oplus(&self, delta: &VectorX<D>) -> Self {
-        self.compose(&Self::exp(delta))
+        if cfg!(feature = "left") {
+            Self::exp(delta).compose(self)
+        } else {
+            self.compose(&Self::exp(delta))
+        }
     }
     fn ominus(&self, other: &Self) -> VectorX<D> {
-        (other.inverse().compose(self)).log()
+        if cfg!(feature = "left") {
+            (self.compose(&other.inverse())).log()
+        } else {
+            (other.inverse().compose(self)).log()
+        }
     }
 
     // Create tangent vector w/ duals set up properly
