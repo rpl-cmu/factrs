@@ -1,13 +1,7 @@
 use crate::linalg::VectorX;
-use crate::traits::{Bundle, DualVec, Residual, Variable};
-use crate::{dtype, unpack};
+use crate::traits::{DualVec, Residual, Variable};
+use crate::unpack;
 
-// https://github.com/rust-lang/rust/issues/38078#issuecomment-1672202401
-pub type BundleDual<B> = <<B as Bundle>::Variable as Variable>::Dual;
-
-// Prior Variable
-// TODO: this needs to be typedef'd to Bundle I believe
-// Need to prove here, not in enum, that our VariableEnum can be turned into P
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct PriorResidual<P: Variable> {
     prior: P::Dual,
@@ -23,7 +17,7 @@ impl<P: Variable> PriorResidual<P> {
 
 impl<P: Variable, V: Variable> Residual<V> for PriorResidual<P>
 where
-    V::Dual: TryInto<P::Dual>,
+    V::Dual: std::convert::TryInto<P::Dual>,
 {
     const DIM: usize = P::DIM;
 

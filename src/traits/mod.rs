@@ -48,9 +48,10 @@ pub trait RobustCost {
     fn cost(&self, v: &VectorX) -> f64;
 }
 
-// pub struct Factor<B: Bundle> {
-//     keys: Vec<B::Key>,
-//     residual: B::Residual,
-//     noise: B::Noise,
-//     robust: B::Robust,
+// pub struct Factor<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
+//     keys: Vec<K>,
+//     residual: R,
+//     noise: N,
+//     robust: C,
+//     _phantom: std::marker::PhantomData<V>,
 // }

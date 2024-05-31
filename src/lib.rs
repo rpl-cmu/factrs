@@ -9,6 +9,7 @@ pub mod linalg;
 pub mod macros;
 pub mod traits;
 pub mod variables;
+
 // struct DefaultBundle;
 
 // impl traits::Bundle for DefaultBundle {
@@ -16,7 +17,7 @@ pub mod variables;
 //     type Variable = variables::VariableEnum;
 //     type Robust = (); // TODO
 //     type Noise = factors::NoiseModelEnum;
-//     type Residual = (); // TODO
+//     type Residual = factors::ResidualEnum;
 // }
 
 pub fn unpack<D: traits::DualNum, V: traits::Variable<D>, W>(b: W) -> V

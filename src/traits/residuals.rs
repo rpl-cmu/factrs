@@ -1,11 +1,6 @@
-use crate::dtype;
 use crate::linalg::{Const, Dyn, MatrixX, VectorX};
-use crate::traits::{Bundle, DualVec, Variable};
+use crate::traits::{DualVec, Variable};
 
-// https://github.com/rust-lang/rust/issues/38078#issuecomment-1672202401
-pub type BundleDual<B> = <<B as Bundle>::Variable as Variable>::Dual;
-
-// TODO: generic on bundle instead??
 pub trait Residual<V: Variable>: Sized {
     const DIM: usize;
 
