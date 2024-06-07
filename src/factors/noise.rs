@@ -4,68 +4,61 @@ use crate::traits::NoiseModel;
 use std::fmt;
 
 #[derive(Clone, Debug)]
-pub struct GaussianNoise<const N: usize> {
-    sqrt_cov: MatrixX<dtype>,
+pub struct GaussianNoise {
+    sqrt_inf: MatrixX<dtype>,
 }
 
-impl<const N: usize> NoiseModel for GaussianNoise<N> {
-    const DIM: usize = N;
+impl NoiseModel for GaussianNoise {
+    fn dim(&self) -> usize {
+        self.sqrt_inf.shape().0
+    }
 
     fn whiten(&self, v: &VectorX) -> VectorX {
-        &self.sqrt_cov * v
+        &self.sqrt_inf * v
     }
 }
 
-impl<const N: usize> GaussianNoise<N> {
-    pub fn from_scalar_sigma(sigma: dtype) -> Self {
-        let sqrt_cov = MatrixX::<dtype>::from_diagonal_element(N, N, sigma);
-        Self { sqrt_cov }
+impl GaussianNoise {
+    pub fn identity(n: usize) -> Self {
+        let sqrt_inf = MatrixX::<dtype>::identity(n, n);
+        Self { sqrt_inf }
     }
 
-    pub fn from_scalar_cov(cov: dtype) -> Self {
-        let sqrt_cov = MatrixX::<dtype>::from_diagonal_element(N, N, cov.sqrt());
-        Self { sqrt_cov }
+    pub fn from_scalar_sigma(sigma: dtype, n: usize) -> Self {
+        let sqrt_inf = MatrixX::<dtype>::from_diagonal_element(n, n, 1.0 / sigma);
+        Self { sqrt_inf }
+    }
+
+    pub fn from_scalar_cov(cov: dtype, n: usize) -> Self {
+        let sqrt_inf = MatrixX::<dtype>::from_diagonal_element(n, n, 1.0 / cov.sqrt());
+        Self { sqrt_inf }
     }
 
     pub fn from_diag_sigma(sigma: &VectorX) -> Self {
-        let sqrt_cov = MatrixX::<dtype>::from_diagonal(sigma);
-        Self { sqrt_cov }
+        let sqrt_inf = MatrixX::<dtype>::from_diagonal(&sigma.map(|x| 1.0 / x));
+        Self { sqrt_inf }
     }
 
     pub fn from_diag_cov(cov: &VectorX) -> Self {
-        let sqrt_cov = MatrixX::<dtype>::from_diagonal(&cov.map(|x| x.sqrt()));
-        Self { sqrt_cov }
-    }
-
-    pub fn from_matrix_sigma(sigma: &MatrixX<dtype>) -> Self {
-        let sqrt_cov = sigma.clone();
-        Self { sqrt_cov }
+        let sqrt_inf = MatrixX::<dtype>::from_diagonal(&cov.map(|x| 1.0 / x.sqrt()));
+        Self { sqrt_inf }
     }
 
     pub fn from_matrix_cov(cov: &MatrixX<dtype>) -> Self {
         // TODO: Double check if I want upper or lower triangular cholesky
-        let sqrt_cov = cov
+        let sqrt_inf = cov
             .clone()
+            .try_inverse()
+            .expect("Matrix inversion failed when creating sqrt covariance.")
             .cholesky()
             .expect("Cholesky failed when creating sqrt covariance.")
             .l();
-        Self { sqrt_cov }
+        Self { sqrt_inf }
     }
 }
 
-impl<const N: usize> fmt::Display for GaussianNoise<N> {
+impl fmt::Display for GaussianNoise {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "GaussianNoise1: {}", self.sqrt_cov)
+        write!(f, "GaussianNoise1: {}", self.sqrt_inf)
     }
 }
-
-pub type GaussianNoise1 = GaussianNoise<1>;
-pub type GaussianNoise2 = GaussianNoise<2>;
-pub type GaussianNoise3 = GaussianNoise<3>;
-pub type GaussianNoise4 = GaussianNoise<4>;
-pub type GaussianNoise5 = GaussianNoise<5>;
-pub type GaussianNoise6 = GaussianNoise<6>;
-pub type GaussianNoise7 = GaussianNoise<7>;
-pub type GaussianNoise8 = GaussianNoise<8>;
-pub type GaussianNoise9 = GaussianNoise<9>;
-pub type GaussianNoise10 = GaussianNoise<10>;

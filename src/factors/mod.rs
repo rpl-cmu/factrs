@@ -1,26 +1,11 @@
 mod noise;
-pub use noise::*;
-
-use crate::make_enum_noise;
-make_enum_noise!(
-    NoiseModelEnum,
-    GaussianNoise1,
-    GaussianNoise2,
-    GaussianNoise3,
-    GaussianNoise4,
-    GaussianNoise5,
-    GaussianNoise6,
-    GaussianNoise7,
-    GaussianNoise8,
-    GaussianNoise9,
-    GaussianNoise10
-);
+pub use noise::GaussianNoise;
 
 mod residual;
-use crate::make_enum_residual;
 use crate::variables::{VariableEnum, Vector3, SE3, SO3};
+use crate::{make_enum_residual, make_enum_robust};
 pub use residual::{BetweenResidual, PriorResidual};
-
+// TODO: Add everything to this
 make_enum_residual!(
     ResidualEnum,
     VariableEnum,
@@ -29,3 +14,20 @@ make_enum_residual!(
     PriorResidual<SO3>,
     PriorResidual<SE3>
 );
+
+mod robust;
+pub use robust::*;
+make_enum_robust!(
+    RobustEnum,
+    L2,
+    L1,
+    Huber,
+    Fair,
+    Cauchy,
+    GemanMcClure,
+    Welsch,
+    Tukey
+);
+
+mod factor;
+pub use factor::Factor;

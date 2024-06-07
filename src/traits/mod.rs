@@ -34,24 +34,16 @@ pub trait Bundle: Sized {
     type Noise: NoiseModel;
     type Residual: Residual<Self::Variable>;
 }
-pub trait NoiseModel {
-    const DIM: usize;
-
-    fn dim(&self) -> usize {
-        Self::DIM
-    }
+pub trait NoiseModel: Sized {
+    fn dim(&self) -> usize;
 
     fn whiten(&self, v: &VectorX) -> VectorX;
 }
 
-pub trait RobustCost {
-    fn cost(&self, v: &VectorX) -> f64;
-}
+pub trait RobustCost: Sized {
+    fn weight(&self, d2: dtype) -> dtype;
 
-// pub struct Factor<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
-//     keys: Vec<K>,
-//     residual: R,
-//     noise: N,
-//     robust: C,
-//     _phantom: std::marker::PhantomData<V>,
-// }
+    fn weight_vector(&self, r: &VectorX) -> VectorX {
+        r * self.weight(r.norm_squared()).sqrt()
+    }
+}

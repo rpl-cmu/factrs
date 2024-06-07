@@ -11,6 +11,11 @@ pub trait Residual<V: Variable>: Sized {
     // TODO: Would be nice if this was generic over dtypes, but it'll probably mostly be used with dual vecs
     fn residual(&self, v: &[V::Dual]) -> VectorX<DualVec>;
 
+    fn residual_single(&self, v: &[V]) -> VectorX {
+        let duals: Vec<V::Dual> = v.iter().map(|x| x.dual(0, x.dim())).collect();
+        self.residual(&duals).map(|r| r.re)
+    }
+
     fn residual_jacobian(&self, v: &[V]) -> (VectorX, MatrixX) {
         let dim = v.iter().map(|x| x.dim()).sum();
         let duals: Vec<V::Dual> = v
