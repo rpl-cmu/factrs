@@ -9,6 +9,7 @@ pub mod linalg;
 pub mod macros;
 pub mod residuals;
 pub mod traits;
+pub mod utils;
 pub mod variables;
 
 // struct DefaultBundle;

@@ -1,19 +1,7 @@
 mod noise;
 pub use noise::GaussianNoise;
 
-mod residual;
-use crate::variables::{VariableEnum, Vector3, SE3, SO3};
-use crate::{make_enum_residual, make_enum_robust};
-pub use residual::{BetweenResidual, PriorResidual};
-// TODO: Add everything to this
-make_enum_residual!(
-    ResidualEnum,
-    VariableEnum,
-    BetweenResidual<Vector3>,
-    PriorResidual<Vector3>,
-    PriorResidual<SO3>,
-    PriorResidual<SE3>
-);
+use crate::make_enum_robust;
 
 mod robust;
 pub use robust::*;

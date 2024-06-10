@@ -14,14 +14,14 @@ macro_rules! make_enum_residual {
         }
 
         // Implement the trait for the specified enum
-        impl $crate::traits::Residual<$var> for $name {
+        impl $crate::residuals::Residual<$var> for $name {
             const DIM: usize = 0;
 
             fn residual_jacobian<K: $crate::traits::Key>(&self, values: &$crate::variables::Values<K, $var>, keys: &[K]) -> ($crate::linalg::VectorX, $crate::linalg::MatrixX) {
                 paste! {
                     match self {
                         $(
-                            $name::[<$x $($gen)?>](x) => $crate::traits::Residual::<$var>::residual_jacobian(x, values, keys),
+                            $name::[<$x $($gen)?>](x) => $crate::residuals::Residual::<$var>::residual_jacobian(x, values, keys),
                         )*
                     }
                 }

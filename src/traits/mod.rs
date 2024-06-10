@@ -21,8 +21,8 @@ pub use variable::{LieGroup, Variable};
 pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone {}
 impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone> Key for T {}
 
-mod residuals;
-pub use residuals::{Residual, Residual1, Residual2};
+// Residual
+use crate::residuals::Residual;
 
 // ------------------------- TODO: Rest of this is all WIP ------------------------- //
 // Holds the enums optimize over

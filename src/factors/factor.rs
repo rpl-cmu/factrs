@@ -1,7 +1,8 @@
 use crate::dtype;
 use crate::factors::{GaussianNoise, L2};
 use crate::linalg::{MatrixX, VectorX};
-use crate::traits::{Bundle, Key, NoiseModel, Residual, RobustCost, Variable};
+use crate::residuals::Residual;
+use crate::traits::{Bundle, Key, NoiseModel, RobustCost, Variable};
 use crate::variables::Values;
 
 type FactorBundle<B> = Factor<
