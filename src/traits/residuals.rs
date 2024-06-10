@@ -1,5 +1,31 @@
 use crate::linalg::{Const, Dyn, MatrixX, VectorX};
-use crate::traits::{DualVec, Variable};
+use crate::traits::{DualNum, DualVec, Variable};
+use crate::variables::Values;
+
+use super::Key;
+
+type DualVar<V> = <V as Variable>::Dual;
+
+// ------------------------- Base Residual Trait & Helpers ------------------------- //
+pub fn unpack<'a, V, W, K>(values: &'a Values<K, V>, k: &K) -> &'a W
+where
+    W: Variable,
+    V: Variable,
+    &'a V: std::convert::TryInto<&'a W>,
+    K: Key,
+{
+    let v1 = values
+        .get(k)
+        .unwrap_or_else(|| panic!("Key not found: {}", k));
+
+    v1.try_into().unwrap_or_else(|_| {
+        panic!(
+            "Variable type mismatch: expected {} for key {}",
+            std::any::type_name::<W>(),
+            k
+        )
+    })
+}
 
 pub trait Residual<V: Variable>: Sized {
     const DIM: usize;
@@ -9,26 +35,38 @@ pub trait Residual<V: Variable>: Sized {
     }
 
     // TODO: Would be nice if this was generic over dtypes, but it'll probably mostly be used with dual vecs
-    fn residual(&self, v: &[V::Dual]) -> VectorX<DualVec>;
-
-    fn residual_single(&self, v: &[V]) -> VectorX {
-        let duals: Vec<V::Dual> = v.iter().map(|x| x.dual(0, x.dim())).collect();
-        self.residual(&duals).map(|r| r.re)
+    fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX {
+        return self.residual_jacobian(values, keys).0;
     }
 
-    fn residual_jacobian(&self, v: &[V]) -> (VectorX, MatrixX) {
-        let dim = v.iter().map(|x| x.dim()).sum();
-        let duals: Vec<V::Dual> = v
-            .iter()
-            .scan(0, |idx, x| {
-                let d = x.dual(*idx, dim);
-                *idx += x.dim();
-                Some(d)
-            })
-            .collect();
+    fn residual_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX);
 
-        let res: VectorX<DualVec> = self.residual(&duals);
+    // TODO: Move this to external function for testing, probably doesn't need to be built in
+    // fn residual_jacobian_numerical(&self, v: &[V]) -> (VectorX, MatrixX);
+}
 
+// ------------------------- Residual 1 ------------------------- //
+pub trait Residual1<V: Variable>: Residual<V>
+where
+    for<'a> &'a V: std::convert::TryInto<&'a Self::V1>,
+{
+    type V1: Variable;
+    const DIM: usize;
+
+    fn residual1(&self, v: DualVar<Self::V1>) -> VectorX<DualVec>;
+
+    fn residual_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX) {
+        // Unwrap everything
+        let v1 = unpack(values, &keys[0]);
+
+        // Prepare variables
+        let dim = Self::V1::DIM;
+        let v1d = v1.dual(0, dim);
+
+        // Compute residual
+        let res = self.residual1(v1d);
+
+        // Compute Jacobian
         let eps = MatrixX::from_rows(
             res.map(|r| r.eps.unwrap_generic(Dyn(dim), Const::<1>).transpose())
                 .as_slice(),
@@ -37,43 +75,79 @@ pub trait Residual<V: Variable>: Sized {
         (res.map(|r| r.re), eps)
     }
 
-    fn residual_jacobian_numerical(&self, v: &[V]) -> (VectorX, MatrixX) {
+    fn residual_jacobian_numerical<K: Key>(
+        &self,
+        values: &Values<K, V>,
+        keys: &[K],
+    ) -> (VectorX, MatrixX) {
+        // Unwrap everything
         let eps = 1e-6;
-        let dim = v.iter().map(|x| x.dim()).sum();
-        let duals: Vec<V::Dual> = v
-            .iter()
-            .scan(0, |idx, x| {
-                let d = x.dual(*idx, dim);
-                *idx += x.dim();
-                Some(d)
-            })
-            .collect();
+        let v1 = unpack(values, &keys[0]);
 
-        let fx: VectorX<DualVec> = self.residual(&duals);
-        let mut jac: MatrixX = MatrixX::zeros(Self::DIM, dim);
+        // Prepare variables
+        let dim = Self::V1::DIM;
+        let v1d = v1.dual(0, dim);
 
-        let mut curr_dim = 0;
-        for i in 0..v.len() {
-            for j in 0..v[i].dim() {
-                let mut v_plus = duals.clone();
-                let mut tv = v_plus[i].dual_tangent(0, dim);
-                tv[j] = DualVec::from(eps);
+        // Compute residual
+        let res = self.residual1(v1d.clone());
+        let mut jac: MatrixX = MatrixX::zeros(<Self as Residual1<V>>::DIM, dim);
 
-                v_plus[i] = v_plus[i].oplus(&tv);
+        // Compute Jacobian
+        for j in 0..dim {
+            let mut v1_plus = v1d.clone();
+            let mut tv = v1_plus.dual_tangent(0, dim);
+            tv[j] = DualVec::from(eps);
 
-                let fx_plus = self.residual(&v_plus);
-                let delta: Vec<_> = fx_plus
-                    .iter()
-                    .zip(fx.iter())
-                    .map(|(a, b)| (a.re - b.re) / eps)
-                    .collect();
-                let delta = VectorX::from(delta);
+            v1_plus = v1_plus.oplus(&tv);
 
-                jac.columns_mut(curr_dim, 1).copy_from(&delta);
-                curr_dim += 1;
-            }
+            // TODO: There's probably a faster way to compute this...
+            let fx_plus = self.residual1(v1_plus);
+            let delta: Vec<_> = fx_plus
+                .iter()
+                .zip(res.iter())
+                .map(|(a, b)| (a.re - b.re) / eps)
+                .collect();
+            let delta = VectorX::from(delta);
+
+            jac.columns_mut(j, 1).copy_from(&delta);
         }
 
-        (fx.map(|r| r.re), jac)
+        (res.map(|r| r.re), jac)
+    }
+}
+
+// ------------------------- Residual2 ------------------------- //
+// ------------------------- Residual 1 ------------------------- //
+pub trait Residual2<V: Variable>: Residual<V>
+where
+    for<'a> &'a V: std::convert::TryInto<&'a Self::V1>,
+    for<'a> &'a V: std::convert::TryInto<&'a Self::V2>,
+{
+    type V1: Variable;
+    type V2: Variable;
+    const DIM: usize;
+
+    fn residual2(&self, v1: DualVar<Self::V1>, v2: DualVar<Self::V2>) -> VectorX<DualVec>;
+
+    fn residual_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX) {
+        // Unwrap everything
+        let v1: &Self::V1 = unpack(values, &keys[0]);
+        let v2: &Self::V2 = unpack(values, &keys[1]);
+
+        // Prepare variables
+        let dim = Self::V1::DIM + Self::V2::DIM;
+        let v1d = v1.dual(0, dim);
+        let v2d = v2.dual(Self::V1::DIM, dim);
+
+        // Compute residual
+        let res = self.residual2(v1d, v2d);
+
+        // Compute Jacobian
+        let eps = MatrixX::from_rows(
+            res.map(|r| r.eps.unwrap_generic(Dyn(dim), Const::<1>).transpose())
+                .as_slice(),
+        );
+
+        (res.map(|r| r.re), eps)
     }
 }

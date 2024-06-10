@@ -35,5 +35,5 @@ fn main() {
             .set_robust(L2)
             .build();
 
-    f.error(values);
+    f.error(&values);
 }

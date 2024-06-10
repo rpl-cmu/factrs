@@ -22,7 +22,7 @@ pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone {}
 impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone> Key for T {}
 
 mod residuals;
-pub use residuals::Residual;
+pub use residuals::{Residual, Residual1, Residual2};
 
 // ------------------------- TODO: Rest of this is all WIP ------------------------- //
 // Holds the enums optimize over

@@ -17,11 +17,11 @@ macro_rules! make_enum_residual {
         impl $crate::traits::Residual<$var> for $name {
             const DIM: usize = 0;
 
-            fn residual(&self, v: &[<$var as $crate::traits::Variable>::Dual]) -> $crate::linalg::VectorX<$crate::traits::DualVec> {
+            fn residual_jacobian<K: $crate::traits::Key>(&self, values: &$crate::variables::Values<K, $var>, keys: &[K]) -> ($crate::linalg::VectorX, $crate::linalg::MatrixX) {
                 paste! {
                     match self {
                         $(
-                            $name::[<$x $($gen)?>](x) => $crate::traits::Residual::<$var>::residual(x, v),
+                            $name::[<$x $($gen)?>](x) => $crate::traits::Residual::<$var>::residual_jacobian(x, values, keys),
                         )*
                     }
                 }

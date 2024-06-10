@@ -1,9 +1,16 @@
 use crate::dtype;
 use crate::factors::{GaussianNoise, L2};
 use crate::linalg::{MatrixX, VectorX};
-use crate::traits::{Key, NoiseModel, Residual, RobustCost, Variable};
+use crate::traits::{Bundle, Key, NoiseModel, Residual, RobustCost, Variable};
 use crate::variables::Values;
 
+type FactorBundle<B> = Factor<
+    <B as Bundle>::Key,
+    <B as Bundle>::Variable,
+    <B as Bundle>::Residual,
+    <B as Bundle>::Noise,
+    <B as Bundle>::Robust,
+>;
 pub struct Factor<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
     keys: Vec<K>,
     residual: R,
@@ -40,20 +47,15 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K
     }
 
     // TODO: error function
-    pub fn error(&self, values: Values<K, V>) -> dtype {
-        let v = values
-            .get_multiple(&self.keys)
-            .expect("Factor keys not found in values.");
-        let v: Vec<_> = v.into_iter().cloned().collect();
-
-        let r = self.residual.residual_single(&v);
+    pub fn error(&self, values: &Values<K, V>) -> dtype {
+        let r = self.residual.residual(values, &self.keys);
         let r = self.noise.whiten(&r);
         let norm2 = r.norm_squared();
         norm2 * self.robust.weight(norm2) / 2.0
     }
 
     // TODO: Linearize function
-    pub fn linearize(&self, values: Values<K, V>) -> LinearFactor<K> {
+    pub fn linearize(&self, values: &Values<K, V>) -> LinearFactor<K> {
         unimplemented!()
     }
 }
