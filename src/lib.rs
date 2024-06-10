@@ -4,22 +4,13 @@ pub type dtype = f64;
 #[cfg(feature = "f32")]
 pub type dtype = f32;
 
+pub mod bundle;
+pub mod containers;
 pub mod factors;
 pub mod linalg;
-pub mod macros;
 pub mod noise;
 pub mod residuals;
 pub mod robust;
 pub mod traits;
 pub mod utils;
 pub mod variables;
-
-// struct DefaultBundle;
-
-// impl traits::Bundle for DefaultBundle {
-//     type Key = variables::Symbol;
-//     type Variable = variables::VariableEnum;
-//     type Robust = (); // TODO
-//     type Noise = factors::NoiseModelEnum;
-//     type Residual = factors::ResidualEnum;
-// }

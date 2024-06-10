@@ -1,7 +1,7 @@
 use super::{Residual, Residual2};
+use crate::containers::Values;
 use crate::linalg::{MatrixX, VectorX};
 use crate::traits::{DualVec, Key, Variable};
-use crate::variables::Values;
 
 // // Between Variable
 #[derive(Clone, Debug, derive_more::Display)]

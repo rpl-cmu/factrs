@@ -1,11 +1,13 @@
+use samrs::bundle::FactorBundled;
+use samrs::containers::Values;
 use samrs::factors::Factor;
 use samrs::linalg::dvector;
 use samrs::noise::GaussianNoise;
-use samrs::residuals::{PriorResidual, ResidualEnum};
-use samrs::robust::{RobustEnum, L2};
+use samrs::residuals::PriorResidual;
+use samrs::robust::L2;
 use samrs::traits::Variable;
 use samrs::variables::SO3;
-use samrs::variables::{Symbol, Values, VariableEnum, Vector3, X};
+use samrs::variables::{Symbol, VariableEnum, Vector3, X};
 
 #[allow(dead_code)]
 fn main() {
@@ -32,11 +34,10 @@ fn main() {
 
     // : Factor<Symbol, SO3, PriorResidual<SO3>, GaussianNoise, L2>
 
-    let f: Factor<Symbol, VariableEnum, ResidualEnum, GaussianNoise, RobustEnum> =
-        Factor::new(vec![X(0)], PriorResidual::new(&r))
-            .set_noise(GaussianNoise::from_scalar_sigma(1e-2, r.dim()))
-            .set_robust(L2)
-            .build();
+    let f: FactorBundled = Factor::new(vec![X(0)], PriorResidual::new(&r))
+        .set_noise(GaussianNoise::from_scalar_sigma(1e-2, r.dim()))
+        .set_robust(L2)
+        .build();
 
     f.error(&values);
 }

@@ -1,18 +1,11 @@
 use super::LinearFactor;
+use crate::containers::Values;
 use crate::dtype;
 use crate::noise::{GaussianNoise, NoiseModel};
 use crate::residuals::Residual;
 use crate::robust::{RobustCost, L2};
-use crate::traits::{Bundle, Key, Variable};
-use crate::variables::Values;
+use crate::traits::{Key, Variable};
 
-pub type FactorBundle<B> = Factor<
-    <B as Bundle>::Key,
-    <B as Bundle>::Variable,
-    <B as Bundle>::Residual,
-    <B as Bundle>::Noise,
-    <B as Bundle>::Robust,
->;
 pub struct Factor<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
     keys: Vec<K>,
     residual: R,

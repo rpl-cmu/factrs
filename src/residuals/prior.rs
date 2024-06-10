@@ -1,7 +1,7 @@
 use super::{Residual, Residual1};
+use crate::containers::Values;
 use crate::linalg::{MatrixX, VectorX};
 use crate::traits::{DualVec, Key, Variable};
-use crate::variables::Values;
 
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct PriorResidual<P: Variable> {

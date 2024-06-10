@@ -1,6 +1,6 @@
+use crate::containers::Values;
 use crate::linalg::{Const, Dyn, MatrixX, VectorX};
 use crate::traits::{DualVec, Variable};
-use crate::variables::Values;
 
 use crate::traits::Key;
 
