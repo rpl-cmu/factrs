@@ -10,7 +10,7 @@ macro_rules! make_enum_robust {
         }
 
         // Implement the trait for each enum
-        impl $crate::traits::RobustCost for $name {
+        impl $crate::robust::RobustCost for $name {
             fn weight(&self, d2: $crate::dtype) -> $crate::dtype {
                 match self {
                     $(

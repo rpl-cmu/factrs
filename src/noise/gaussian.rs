@@ -1,6 +1,6 @@
+use super::NoiseModel;
 use crate::dtype;
 use crate::linalg::{MatrixX, VectorX};
-use crate::traits::NoiseModel;
 use std::fmt;
 
 #[derive(Clone, Debug)]
@@ -13,8 +13,12 @@ impl NoiseModel for GaussianNoise {
         self.sqrt_inf.shape().0
     }
 
-    fn whiten(&self, v: &VectorX) -> VectorX {
+    fn whiten_vec(&self, v: &VectorX) -> VectorX {
         &self.sqrt_inf * v
+    }
+
+    fn whiten_mat(&self, m: &MatrixX) -> MatrixX {
+        &self.sqrt_inf * m
     }
 }
 

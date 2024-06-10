@@ -10,9 +10,7 @@ macro_rules! make_enum_noise {
         }
 
         // Implement the trait for each enum
-        impl $crate::traits::NoiseModel for $name {
-            const DIM: usize = 0;
-
+        impl $crate::noise::NoiseModel for $name {
             fn dim(&self) -> usize {
                 match self {
                     $(
@@ -21,10 +19,18 @@ macro_rules! make_enum_noise {
                 }
             }
 
-            fn whiten(&self, v: &$crate::linalg::VectorX) -> $crate::linalg::VectorX {
+            fn whiten_vec(&self, v: &$crate::linalg::VectorX) -> $crate::linalg::VectorX {
                 match self {
                     $(
-                        $name::$x(x) => x.whiten(v),
+                        $name::$x(x) => x.whiten_vec(v),
+                    )*
+                }
+            }
+
+            fn whiten_mat(&self, m: &$crate::linalg::MatrixX) -> $crate::linalg::MatrixX {
+                match self {
+                    $(
+                        $name::$x(x) => x.whiten_mat(m),
                     )*
                 }
             }

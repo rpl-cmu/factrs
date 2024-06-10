@@ -1,5 +1,5 @@
+use super::RobustCost;
 use crate::dtype;
-use crate::traits::RobustCost;
 
 // ------------------------- L2 Norm ------------------------- //
 pub struct L2;

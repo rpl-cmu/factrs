@@ -1,6 +1,8 @@
-use samrs::factors::{Factor, GaussianNoise, RobustEnum, L2};
+use samrs::factors::Factor;
 use samrs::linalg::dvector;
+use samrs::noise::GaussianNoise;
 use samrs::residuals::{PriorResidual, ResidualEnum};
+use samrs::robust::{RobustEnum, L2};
 use samrs::traits::Variable;
 use samrs::variables::SO3;
 use samrs::variables::{Symbol, Values, VariableEnum, Vector3, X};

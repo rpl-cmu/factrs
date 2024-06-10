@@ -1,5 +1,7 @@
 use crate::dtype;
 use crate::linalg::{Dyn, RealField, VectorX};
+use crate::noise::NoiseModel;
+use crate::robust::RobustCost;
 use std::{cmp, fmt, hash};
 
 // Dual field
@@ -33,17 +35,4 @@ pub trait Bundle: Sized {
     type Robust: RobustCost;
     type Noise: NoiseModel;
     type Residual: Residual<Self::Variable>;
-}
-pub trait NoiseModel: Sized {
-    fn dim(&self) -> usize;
-
-    fn whiten(&self, v: &VectorX) -> VectorX;
-}
-
-pub trait RobustCost: Sized {
-    fn weight(&self, d2: dtype) -> dtype;
-
-    fn weight_vector(&self, r: &VectorX) -> VectorX {
-        r * self.weight(r.norm_squared()).sqrt()
-    }
 }

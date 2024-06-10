@@ -1,11 +1,12 @@
+use super::LinearFactor;
 use crate::dtype;
-use crate::factors::{GaussianNoise, L2};
-use crate::linalg::{MatrixX, VectorX};
+use crate::noise::{GaussianNoise, NoiseModel};
 use crate::residuals::Residual;
-use crate::traits::{Bundle, Key, NoiseModel, RobustCost, Variable};
+use crate::robust::{RobustCost, L2};
+use crate::traits::{Bundle, Key, Variable};
 use crate::variables::Values;
 
-type FactorBundle<B> = Factor<
+pub type FactorBundle<B> = Factor<
     <B as Bundle>::Key,
     <B as Bundle>::Variable,
     <B as Bundle>::Residual,
@@ -28,12 +29,6 @@ pub struct FactorFactory<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: 
     _phantom: std::marker::PhantomData<V>,
 }
 
-pub struct LinearFactor<K: Key> {
-    keys: Vec<K>,
-    A: MatrixX,
-    b: VectorX,
-}
-
 impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K, V, R, N, C> {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(keys: Vec<K>, residual: impl Into<R>) -> FactorFactory<K, V, R, N, C> {
@@ -47,17 +42,20 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K
         }
     }
 
-    // TODO: error function
     pub fn error(&self, values: &Values<K, V>) -> dtype {
         let r = self.residual.residual(values, &self.keys);
-        let r = self.noise.whiten(&r);
+        let r = self.noise.whiten_vec(&r);
         let norm2 = r.norm_squared();
         norm2 * self.robust.weight(norm2) / 2.0
     }
 
-    // TODO: Linearize function
     pub fn linearize(&self, values: &Values<K, V>) -> LinearFactor<K> {
-        unimplemented!()
+        let (r, h) = self.residual.residual_jacobian(values, &self.keys);
+        let norm2 = r.norm_squared();
+        let weight = self.robust.weight(norm2);
+        let a = weight * self.noise.whiten_mat(&h);
+        let b = -weight * self.noise.whiten_vec(&r);
+        LinearFactor::new(self.keys.clone(), a, b)
     }
 }
 
