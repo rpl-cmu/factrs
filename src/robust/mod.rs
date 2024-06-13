@@ -3,7 +3,7 @@ use crate::{dtype, linalg::VectorX, make_enum_robust};
 pub trait RobustCost: Sized {
     fn weight(&self, d2: dtype) -> dtype;
 
-    fn weight_vector(&self, r: &VectorX) -> VectorX {
+    fn weight_vec(&self, r: &VectorX) -> VectorX {
         r * self.weight(r.norm_squared()).sqrt()
     }
 }

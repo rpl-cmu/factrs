@@ -1,7 +1,5 @@
 use crate::{
-    containers::Graph,
     dtype,
-    factors::Factor,
     noise::{NoiseEnum, NoiseModel},
     residuals::{Residual, ResidualEnum},
     robust::{RobustCost, RobustEnum},
@@ -28,20 +26,3 @@ impl Bundle for DefaultBundle {
     type Noise = NoiseEnum;
     type Residual = ResidualEnum;
 }
-
-// Some type aliases to make life easier
-pub type FactorBundled<B = DefaultBundle> = Factor<
-    <B as Bundle>::Key,
-    <B as Bundle>::Variable,
-    <B as Bundle>::Residual,
-    <B as Bundle>::Noise,
-    <B as Bundle>::Robust,
->;
-
-pub type GraphBundled<B> = Graph<
-    <B as Bundle>::Key,
-    <B as Bundle>::Variable,
-    <B as Bundle>::Residual,
-    <B as Bundle>::Noise,
-    <B as Bundle>::Robust,
->;

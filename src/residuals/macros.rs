@@ -26,6 +26,16 @@ macro_rules! make_enum_residual {
                     }
                 }
             }
+
+            fn dim(&self) -> usize {
+                paste! {
+                    match self {
+                        $(
+                            $name::[<$x $($gen)?>](x) => $crate::residuals::Residual::<$var>::dim(x),
+                        )*
+                    }
+                }
+            }
         }
 
     };

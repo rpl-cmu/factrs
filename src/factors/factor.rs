@@ -1,12 +1,13 @@
 use super::LinearFactor;
 use crate::containers::Values;
 use crate::dtype;
+use crate::linalg::VectorX;
 use crate::noise::{GaussianNoise, NoiseModel};
 use crate::residuals::Residual;
 use crate::robust::{RobustCost, L2};
 use crate::traits::{Key, Variable};
 
-pub struct Factor<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
+pub struct FactorGeneric<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
     keys: Vec<K>,
     residual: R,
     noise: N,
@@ -22,7 +23,9 @@ pub struct FactorFactory<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: 
     _phantom: std::marker::PhantomData<V>,
 }
 
-impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K, V, R, N, C> {
+impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
+    FactorGeneric<K, V, R, N, C>
+{
     #[allow(clippy::new_ret_no_self)]
     pub fn new(keys: Vec<K>, residual: impl Into<R>) -> FactorFactory<K, V, R, N, C> {
         let residual = residual.into();
@@ -35,7 +38,14 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K
         }
     }
 
-    pub fn error(&self, values: &Values<K, V>) -> dtype {
+    pub fn error_vec(&self, values: &Values<K, V>) -> VectorX {
+        let r = self.residual.residual(values, &self.keys);
+        let r = self.noise.whiten_vec(&r);
+        // Divide by sqrt 2?
+        self.robust.weight_vec(&r)
+    }
+
+    pub fn error_scalar(&self, values: &Values<K, V>) -> dtype {
         let r = self.residual.residual(values, &self.keys);
         let r = self.noise.whiten_vec(&r);
         let norm2 = r.norm_squared();
@@ -45,7 +55,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K
     pub fn linearize(&self, values: &Values<K, V>) -> LinearFactor<K> {
         let (r, h) = self.residual.residual_jacobian(values, &self.keys);
         let norm2 = r.norm_squared();
-        let weight = self.robust.weight(norm2);
+        let weight = self.robust.weight(norm2).sqrt();
         let a = weight * self.noise.whiten_mat(&h);
         let b = -weight * self.noise.whiten_vec(&r);
         LinearFactor::new(self.keys.clone(), a, b)
@@ -73,10 +83,10 @@ where
         self
     }
 
-    pub fn build(self) -> Factor<K, V, R, N, C> {
+    pub fn build(self) -> FactorGeneric<K, V, R, N, C> {
         let d = self.residual.dim();
         // TODO: Should we cater to situations where noise or robustness has a different default?
-        Factor {
+        FactorGeneric {
             keys: self.keys,
             residual: self.residual,
             noise: self
@@ -86,4 +96,64 @@ where
             _phantom: std::marker::PhantomData,
         }
     }
+}
+
+// Type alias to make life easier
+use crate::bundle::{Bundle, DefaultBundle};
+pub type Factor<B = DefaultBundle> = FactorGeneric<
+    <B as Bundle>::Key,
+    <B as Bundle>::Variable,
+    <B as Bundle>::Residual,
+    <B as Bundle>::Noise,
+    <B as Bundle>::Robust,
+>;
+
+#[cfg(test)]
+mod tests {
+    use nalgebra::dvector;
+
+    use crate::{
+        linalg::Vector3, residuals::PriorResidual, robust::GemanMcClure, utils::num_derivative_11,
+        variables::X,
+    };
+
+    use super::*;
+
+    // TODO: Go through the math to figure out how to test A matrix
+    // Gets a little tricky with the robust cost
+    #[test]
+    fn linearize_a() {
+        let x = <Vector3 as Variable>::identity();
+        let prior = Vector3::new(1.0, 2.0, 3.0);
+
+        let keys = vec![X(0)];
+        let residual = PriorResidual::new(&prior);
+        let noise = GaussianNoise::from_diag_sigma(&dvector![4.0, 5.0, 6.0]);
+        let robust = GemanMcClure::default();
+
+        let factor = Factor::<DefaultBundle>::new(keys, residual)
+            .set_noise(noise)
+            .set_robust(robust)
+            .build();
+
+        let f = |x: Vector3| {
+            let mut values = Values::new();
+            values.insert(X(0), x);
+            factor.error_vec(&values)
+        };
+
+        let mut values = Values::new();
+        values.insert(X(0), x);
+
+        let linear = factor.linearize(&values);
+        println!("{:}", linear.a);
+
+        let jac = num_derivative_11(f, x);
+        println!("{:}", jac);
+
+        panic!();
+    }
+
+    #[test]
+    fn linearize_b() {}
 }

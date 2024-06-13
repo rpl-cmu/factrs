@@ -30,3 +30,36 @@ impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
         self.map(|x| x.into())
     }
 }
+
+impl<D: DualNum> Variable<D> for VectorX<D> {
+    const DIM: usize = 0;
+    type Dual = VectorX<DualVec>;
+
+    fn identity() -> Self {
+        panic!("Cannot create identity for VectorX")
+    }
+
+    fn dim(&self) -> usize {
+        self.len()
+    }
+
+    fn inverse(&self) -> Self {
+        -self
+    }
+
+    fn compose(&self, other: &Self) -> Self {
+        self + other
+    }
+
+    fn exp(delta: &VectorX<D>) -> Self {
+        delta.clone()
+    }
+
+    fn log(&self) -> VectorX<D> {
+        self.clone()
+    }
+
+    fn dual_self(&self) -> Self::Dual {
+        self.map(|x| x.into())
+    }
+}

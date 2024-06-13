@@ -63,6 +63,6 @@ impl GaussianNoise {
 
 impl fmt::Display for GaussianNoise {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "GaussianNoise1: {}", self.sqrt_inf)
+        write!(f, "GaussianNoise{}: {}", self.dim(), self.sqrt_inf)
     }
 }

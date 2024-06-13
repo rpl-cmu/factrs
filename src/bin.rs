@@ -1,10 +1,10 @@
-use samrs::bundle::FactorBundled;
+use samrs::bundle::DefaultBundle;
 use samrs::containers::Values;
 use samrs::factors::Factor;
 use samrs::linalg::dvector;
 use samrs::noise::GaussianNoise;
 use samrs::residuals::PriorResidual;
-use samrs::robust::L2;
+use samrs::robust::GemanMcClure;
 use samrs::traits::Variable;
 use samrs::variables::SO3;
 use samrs::variables::{Symbol, VariableEnum, Vector3, X};
@@ -34,10 +34,10 @@ fn main() {
 
     // : Factor<Symbol, SO3, PriorResidual<SO3>, GaussianNoise, L2>
 
-    let f: FactorBundled = Factor::new(vec![X(0)], PriorResidual::new(&r))
+    let f = Factor::<DefaultBundle>::new(vec![X(0)], PriorResidual::new(&r))
         .set_noise(GaussianNoise::from_scalar_sigma(1e-2, r.dim()))
-        .set_robust(L2)
+        .set_robust(GemanMcClure::default())
         .build();
 
-    f.error(&values);
+    f.error_scalar(&values);
 }
