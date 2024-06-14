@@ -11,6 +11,14 @@ macro_rules! make_enum_robust {
 
         // Implement the trait for each enum
         impl $crate::robust::RobustCost for $name {
+            fn loss(&self, d2: $crate::dtype) -> $crate::dtype {
+                match self {
+                    $(
+                        $name::$x(x) => x.loss(d2),
+                    )*
+                }
+            }
+
             fn weight(&self, d2: $crate::dtype) -> $crate::dtype {
                 match self {
                     $(

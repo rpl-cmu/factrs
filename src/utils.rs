@@ -1,5 +1,33 @@
+use crate::dtype;
 use crate::linalg::{MatrixX, VectorX};
 use crate::traits::Variable;
+
+// ------------------------- Gradient ------------------------- //
+pub fn num_gradient<V: Variable, F: Fn(V) -> dtype>(f: F, v: V) -> VectorX {
+    let eps = 1e-6;
+
+    // Prepare variables
+    let dim = v.dim();
+
+    // Compute gradient
+    let mut grad: VectorX = VectorX::zeros(dim);
+
+    for j in 0..dim {
+        let mut tv: VectorX = VectorX::zeros(dim);
+
+        tv[j] = eps;
+        let v_plus = v.clone().oplus(&tv);
+
+        tv[j] = -eps;
+        let v_minus = v.clone().oplus(&tv);
+
+        let delta = (f(v_plus) - f(v_minus)) / (2.0 * eps);
+
+        grad[j] = delta;
+    }
+
+    grad
+}
 
 // ------------------------- Numerical Derivative - 1 input ------------------------- //
 pub fn num_derivative_11<V: Variable, F: Fn(V) -> VectorX>(f: F, v: V) -> MatrixX {

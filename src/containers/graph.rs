@@ -34,7 +34,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
     }
 
     pub fn error(&self, values: &Values<K, V>) -> dtype {
-        self.factors.iter().map(|f| f.error_scalar(values)).sum()
+        self.factors.iter().map(|f| f.error(values)).sum()
     }
 
     pub fn linearize(&self, values: &Values<K, V>) -> Vec<LinearFactor<K>> {

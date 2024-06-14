@@ -39,5 +39,5 @@ fn main() {
         .set_robust(GemanMcClure::default())
         .build();
 
-    f.error_scalar(&values);
+    f.error(&values);
 }

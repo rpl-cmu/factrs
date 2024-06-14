@@ -1,7 +1,6 @@
 use super::LinearFactor;
 use crate::containers::Values;
 use crate::dtype;
-use crate::linalg::VectorX;
 use crate::noise::{GaussianNoise, NoiseModel};
 use crate::residuals::Residual;
 use crate::robust::{RobustCost, L2};
@@ -38,26 +37,27 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
         }
     }
 
-    pub fn error_vec(&self, values: &Values<K, V>) -> VectorX {
-        let r = self.residual.residual(values, &self.keys);
-        let r = self.noise.whiten_vec(&r);
-        // Divide by sqrt 2?
-        self.robust.weight_vec(&r)
-    }
-
-    pub fn error_scalar(&self, values: &Values<K, V>) -> dtype {
+    pub fn error(&self, values: &Values<K, V>) -> dtype {
         let r = self.residual.residual(values, &self.keys);
         let r = self.noise.whiten_vec(&r);
         let norm2 = r.norm_squared();
-        norm2 * self.robust.weight(norm2) / 2.0
+        self.robust.loss(norm2)
     }
 
     pub fn linearize(&self, values: &Values<K, V>) -> LinearFactor<K> {
-        let (r, h) = self.residual.residual_jacobian(values, &self.keys);
+        // Compute residual and jacobian
+        let (r, a) = self.residual.residual_jacobian(values, &self.keys);
+
+        // Whiten residual and jacobian
+        let r = self.noise.whiten_vec(&r);
+        let a = self.noise.whiten_mat(&a);
+
+        // Weight according to robust cost
         let norm2 = r.norm_squared();
         let weight = self.robust.weight(norm2).sqrt();
-        let a = weight * self.noise.whiten_mat(&h);
-        let b = -weight * self.noise.whiten_vec(&r);
+        let a = weight * a;
+        let b = -weight * r;
+
         LinearFactor::new(self.keys.clone(), a, b)
     }
 }
@@ -113,22 +113,22 @@ mod tests {
     use nalgebra::dvector;
 
     use crate::{
-        linalg::Vector3, residuals::PriorResidual, robust::GemanMcClure, utils::num_derivative_11,
+        linalg::Vector3, residuals::PriorResidual, robust::GemanMcClure, utils::num_gradient,
         variables::X,
     };
 
     use super::*;
 
-    // TODO: Go through the math to figure out how to test A matrix
     // Gets a little tricky with the robust cost
     #[test]
     fn linearize_a() {
-        let x = <Vector3 as Variable>::identity();
         let prior = Vector3::new(1.0, 2.0, 3.0);
+        let x = <Vector3 as Variable>::identity();
+        // let x = Vector3::new(1.0, 2.0, 50.0);
 
         let keys = vec![X(0)];
         let residual = PriorResidual::new(&prior);
-        let noise = GaussianNoise::from_diag_sigma(&dvector![4.0, 5.0, 6.0]);
+        let noise = GaussianNoise::from_diag_sigma(&dvector![1e-1, 2e-1, 3e-1]);
         let robust = GemanMcClure::default();
 
         let factor = Factor::<DefaultBundle>::new(keys, residual)
@@ -139,19 +139,20 @@ mod tests {
         let f = |x: Vector3| {
             let mut values = Values::new();
             values.insert(X(0), x);
-            factor.error_vec(&values)
+            factor.error(&values)
         };
 
         let mut values = Values::new();
         values.insert(X(0), x);
 
         let linear = factor.linearize(&values);
-        println!("{:}", linear.a);
+        let grad_got = -linear.a.transpose() * linear.b;
+        println!("Received {:}", grad_got);
 
-        let jac = num_derivative_11(f, x);
-        println!("{:}", jac);
+        let grad_num = num_gradient(f, x);
+        println!("Expected {:}", grad_num);
 
-        panic!();
+        assert!((grad_got - grad_num).norm() < 1e-6);
     }
 
     #[test]

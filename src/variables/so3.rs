@@ -155,7 +155,6 @@ impl<D: DualNum> Variable<D> for SO3<D> {
     }
 
     fn log(&self) -> VectorX<D> {
-        // TODO: Any small angle check needed in here?
         let xi = dvector![
             self.xyzw[0].clone(),
             self.xyzw[1].clone(),

@@ -1,11 +1,9 @@
-use crate::{dtype, linalg::VectorX, make_enum_robust};
+use crate::{dtype, make_enum_robust};
 
 pub trait RobustCost: Sized {
-    fn weight(&self, d2: dtype) -> dtype;
+    fn loss(&self, d2: dtype) -> dtype;
 
-    fn weight_vec(&self, r: &VectorX) -> VectorX {
-        r * self.weight(r.norm_squared()).sqrt()
-    }
+    fn weight(&self, d2: dtype) -> dtype;
 }
 
 // ------------------------- L2 Norm ------------------------- //
@@ -18,6 +16,10 @@ impl Default for L2 {
 }
 
 impl RobustCost for L2 {
+    fn loss(&self, d2: dtype) -> dtype {
+        d2
+    }
+
     fn weight(&self, _d: dtype) -> dtype {
         1.0
     }
@@ -33,6 +35,10 @@ impl Default for L1 {
 }
 
 impl RobustCost for L1 {
+    fn loss(&self, d2: dtype) -> dtype {
+        d2.sqrt().abs()
+    }
+
     fn weight(&self, d2: dtype) -> dtype {
         1.0 / d2.sqrt().abs()
     }
@@ -56,8 +62,17 @@ impl Default for Huber {
 }
 
 impl RobustCost for Huber {
+    fn loss(&self, d2: dtype) -> dtype {
+        if d2 <= self.k * self.k {
+            d2 / 2.0
+        } else {
+            let d = d2.sqrt();
+            self.k * (d - self.k / 2.0)
+        }
+    }
+
     fn weight(&self, d2: dtype) -> dtype {
-        let dabs = d2.sqrt().abs();
+        let dabs = d2.sqrt();
         if dabs <= self.k {
             1.0
         } else {
@@ -84,6 +99,11 @@ impl Default for Fair {
 }
 
 impl RobustCost for Fair {
+    fn loss(&self, d2: dtype) -> dtype {
+        let d = d2.sqrt();
+        self.c * self.c * (d / self.c - (1.0 + (d / self.c)).ln())
+    }
+
     fn weight(&self, d: dtype) -> dtype {
         1.0 / (1.0 + d.sqrt().abs() / self.c)
     }
@@ -109,32 +129,43 @@ impl Default for Cauchy {
 }
 
 impl RobustCost for Cauchy {
+    fn loss(&self, d2: dtype) -> dtype {
+        self.c2 * ((1.0 + d2 / self.c2).ln()) / 2.0
+    }
+
     fn weight(&self, d2: dtype) -> dtype {
         1.0 / (1.0 + d2 / self.c2)
     }
 }
 
 // ------------------------- Geman-McClure ------------------------- //
-// TODO: Generalized Geman-McClure?
 pub struct GemanMcClure {
-    c: dtype,
+    c2: dtype,
 }
 
 impl GemanMcClure {
     pub fn new(c: dtype) -> Self {
-        GemanMcClure { c }
+        GemanMcClure { c2: c * c }
     }
 }
 
 impl Default for GemanMcClure {
     fn default() -> Self {
-        GemanMcClure { c: 1.3998 }
+        GemanMcClure {
+            c2: 1.3998 * 1.3998,
+        }
     }
 }
 
 impl RobustCost for GemanMcClure {
-    fn weight(&self, d: dtype) -> dtype {
-        1.0 / (1.0 + (d / self.c).powi(2)).sqrt()
+    fn loss(&self, d2: dtype) -> dtype {
+        0.5 * self.c2 * d2 / (self.c2 + d2)
+    }
+
+    fn weight(&self, d2: dtype) -> dtype {
+        let denom = self.c2 + d2;
+        let frac = self.c2 / denom;
+        frac * frac
     }
 }
 
@@ -158,6 +189,10 @@ impl Default for Welsch {
 }
 
 impl RobustCost for Welsch {
+    fn loss(&self, d2: dtype) -> dtype {
+        self.c2 * (1.0 - (-d2 / self.c2).exp()) / 2.0
+    }
+
     fn weight(&self, d2: dtype) -> dtype {
         (-d2 / self.c2).exp()
     }
@@ -183,6 +218,14 @@ impl Default for Tukey {
 }
 
 impl RobustCost for Tukey {
+    fn loss(&self, d2: dtype) -> dtype {
+        if d2 <= self.c2 {
+            self.c2 * (1.0 - (1.0 - d2 / self.c2).powi(3)) / 6.0
+        } else {
+            self.c2 / 6.0
+        }
+    }
+
     fn weight(&self, d2: dtype) -> dtype {
         if d2 <= self.c2 {
             (1.0 - d2 / self.c2).powi(2)
