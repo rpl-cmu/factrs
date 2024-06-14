@@ -17,7 +17,7 @@ impl Default for L2 {
 
 impl RobustCost for L2 {
     fn loss(&self, d2: dtype) -> dtype {
-        d2
+        d2 / 2.0
     }
 
     fn weight(&self, _d: dtype) -> dtype {
@@ -250,3 +250,49 @@ make_enum_robust!(
     Welsch,
     Tukey
 );
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::utils::num_derivative;
+
+    fn test_weight(robust: &impl RobustCost, d: dtype) {
+        let got = robust.weight(d * d);
+        // weight = loss'(d) / d
+        let actual = num_derivative(|d| robust.loss(d * d), d) / d;
+
+        println!("Weight got: {}, Weight actual: {}", got, actual);
+        assert!((got - actual).abs() < 1e-6);
+    }
+
+    macro_rules! robust_tests {
+        ($($robust:ident),*) => {
+            use paste::paste;
+
+            paste!{
+                $(
+                    #[test]
+                    #[allow(non_snake_case)]
+                    fn [<$robust _weight>]() {
+                        let robust = $robust::default();
+                        // Test near origin
+                        test_weight(&robust, 0.1);
+                        // Test far away
+                        test_weight(&robust, 50.0);
+                    }
+
+                    #[test]
+                    #[allow(non_snake_case)]
+                    fn [<$robust _center>]() {
+                        let robust = $robust::default();
+                        assert!(robust.loss(0.0) == 0.0);
+                    }
+
+                )*
+            }
+
+        }
+    }
+
+    robust_tests!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
+}

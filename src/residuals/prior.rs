@@ -47,7 +47,7 @@ mod test {
     use super::*;
     use crate::{
         linalg::dvector,
-        utils::num_derivative_11,
+        utils::num_jacobian_11,
         variables::{Symbol, Vector3, SE3, SO3, X},
     };
 
@@ -62,7 +62,7 @@ mod test {
         let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
 
         let f = |v: Vector3| Residual1::<Vector3>::residual1_single(&prior_residual, &v);
-        let jac_n = num_derivative_11(f, x1);
+        let jac_n = num_jacobian_11(f, x1);
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
@@ -81,7 +81,7 @@ mod test {
         let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
 
         let f = |v: SO3| Residual1::<SO3>::residual1_single(&prior_residual, &v);
-        let jac_n = num_derivative_11(f, x1);
+        let jac_n = num_jacobian_11(f, x1);
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
@@ -100,7 +100,7 @@ mod test {
         let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
 
         let f = |v: SE3| Residual1::<SE3>::residual1_single(&prior_residual, &v);
-        let jac_n = num_derivative_11(f, x1);
+        let jac_n = num_jacobian_11(f, x1);
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
