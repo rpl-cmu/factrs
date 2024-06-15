@@ -248,6 +248,7 @@ impl<D: DualNum> fmt::Debug for SO3<D> {
 mod tests {
     use super::*;
     use crate::linalg::{Const, DualNum, Dyn};
+    use matrixcompare::{assert_matrix_eq, assert_scalar_eq};
     use num_dual::jacobian;
 
     #[test]
@@ -257,7 +258,7 @@ mod tests {
         let so3 = SO3::exp(&xi);
         let log = so3.log();
         println!("xi {xi:?}, {log:?}");
-        assert!((xi - log).norm() < 1e-6);
+        assert_matrix_eq!(xi, log, comp = float);
     }
 
     #[test]
@@ -270,7 +271,7 @@ mod tests {
         let so3_after = SO3::from_matrix(&mat);
         println!("{:}", so3_og);
         println!("{:}", so3_after);
-        assert!((so3_og.xyzw - so3_after.xyzw).norm() < 1e-6);
+        assert_matrix_eq!(so3_og.xyzw, so3_after.xyzw, comp = float);
     }
 
     #[test]
@@ -281,7 +282,7 @@ mod tests {
         let double = &so3 * &so3;
         let xi_double = double.log();
         println!("{:?}", xi_double);
-        assert!((xi_double[0] - 1.0) < 1e-6);
+        assert_scalar_eq!(xi_double[0], 1.0, comp = float);
     }
 
     #[test]
@@ -293,7 +294,7 @@ mod tests {
         let so3_res = &so3 * &so3_inv;
         let id = SO3::<f64>::identity();
         println!("{}", so3_res);
-        assert!((so3_res.xyzw - id.xyzw).norm() < 1e-6);
+        assert_matrix_eq!(so3_res.xyzw, id.xyzw, comp = float);
     }
 
     #[test]
@@ -305,9 +306,7 @@ mod tests {
         let v_rot = so3.apply(&v);
         println!("{:?}", v_rot);
         println!("{}", so3.to_matrix());
-        assert!((v_rot[0] - 0.0).abs() < 1e-6);
-        assert!((v_rot[1] - 1.0).abs() < 1e-6);
-        assert!((v_rot[2] - 0.0).abs() < 1e-6);
+        assert_matrix_eq!(v_rot, Vector3::y(), comp = float);
     }
 
     #[test]
@@ -323,8 +322,8 @@ mod tests {
         let v = dvector![0.1, 0.2, 0.3];
         let (x, dx) = jacobian(compute, v.clone());
 
-        assert!((x - v).norm() < 1e-6);
-        assert!((MatrixX::identity(3, 3) - dx).norm() < 1e-6);
+        assert_matrix_eq!(x, v, comp = float);
+        assert_matrix_eq!(MatrixX::identity(3, 3), dx, comp = float);
     }
 
     fn var_jacobian<G>(g: G, r: SO3) -> (VectorX<f64>, MatrixX<f64>)
@@ -356,6 +355,6 @@ mod tests {
         let v = dvector!(1.0, 2.0, 3.0);
         let dx_exp = -r.to_matrix() * SO3::hat(&v);
 
-        assert!((dx - dx_exp).norm() < 1e-4);
+        assert_matrix_eq!(dx, dx_exp, comp = float);
     }
 }

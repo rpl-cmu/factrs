@@ -184,6 +184,8 @@ impl<D: DualNum> fmt::Display for SE3<D> {
 mod tests {
     use super::*;
     use crate::linalg::DualNum;
+    use matrixcompare::assert_matrix_eq;
+    // TODO: Use our jacobian to compare
     use num_dual::jacobian;
 
     #[test]
@@ -192,7 +194,7 @@ mod tests {
         let se3 = SE3::exp(&xi);
         let xi_hat = se3.log();
         println!("{} {}", xi, xi_hat);
-        assert!((xi_hat - xi).norm() < 1e-6);
+        assert_matrix_eq!(xi_hat, xi, comp = float);
     }
 
     #[test]
@@ -204,7 +206,7 @@ mod tests {
 
         let se3_hat = SE3::from_matrix(&mat);
 
-        assert!(se3.ominus(&se3_hat).norm() < 1e-6);
+        assert_matrix_eq!(se3.ominus(&se3_hat), VectorX::zeros(6), comp = float);
     }
 
     #[test]
@@ -217,7 +219,7 @@ mod tests {
         // println!("{}", out);
         // println!("{}", out.inverse());
         // println!("{:?}", out.ominus(&SE3::identity()));
-        assert!(out.ominus(&SE3::identity()).norm() < 1e-6);
+        assert_matrix_eq!(out.log(), VectorX::zeros(6), comp = float);
     }
 
     #[test]
@@ -233,7 +235,7 @@ mod tests {
         let v = dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0];
         let (x, dx) = jacobian(compute, v.clone());
 
-        assert!((x - v).norm() < 1e-6);
-        assert!((MatrixX::identity(6, 6) - dx).norm() < 1e-6);
+        assert_matrix_eq!(x, v, comp = float);
+        assert_matrix_eq!(MatrixX::identity(6, 6), dx, comp = float);
     }
 }

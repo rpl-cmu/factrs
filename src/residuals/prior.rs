@@ -51,6 +51,9 @@ mod test {
         utils::num_jacobian_11,
         variables::{Vector3, SE3, SO3},
     };
+    use matrixcompare::assert_matrix_eq;
+
+    // TODO: Template this test?
 
     #[test]
     fn prior_linear() {
@@ -68,7 +71,7 @@ mod test {
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
 
-        assert!((jac - jac_n).norm() < 1e-4);
+        assert_matrix_eq!(jac, jac_n, comp = abs, tol = 1e-6);
     }
 
     #[test]
@@ -86,7 +89,8 @@ mod test {
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
-        assert!((jac - jac_n).norm() < 1e-4);
+
+        assert_matrix_eq!(jac, jac_n, comp = abs, tol = 1e-6);
     }
 
     #[test]
@@ -106,6 +110,6 @@ mod test {
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
 
-        assert!((jac - jac_n).norm() < 1e-4);
+        assert_matrix_eq!(jac, jac_n, comp = abs, tol = 1e-6);
     }
 }

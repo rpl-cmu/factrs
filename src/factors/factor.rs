@@ -116,6 +116,7 @@ mod tests {
         containers::X, linalg::Vector3, residuals::PriorResidual, robust::GemanMcClure,
         utils::num_gradient,
     };
+    use matrixcompare::assert_matrix_eq;
 
     use super::*;
 
@@ -152,7 +153,7 @@ mod tests {
         let grad_num = num_gradient(f, x);
         println!("Expected {:}", grad_num);
 
-        assert!((grad_got - grad_num).norm() < 1e-6);
+        assert_matrix_eq!(grad_got, grad_num, comp = abs, tol = 1e-6);
     }
 
     #[test]

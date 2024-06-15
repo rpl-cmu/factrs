@@ -37,11 +37,15 @@ impl Default for L1 {
 
 impl RobustCost for L1 {
     fn loss(&self, d2: dtype) -> dtype {
-        d2.sqrt().abs()
+        d2.sqrt()
     }
 
     fn weight(&self, d2: dtype) -> dtype {
-        1.0 / d2.sqrt().abs()
+        if d2 <= 1e-3 {
+            1.0
+        } else {
+            1.0 / d2.sqrt()
+        }
     }
 }
 
@@ -254,6 +258,8 @@ make_enum_robust!(
 
 #[cfg(test)]
 mod test {
+    use matrixcompare::assert_scalar_eq;
+
     use super::*;
     use crate::utils::num_derivative;
 
@@ -263,7 +269,7 @@ mod test {
         let actual = num_derivative(|d| robust.loss(d * d), d) / d;
 
         println!("Weight got: {}, Weight actual: {}", got, actual);
-        assert!((got - actual).abs() < 1e-6);
+        assert_scalar_eq!(got, actual, comp = abs, tol = 1e-6);
     }
 
     macro_rules! robust_tests {
@@ -286,7 +292,8 @@ mod test {
                     #[allow(non_snake_case)]
                     fn [<$robust _center>]() {
                         let robust = $robust::default();
-                        assert!(robust.loss(0.0) == 0.0);
+                        println!("Center: {}", robust.loss(0.0));
+                        assert_scalar_eq!(robust.loss(0.0), 0.0, comp=float);
                     }
 
                 )*
