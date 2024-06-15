@@ -4,10 +4,10 @@ use crate::{
     noise::NoiseModel,
     residuals::Residual,
     robust::RobustCost,
-    traits::{Key, Variable},
+    variables::Variable,
 };
 
-use super::Values;
+use super::{Key, Values};
 
 use crate::bundle::{Bundle, DefaultBundle};
 pub type Graph<B = DefaultBundle> = GraphGeneric<

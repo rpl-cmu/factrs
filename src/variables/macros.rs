@@ -3,13 +3,13 @@ macro_rules! make_enum_variable {
     ( $name:ident, $( $x:ident),*) => {
         #[derive(Clone, derive_more::From, derive_more::TryInto)]
         #[try_into(owned, ref, ref_mut)]
-        pub enum $name<D: $crate::traits::DualNum = $crate::dtype> {
+        pub enum $name<D: $crate::linalg::DualNum = $crate::dtype> {
             $(
                 $x($x<D>),
             )*
         }
 
-        impl <D: $crate::traits::DualNum> std::fmt::Display for $name<D> {
+        impl <D: $crate::linalg::DualNum> std::fmt::Display for $name<D> {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 match self {
                     $(
@@ -19,16 +19,16 @@ macro_rules! make_enum_variable {
             }
         }
 
-        impl <D: $crate::traits::DualNum> std::fmt::Debug for $name<D> {
+        impl <D: $crate::linalg::DualNum> std::fmt::Debug for $name<D> {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 std::fmt::Display::fmt(self, f)
             }
         }
 
         // Implement the trait for each enum
-        impl<D: $crate::traits::DualNum> $crate::traits::Variable<D> for $name<D> {
+        impl<D: $crate::linalg::DualNum> $crate::variables::Variable<D> for $name<D> {
             const DIM: usize = 0;
-            type Dual = $name<$crate::traits::DualVec>;
+            type Dual = $name<$crate::linalg::DualVec>;
 
             fn dim(&self) -> usize {
                 match self {
@@ -74,7 +74,7 @@ macro_rules! make_enum_variable {
             fn dual_self(&self) -> Self::Dual {
                 match self {
                     $(
-                        $name::$x(x) => $name::<$crate::traits::DualVec>::$x(x.dual_self()),
+                        $name::$x(x) => $name::<$crate::linalg::DualVec>::$x(x.dual_self()),
                     )*
                 }
             }
@@ -107,7 +107,7 @@ macro_rules! make_enum_variable {
                 }
             }
 
-            fn dual_tangent(&self, idx: usize, total: usize) -> $crate::linalg::VectorX<$crate::traits::DualVec> {
+            fn dual_tangent(&self, idx: usize, total: usize) -> $crate::linalg::VectorX<$crate::linalg::DualVec> {
                 match self {
                     $(
                         $name::$x(x) => x.dual_tangent(idx, total),

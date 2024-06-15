@@ -1,6 +1,6 @@
 use crate::dtype;
 use crate::linalg::{MatrixX, VectorX};
-use crate::traits::Variable;
+use crate::variables::Variable;
 
 // ------------------------- Numerical Derivative (Scalar in/out) ------------------------- //
 pub fn num_derivative<F: Fn(dtype) -> dtype>(f: F, x: dtype) -> dtype {

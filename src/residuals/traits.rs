@@ -1,8 +1,6 @@
-use crate::containers::Values;
-use crate::linalg::{Const, Dyn, MatrixX, VectorX};
-use crate::traits::{DualVec, Variable};
-
-use crate::traits::Key;
+use crate::containers::{Key, Values};
+use crate::linalg::{Const, DualVec, Dyn, MatrixX, VectorX};
+use crate::variables::Variable;
 
 type DualVar<V> = <V as Variable>::Dual;
 

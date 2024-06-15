@@ -11,6 +11,5 @@ pub mod linalg;
 pub mod noise;
 pub mod residuals;
 pub mod robust;
-pub mod traits;
 pub mod utils;
 pub mod variables;

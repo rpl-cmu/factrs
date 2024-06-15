@@ -1,4 +1,5 @@
-use crate::{factors::LinearFactor, traits::Key};
+use super::Key;
+use crate::factors::LinearFactor;
 
 pub struct LinearGraph<K: Key> {
     factors: Vec<LinearFactor<K>>,

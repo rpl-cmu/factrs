@@ -1,10 +1,10 @@
 use super::LinearFactor;
-use crate::containers::Values;
+use crate::containers::{Key, Values};
 use crate::dtype;
 use crate::noise::{GaussianNoise, NoiseModel};
 use crate::residuals::Residual;
 use crate::robust::{RobustCost, L2};
-use crate::traits::{Key, Variable};
+use crate::variables::Variable;
 
 pub struct FactorGeneric<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
     keys: Vec<K>,
@@ -113,8 +113,8 @@ mod tests {
     use nalgebra::dvector;
 
     use crate::{
-        linalg::Vector3, residuals::PriorResidual, robust::GemanMcClure, utils::num_gradient,
-        variables::X,
+        containers::X, linalg::Vector3, residuals::PriorResidual, robust::GemanMcClure,
+        utils::num_gradient,
     };
 
     use super::*;

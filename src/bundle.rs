@@ -1,10 +1,10 @@
 use crate::{
+    containers::{Key, Symbol},
     dtype,
     noise::{NoiseEnum, NoiseModel},
     residuals::{Residual, ResidualEnum},
     robust::{RobustCost, RobustEnum},
-    traits::{Key, Variable},
-    variables,
+    variables::{Variable, VariableEnum},
 };
 
 // Trait
@@ -20,8 +20,8 @@ pub trait Bundle: Sized {
 pub struct DefaultBundle;
 
 impl Bundle for DefaultBundle {
-    type Key = variables::Symbol;
-    type Variable = variables::VariableEnum;
+    type Key = Symbol;
+    type Variable = VariableEnum;
     type Robust = RobustEnum;
     type Noise = NoiseEnum;
     type Residual = ResidualEnum;

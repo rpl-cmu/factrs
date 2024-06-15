@@ -1,7 +1,6 @@
 use crate::dtype;
-use crate::linalg::{dvector, Matrix3, Matrix4, MatrixX, Vector3, VectorX};
-use crate::traits::{DualNum, DualVec, LieGroup, Variable};
-use crate::variables::SO3;
+use crate::linalg::{dvector, DualNum, DualVec, Matrix3, Matrix4, MatrixX, Vector3, VectorX};
+use crate::variables::{LieGroup, Variable, SO3};
 use std::fmt;
 use std::ops;
 
@@ -184,7 +183,7 @@ impl<D: DualNum> fmt::Display for SE3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::DualNum;
+    use crate::linalg::DualNum;
     use num_dual::jacobian;
 
     #[test]

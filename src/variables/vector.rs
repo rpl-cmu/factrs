@@ -1,5 +1,5 @@
-use crate::linalg::{Vector, VectorX};
-use crate::traits::{DualNum, DualVec, Variable};
+use crate::linalg::{DualNum, DualVec, Vector, VectorX};
+use crate::variables::Variable;
 
 // ------------------------- Our needs ------------------------- //
 impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {

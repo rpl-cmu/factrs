@@ -1,6 +1,5 @@
 use crate::dtype;
-use crate::linalg::{Const, Dyn, MatrixX, VectorX};
-use crate::traits::{DualNum, DualVec};
+use crate::linalg::{Const, DualNum, DualVec, Dyn, MatrixX, VectorX};
 
 use std::fmt::{Debug, Display};
 

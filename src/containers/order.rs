@@ -1,4 +1,4 @@
-use crate::traits::Key;
+use super::Key;
 
 pub struct Order<K: Key>(Vec<K>);
 

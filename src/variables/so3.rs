@@ -1,6 +1,6 @@
 use crate::dtype;
-use crate::linalg::{dvector, Matrix3, MatrixX, Vector3, Vector4, VectorX};
-use crate::traits::{DualNum, DualVec, LieGroup, Variable};
+use crate::linalg::{dvector, DualNum, DualVec, Matrix3, MatrixX, Vector3, Vector4, VectorX};
+use crate::variables::{LieGroup, Variable};
 use std::fmt;
 use std::ops;
 
@@ -247,8 +247,7 @@ impl<D: DualNum> fmt::Debug for SO3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{Const, Dyn};
-    use crate::traits::DualNum;
+    use crate::linalg::{Const, DualNum, Dyn};
     use num_dual::jacobian;
 
     #[test]

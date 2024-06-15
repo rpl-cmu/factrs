@@ -6,7 +6,8 @@ use std::default::Default;
 use std::fmt;
 use std::iter::IntoIterator;
 
-use crate::traits::{Key, Variable};
+use super::Key;
+use crate::variables::Variable;
 
 // Since we won't be passing dual numbers through any of this,
 // we can just use dtype rather than using generics with DualNum

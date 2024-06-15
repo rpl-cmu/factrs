@@ -1,5 +1,17 @@
+// Setup dual num
+pub trait DualNum:
+    RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>
+{
+}
+impl<G: RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>> DualNum
+    for G
+{
+}
+pub type DualVec = num_dual::DualVec<dtype, dtype, Dyn>;
+
 use crate::dtype;
 use nalgebra as na;
+
 // Re-export all nalgebra types to put default dtype on everything
 
 // Misc imports

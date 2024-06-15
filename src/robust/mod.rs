@@ -1,5 +1,6 @@
 use crate::{dtype, make_enum_robust};
 
+// TODO: Consider changing names to \rho and w
 pub trait RobustCost: Sized {
     fn loss(&self, d2: dtype) -> dtype;
 

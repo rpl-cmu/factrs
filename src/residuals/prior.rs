@@ -1,7 +1,7 @@
 use super::{Residual, Residual1};
-use crate::containers::Values;
-use crate::linalg::{MatrixX, VectorX};
-use crate::traits::{DualVec, Key, Variable};
+use crate::containers::{Key, Values};
+use crate::linalg::{DualVec, MatrixX, VectorX};
+use crate::variables::Variable;
 
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct PriorResidual<P: Variable> {
@@ -46,9 +46,10 @@ mod test {
 
     use super::*;
     use crate::{
+        containers::{Symbol, X},
         linalg::dvector,
         utils::num_jacobian_11,
-        variables::{Symbol, Vector3, SE3, SO3, X},
+        variables::{Vector3, SE3, SO3},
     };
 
     #[test]

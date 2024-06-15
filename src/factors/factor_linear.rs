@@ -1,6 +1,5 @@
-use crate::containers::VectorValues;
+use crate::containers::{Key, VectorValues};
 use crate::linalg::{MatrixX, VectorX};
-use crate::traits::Key;
 
 pub struct LinearFactor<K: Key> {
     pub keys: Vec<K>,

@@ -1,7 +1,6 @@
 // ------------------------- Import all variable types ------------------------- //
-
-mod symbol;
-pub use symbol::*;
+mod traits;
+pub use traits::{LieGroup, Variable};
 
 mod so3;
 pub use so3::SO3;

@@ -1,13 +1,11 @@
 use samrs::bundle::DefaultBundle;
-use samrs::containers::Values;
+use samrs::containers::{Symbol, Values, X};
 use samrs::factors::Factor;
 use samrs::linalg::dvector;
 use samrs::noise::GaussianNoise;
 use samrs::residuals::PriorResidual;
 use samrs::robust::GemanMcClure;
-use samrs::traits::Variable;
-use samrs::variables::SO3;
-use samrs::variables::{Symbol, VariableEnum, Vector3, X};
+use samrs::variables::{Variable, VariableEnum, Vector3, SO3};
 
 #[allow(dead_code)]
 fn main() {
