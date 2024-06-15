@@ -53,63 +53,37 @@ mod test {
     };
     use matrixcompare::assert_matrix_eq;
 
-    // TODO: Template this test?
+    fn test_prior_jacobian<P: Variable>(prior: P) {
+        let prior_residual = PriorResidual::new(&prior);
 
-    #[test]
-    fn prior_linear() {
-        let prior = Vector3::new(1.0, 2.0, 3.0);
-        let prior_residual: PriorResidual<Vector3> = PriorResidual::new(&prior);
-
-        let x1 = Vector3::identity();
-        let mut values: Values<Symbol, Vector3> = Values::new();
-        values.insert(X(0), x1);
+        let x1 = P::identity();
+        let mut values: Values<Symbol, P> = Values::new();
+        values.insert(X(0), x1.clone());
         let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
 
-        let f = |v: Vector3| Residual1::<Vector3>::residual1_single(&prior_residual, &v);
+        let f = |v: P| Residual1::<P>::residual1_single(&prior_residual, &v);
         let jac_n = num_jacobian_11(f, x1);
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
 
         assert_matrix_eq!(jac, jac_n, comp = abs, tol = 1e-6);
+    }
+
+    #[test]
+    fn prior_linear() {
+        test_prior_jacobian(Vector3::new(1.0, 2.0, 3.0));
     }
 
     #[test]
     fn prior_so3() {
         let prior = SO3::exp(&dvector![0.1, 0.2, 0.3]);
-        let prior_residual = PriorResidual::new(&prior);
-
-        let x1 = SO3::identity();
-        let mut values: Values<Symbol, SO3> = Values::new();
-        values.insert(X(0), x1.clone());
-        let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
-
-        let f = |v: SO3| Residual1::<SO3>::residual1_single(&prior_residual, &v);
-        let jac_n = num_jacobian_11(f, x1);
-
-        eprintln!("jac: {:.3}", jac);
-        eprintln!("jac_n: {:.3}", jac_n);
-
-        assert_matrix_eq!(jac, jac_n, comp = abs, tol = 1e-6);
+        test_prior_jacobian(prior);
     }
 
     #[test]
     fn prior_se3() {
         let prior = SE3::exp(&dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0]);
-
-        let prior_residual = PriorResidual::new(&prior);
-
-        let x1 = SE3::identity();
-        let mut values: Values<Symbol, SE3> = Values::new();
-        values.insert(X(0), x1.clone());
-        let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
-
-        let f = |v: SE3| Residual1::<SE3>::residual1_single(&prior_residual, &v);
-        let jac_n = num_jacobian_11(f, x1);
-
-        eprintln!("jac: {:.3}", jac);
-        eprintln!("jac_n: {:.3}", jac_n);
-
-        assert_matrix_eq!(jac, jac_n, comp = abs, tol = 1e-6);
+        test_prior_jacobian(prior);
     }
 }
