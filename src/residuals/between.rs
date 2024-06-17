@@ -1,6 +1,6 @@
 use super::{Residual, Residual2};
 use crate::containers::{Key, Values};
-use crate::linalg::{DualVec, MatrixX, VectorX};
+use crate::linalg::{DualVec, Forward, MatrixX, VectorX};
 use crate::variables::Variable;
 
 // // Between Variable
@@ -14,6 +14,7 @@ where
     for<'a> &'a V: std::convert::TryInto<&'a P>,
 {
     const DIM: usize = P::DIM;
+    type Differ = Forward;
     type V1 = P;
     type V2 = P;
 

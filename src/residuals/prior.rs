@@ -1,6 +1,6 @@
 use super::{Residual, Residual1};
 use crate::containers::{Key, Values};
-use crate::linalg::{DualVec, MatrixX, VectorX};
+use crate::linalg::{DualVec, Forward, MatrixX, VectorX};
 use crate::variables::Variable;
 
 #[derive(Clone, Debug, derive_more::Display)]
@@ -22,6 +22,7 @@ where
 {
     const DIM: usize = P::DIM;
     type V1 = P;
+    type Differ = Forward;
 
     fn residual1(&self, v: P::Dual) -> VectorX<DualVec> {
         self.prior.ominus(&v)

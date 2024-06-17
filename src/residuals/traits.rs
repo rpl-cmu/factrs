@@ -1,6 +1,7 @@
 use crate::containers::{Key, Values};
-use crate::linalg::{dual_jacobian_1, dual_jacobian_2, dual_jacobian_3, DualVec, MatrixX, VectorX};
+use crate::linalg::{Diff, DualVec, MatrixX, VectorX};
 use crate::variables::Variable;
+use paste::paste;
 
 type DualVar<V> = <V as Variable>::Dual;
 
@@ -40,78 +41,58 @@ pub trait Residual<V: Variable>: Sized {
     fn residual_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX);
 }
 
-// ------------------------- Residual 1 ------------------------- //
-pub trait Residual1<V: Variable>: Residual<V>
-where
-    for<'a> &'a V: std::convert::TryInto<&'a Self::V1>,
-{
-    type V1: Variable;
-    const DIM: usize;
+// ------------------------- Use Macro to create residuals with set sizes ------------------------- //
+macro_rules! residual_maker {
+    ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
+        paste! {
+            pub trait [<Residual $num>]<V: Variable>: Residual<V>
+            where
+                $(
+                    for<'a> &'a V: std::convert::TryInto<&'a Self::$var>,
+                )*
+            {
+                $(
+                    type $var: Variable;
+                )*
+                const DIM: usize;
+                type Differ: Diff;
 
-    fn residual1(&self, v: DualVar<Self::V1>) -> VectorX<DualVec>;
+                fn [<residual $num>](&self, $($name: DualVar<Self::$var>,)*) -> VectorX<DualVec>;
 
-    fn residual1_single(&self, v: &Self::V1) -> VectorX {
-        self.residual1(v.dual_self()).map(|r| r.re)
-    }
+                fn [<residual $num _single>](&self, $($name: &Self::$var,)*) -> VectorX {
+                    self.[<residual $num>]($($name.dual_self(),)*).map(|r| r.re)
+                }
 
-    fn residual1_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX) {
-        // Unwrap everything
-        let v1: &Self::V1 = unpack(values, &keys[0]);
-        dual_jacobian_1(|v1| self.residual1(v1), v1)
-    }
+                fn [<residual $num _jacobian>]<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX) {
+                    // Unwrap everything
+                    $(
+                        let $name: &Self::$var = unpack(values, &keys[$idx]);
+                    )*
+                    Self::Differ::[<jacobian_ $num>](|$($name,)*| self.[<residual $num>]($($name,)*), $($name,)*)
+                }
+            }
+        }
+    };
 }
 
-// ------------------------- Residual 2 ------------------------- //
-pub trait Residual2<V: Variable>: Residual<V>
-where
-    for<'a> &'a V: std::convert::TryInto<&'a Self::V1>,
-    for<'a> &'a V: std::convert::TryInto<&'a Self::V2>,
-{
-    type V1: Variable;
-    type V2: Variable;
-    const DIM: usize;
-
-    fn residual2(&self, v1: DualVar<Self::V1>, v2: DualVar<Self::V2>) -> VectorX<DualVec>;
-
-    fn residual1_single(&self, v1: Self::V1, v2: &Self::V2) -> VectorX {
-        self.residual2(v1.dual_self(), v2.dual_self()).map(|r| r.re)
-    }
-
-    fn residual2_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX) {
-        let v1: &Self::V1 = unpack(values, &keys[0]);
-        let v2: &Self::V2 = unpack(values, &keys[1]);
-        dual_jacobian_2(|v1, v2| self.residual2(v1, v2), v1, v2)
-    }
-}
-
-// ------------------------- Residual 3 ------------------------- //
-pub trait Residual3<V: Variable>: Residual<V>
-where
-    for<'a> &'a V: std::convert::TryInto<&'a Self::V1>,
-    for<'a> &'a V: std::convert::TryInto<&'a Self::V2>,
-    for<'a> &'a V: std::convert::TryInto<&'a Self::V3>,
-{
-    type V1: Variable;
-    type V2: Variable;
-    type V3: Variable;
-    const DIM: usize;
-
-    fn residual3(
-        &self,
-        v1: DualVar<Self::V1>,
-        v2: DualVar<Self::V2>,
-        v3: DualVar<Self::V3>,
-    ) -> VectorX<DualVec>;
-
-    fn residual3_single(&self, v1: Self::V1, v2: &Self::V2, v3: &Self::V3) -> VectorX {
-        self.residual3(v1.dual_self(), v2.dual_self(), v3.dual_self())
-            .map(|r| r.re)
-    }
-
-    fn residual3_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX) {
-        let v1: &Self::V1 = unpack(values, &keys[0]);
-        let v2: &Self::V2 = unpack(values, &keys[1]);
-        let v3: &Self::V3 = unpack(values, &keys[2]);
-        dual_jacobian_3(|v1, v2, v3| self.residual3(v1, v2, v3), v1, v2, v3)
-    }
-}
+residual_maker!(1, (0, v1, V1));
+residual_maker!(2, (0, v1, V1), (1, v2, V2));
+residual_maker!(3, (0, v1, V1), (1, v2, V2), (2, v3, V3));
+residual_maker!(4, (0, v1, V1), (1, v2, V2), (2, v3, V3), (3, v4, V4));
+residual_maker!(
+    5,
+    (0, v1, V1),
+    (1, v2, V2),
+    (2, v3, V3),
+    (3, v4, V4),
+    (4, v5, V5)
+);
+residual_maker!(
+    6,
+    (0, v1, V1),
+    (1, v2, V2),
+    (2, v3, V3),
+    (3, v4, V4),
+    (4, v5, V5),
+    (5, v6, V6)
+);

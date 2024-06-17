@@ -86,9 +86,47 @@ pub type MatrixXx5<D = dtype> = na::MatrixXx5<D>;
 pub type MatrixXx6<D = dtype> = na::MatrixXx6<D>;
 
 // ------------------------- Derivatives ------------------------- //
-// TODO: Standardize API between these two, maybe switch using a feature?
-mod deriv_num;
-pub use deriv_num::*;
+use crate::variables::Variable;
+use paste::paste;
 
-mod deriv_dual;
-pub use deriv_dual::*;
+// TODO: Standardize API between these two, maybe switch using a feature?
+macro_rules! fn_maker {
+    (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
+        paste! {
+            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> DualVec>
+                    (f: F, $($name: &$var,)*) -> (dtype, VectorX);
+        }
+    };
+
+    (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
+        paste! {
+            fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> VectorX<DualVec>>
+                    (f: F, $($name: &$var,)*) -> (VectorX, MatrixX);
+        }
+    };
+}
+
+pub trait Diff {
+    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> (dtype, dtype);
+
+    // TODO: Default implementation of gradient that calls jacobian with a small wrapper?
+    fn_maker!(grad, 1, (v1: V1));
+    fn_maker!(grad, 2, (v1: V1), (v2: V2));
+    fn_maker!(grad, 3, (v1: V1), (v2: V2), (v3: V3));
+    fn_maker!(grad, 4, (v1: V1), (v2: V2), (v3: V3), (v4: V4));
+    fn_maker!(grad, 5, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5));
+    fn_maker!(grad, 6, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5), (v6: V6));
+
+    fn_maker!(jac, 1, (v1: V1));
+    fn_maker!(jac, 2, (v1: V1), (v2: V2));
+    fn_maker!(jac, 3, (v1: V1), (v2: V2), (v3: V3));
+    fn_maker!(jac, 4, (v1: V1), (v2: V2), (v3: V3), (v4: V4));
+    fn_maker!(jac, 5, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5));
+    fn_maker!(jac, 6, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5), (v6: V6));
+}
+
+mod diff_num;
+pub use diff_num::*;
+
+mod diff_forward;
+pub use diff_forward::*;
