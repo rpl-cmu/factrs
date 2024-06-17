@@ -113,8 +113,8 @@ mod tests {
     use nalgebra::dvector;
 
     use crate::{
-        containers::X, linalg::Vector3, residuals::PriorResidual, robust::GemanMcClure,
-        utils::num_gradient,
+        containers::X, linalg::num_gradient, linalg::Vector3, residuals::PriorResidual,
+        robust::GemanMcClure,
     };
     use matrixcompare::assert_matrix_eq;
 
@@ -150,7 +150,7 @@ mod tests {
         let grad_got = -linear.a.transpose() * linear.b;
         println!("Received {:}", grad_got);
 
-        let grad_num = num_gradient(f, x);
+        let grad_num = num_gradient(f, &x);
         println!("Expected {:}", grad_num);
 
         assert_matrix_eq!(grad_got, grad_num, comp = abs, tol = 1e-6);

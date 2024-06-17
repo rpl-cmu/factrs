@@ -13,7 +13,7 @@ pub fn num_derivative<F: Fn(dtype) -> dtype>(f: F, x: dtype) -> dtype {
 }
 
 // ------------------------- Numerical Gradient (Vec in / Scalar out) ------------------------- //
-pub fn num_gradient<V: Variable, F: Fn(V) -> dtype>(f: F, v: V) -> VectorX {
+pub fn num_gradient<V: Variable, F: Fn(V) -> dtype>(f: F, v: &V) -> VectorX {
     let eps = 1e-6;
 
     // Prepare variables
@@ -40,7 +40,7 @@ pub fn num_gradient<V: Variable, F: Fn(V) -> dtype>(f: F, v: V) -> VectorX {
 }
 
 // ------------------------- Numerical Jacobian - 1 input ------------------------- //
-pub fn num_jacobian_11<V: Variable, F: Fn(V) -> VectorX>(f: F, v: V) -> MatrixX {
+pub fn num_jacobian_11<V: Variable, F: Fn(V) -> VectorX>(f: F, v: &V) -> MatrixX {
     let eps = 1e-6;
 
     // Prepare variables
@@ -69,16 +69,16 @@ pub fn num_jacobian_11<V: Variable, F: Fn(V) -> VectorX>(f: F, v: V) -> MatrixX 
 // ------------------------- Numerical Jacobian - 2 inputs ------------------------- //
 pub fn num_jacobian_21<V1: Variable, V2: Variable, F: Fn(V1, V2) -> VectorX>(
     f: F,
-    v1: V1,
-    v2: V2,
+    v1: &V1,
+    v2: &V2,
 ) -> MatrixX {
     num_jacobian_11(|v| f(v, v2.clone()), v1)
 }
 
 pub fn num_jacobian_22<V1: Variable, V2: Variable, F: Fn(V1, V2) -> VectorX>(
     f: F,
-    v1: V1,
-    v2: V2,
+    v1: &V1,
+    v2: &V2,
 ) -> MatrixX {
     num_jacobian_11(|v| f(v1.clone(), v), v2)
 }
@@ -86,27 +86,27 @@ pub fn num_jacobian_22<V1: Variable, V2: Variable, F: Fn(V1, V2) -> VectorX>(
 // ------------------------- Numerical Jacobian - 3 inputs ------------------------- //
 pub fn num_jacobian_31<V1: Variable, V2: Variable, V3: Variable, F: Fn(V1, V2, V3) -> VectorX>(
     f: F,
-    v1: V1,
-    v2: V2,
-    v3: V3,
+    v1: &V1,
+    v2: &V2,
+    v3: &V3,
 ) -> MatrixX {
     num_jacobian_11(|v| f(v, v2.clone(), v3.clone()), v1)
 }
 
 pub fn num_jacobian_32<V1: Variable, V2: Variable, V3: Variable, F: Fn(V1, V2, V3) -> VectorX>(
     f: F,
-    v1: V1,
-    v2: V2,
-    v3: V3,
+    v1: &V1,
+    v2: &V2,
+    v3: &V3,
 ) -> MatrixX {
     num_jacobian_11(|v| f(v1.clone(), v, v3.clone()), v2)
 }
 
 pub fn num_jacobian_33<V1: Variable, V2: Variable, V3: Variable, F: Fn(V1, V2, V3) -> VectorX>(
     f: F,
-    v1: V1,
-    v2: V2,
-    v3: V3,
+    v1: &V1,
+    v2: &V2,
+    v3: &V3,
 ) -> MatrixX {
     num_jacobian_11(|v| f(v1.clone(), v2.clone(), v), v3)
 }

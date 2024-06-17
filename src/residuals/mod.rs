@@ -1,5 +1,5 @@
 mod traits;
-pub use traits::{Residual, Residual1, Residual2};
+pub use traits::{Residual, Residual1, Residual2, Residual3};
 
 mod prior;
 pub use prior::PriorResidual;

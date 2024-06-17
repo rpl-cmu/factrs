@@ -1,3 +1,6 @@
+use crate::dtype;
+use nalgebra as na;
+
 // Setup dual num
 pub trait DualNum:
     RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>
@@ -8,12 +11,9 @@ impl<G: RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dty
 {
 }
 pub type DualVec = num_dual::DualVec<dtype, dtype, Dyn>;
-
-use crate::dtype;
-use nalgebra as na;
+pub type DualScalar = num_dual::Dual<dtype, dtype>;
 
 // Re-export all nalgebra types to put default dtype on everything
-
 // Misc imports
 pub use na::{dvector, Const, Dyn, RealField};
 
@@ -25,10 +25,6 @@ pub type Vector3<D = dtype> = na::SVector<D, 3>;
 pub type Vector4<D = dtype> = na::SVector<D, 4>;
 pub type Vector5<D = dtype> = na::SVector<D, 5>;
 pub type Vector6<D = dtype> = na::SVector<D, 6>;
-pub type Vector7<D = dtype> = na::SVector<D, 7>;
-pub type Vector8<D = dtype> = na::SVector<D, 8>;
-pub type Vector9<D = dtype> = na::SVector<D, 9>;
-pub type Vector10<D = dtype> = na::SVector<D, 10>;
 
 // square
 pub type MatrixX<D = dtype> = na::DMatrix<D>;
@@ -88,3 +84,11 @@ pub type MatrixXx3<D = dtype> = na::MatrixXx3<D>;
 pub type MatrixXx4<D = dtype> = na::MatrixXx4<D>;
 pub type MatrixXx5<D = dtype> = na::MatrixXx5<D>;
 pub type MatrixXx6<D = dtype> = na::MatrixXx6<D>;
+
+// ------------------------- Derivatives ------------------------- //
+// TODO: Standardize API between these two, maybe switch using a feature?
+mod deriv_num;
+pub use deriv_num::*;
+
+mod deriv_dual;
+pub use deriv_dual::*;

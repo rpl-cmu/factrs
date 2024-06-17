@@ -261,7 +261,7 @@ mod test {
     use matrixcompare::assert_scalar_eq;
 
     use super::*;
-    use crate::utils::num_derivative;
+    use crate::linalg::num_derivative;
 
     fn test_weight(robust: &impl RobustCost, d: dtype) {
         let got = robust.weight(d * d);

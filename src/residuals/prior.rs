@@ -48,7 +48,7 @@ mod test {
     use crate::{
         containers::{Symbol, X},
         linalg::dvector,
-        utils::num_jacobian_11,
+        linalg::num_jacobian_11,
         variables::{Vector3, SE3, SO3},
     };
     use matrixcompare::assert_matrix_eq;
@@ -62,7 +62,7 @@ mod test {
         let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
 
         let f = |v: P| Residual1::<P>::residual1_single(&prior_residual, &v);
-        let jac_n = num_jacobian_11(f, x1);
+        let jac_n = num_jacobian_11(f, &x1);
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
