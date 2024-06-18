@@ -261,12 +261,12 @@ mod test {
     use matrixcompare::assert_scalar_eq;
 
     use super::*;
-    use crate::linalg::num_derivative;
+    use crate::linalg::NumericalDiff;
 
     fn test_weight(robust: &impl RobustCost, d: dtype) {
         let got = robust.weight(d * d);
         // weight = loss'(d) / d
-        let actual = num_derivative(|d| robust.loss(d * d), d) / d;
+        let actual = NumericalDiff::<6>::derivative(|d| robust.loss(d * d), d).1 / d;
 
         println!("Weight got: {}, Weight actual: {}", got, actual);
         assert_scalar_eq!(got, actual, comp = abs, tol = 1e-6);

@@ -89,7 +89,6 @@ pub type MatrixXx6<D = dtype> = na::MatrixXx6<D>;
 use crate::variables::Variable;
 use paste::paste;
 
-// TODO: Standardize API between these two, maybe switch using a feature?
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
@@ -125,8 +124,8 @@ pub trait Diff {
     fn_maker!(jac, 6, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5), (v6: V6));
 }
 
-mod diff_num;
-pub use diff_num::*;
+mod numerical_diff;
+pub use numerical_diff::NumericalDiff;
 
-mod diff_forward;
-pub use diff_forward::*;
+mod forward_prop;
+pub use forward_prop::ForwardProp;

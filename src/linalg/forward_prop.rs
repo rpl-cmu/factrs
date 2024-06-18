@@ -5,7 +5,7 @@ use paste::paste;
 
 use super::Diff;
 
-pub struct Forward;
+pub struct ForwardProp;
 
 macro_rules! forward_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
@@ -63,7 +63,7 @@ macro_rules! forward_maker {
     };
 }
 
-impl Diff for Forward {
+impl Diff for ForwardProp {
     fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> (dtype, dtype) {
         let xd = x.into();
         let r = f(xd);
