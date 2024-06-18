@@ -45,7 +45,7 @@ macro_rules! make_bundle {
         // But it's a dry case, so it probably fine
         $crate::make_enum_residual!($residual_name, $var_name, $( $residual_args $(< $residual_types >)? ),*);
 
-        impl Bundle for $bundle_name {
+        impl $crate::bundle::Bundle for $bundle_name {
             type Key = $key;
             type Variable = $var_name;
             type Robust = $robust_name;
