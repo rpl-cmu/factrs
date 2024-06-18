@@ -1,6 +1,7 @@
 use super::LinearFactor;
 use crate::containers::{Key, Values};
 use crate::dtype;
+use crate::linalg::DiffResult;
 use crate::noise::{GaussianNoise, NoiseModel};
 use crate::residuals::Residual;
 use crate::robust::{RobustCost, L2};
@@ -46,7 +47,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
 
     pub fn linearize(&self, values: &Values<K, V>) -> LinearFactor<K> {
         // Compute residual and jacobian
-        let (r, a) = self.residual.residual_jacobian(values, &self.keys);
+        let DiffResult { value: r, diff: a } = self.residual.residual_jacobian(values, &self.keys);
 
         // Whiten residual and jacobian
         let r = self.noise.whiten_vec(&r);
@@ -152,7 +153,7 @@ mod tests {
         let grad_got = -linear.a.transpose() * linear.b;
         println!("Received {:}", grad_got);
 
-        let grad_num = NumericalDiff::<6>::gradient_1(f, &x).1;
+        let grad_num = NumericalDiff::<6>::gradient_1(f, &x).diff;
         println!("Expected {:}", grad_num);
 
         assert_matrix_eq!(grad_got, grad_num, comp = abs, tol = 1e-6);

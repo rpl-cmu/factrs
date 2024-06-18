@@ -1,5 +1,5 @@
 use crate::dtype;
-use crate::linalg::{Const, DualScalar, DualVec, Dyn, MatrixX, VectorX};
+use crate::linalg::{Const, DiffResult, DualScalar, DualVec, Dyn, MatrixX, VectorX};
 use crate::variables::Variable;
 use paste::paste;
 
@@ -12,7 +12,7 @@ macro_rules! forward_maker {
         paste! {
             #[allow(unused_assignments)]
             fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> DualVec>
-                    (f: F, $($name: &$var,)*) -> (dtype, VectorX) {
+                    (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
                 // Prepare variables
                 let mut dim = 0;
                 $(
@@ -27,7 +27,10 @@ macro_rules! forward_maker {
                 // Compute residual
                 let res = f($($name,)*);
 
-                (res.re, res.eps.unwrap_generic(Dyn(dim), Const::<1>))
+                DiffResult {
+                    value: res.re,
+                    diff: res.eps.unwrap_generic(Dyn(dim), Const::<1>),
+                }
             }
         }
     };
@@ -36,7 +39,7 @@ macro_rules! forward_maker {
         paste! {
             #[allow(unused_assignments)]
             fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> VectorX<DualVec>>
-                    (f: F, $($name: &$var,)*) -> (VectorX, MatrixX) {
+                    (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>{
                 // Prepare variables
                 let mut dim = 0;
                 $(
@@ -57,17 +60,23 @@ macro_rules! forward_maker {
                         .as_slice(),
                 );
 
-                (res.map(|r| r.re), eps)
+                DiffResult {
+                    value: res.map(|r| r.re),
+                    diff: eps,
+                }
             }
         }
     };
 }
 
 impl Diff for ForwardProp {
-    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> (dtype, dtype) {
+    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> DiffResult<dtype, dtype> {
         let xd = x.into();
         let r = f(xd);
-        (r.re, r.eps)
+        DiffResult {
+            value: r.re,
+            diff: r.eps,
+        }
     }
 
     forward_maker!(grad, 1, (v1: V1));

@@ -1,6 +1,6 @@
 use super::{Residual, Residual2};
 use crate::containers::{Key, Values};
-use crate::linalg::{DualVec, ForwardProp, MatrixX, VectorX};
+use crate::linalg::{DualVec, ForwardProp, DiffResult, MatrixX, VectorX};
 use crate::variables::Variable;
 
 // // Between Variable
@@ -29,7 +29,7 @@ where
 {
     const DIM: usize = 0;
 
-    fn residual_jacobian<K: Key>(&self, _: &Values<K, V>, _: &[K]) -> (VectorX, MatrixX) {
-        (VectorX::zeros(0), MatrixX::zeros(0, 0))
+    fn residual_jacobian<K: Key>(&self, v: &Values<K, V>, k: &[K]) -> DiffResult<VectorX, MatrixX> {
+        self.residual2_jacobian(v, k)
     }
 }

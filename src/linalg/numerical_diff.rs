@@ -1,5 +1,5 @@
 use crate::dtype;
-use crate::linalg::{Diff, DualScalar, DualVec, MatrixX, VectorX};
+use crate::linalg::{Diff, DiffResult, DualScalar, DualVec, MatrixX, VectorX};
 use crate::variables::Variable;
 
 use paste::paste;
@@ -17,7 +17,7 @@ macro_rules! numerical_maker {
         paste! {
             #[allow(unused_assignments)]
             pub fn [<gradient_$num>]<$( $var: Variable, )* F: Fn($($var,)*) -> dtype>
-                    (f: F, $($name: &$var,)*) -> (dtype, VectorX) {
+                    (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX> {
                 let eps = dtype::powi(10.0, -PWR);
 
                 // Get Dimension
@@ -50,7 +50,7 @@ macro_rules! numerical_maker {
                     curr_dim += tvs[i].dim();
                 }
 
-                (res, grad)
+                DiffResult { value: res, diff: grad }
             }
         }
     };
@@ -59,7 +59,7 @@ macro_rules! numerical_maker {
         paste! {
             #[allow(unused_assignments)]
             pub fn [<jacobian_$num>]<$( $var: Variable, )* F: Fn($($var,)*) -> VectorX>
-                    (f: F, $($name: &$var,)*) -> (VectorX, MatrixX) {
+                    (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX> {
                 let eps = dtype::powi(10.0, -PWR);
 
                 // Get Dimension
@@ -93,20 +93,20 @@ macro_rules! numerical_maker {
                     curr_dim += tvs[i].dim();
                 }
 
-                (res, jac)
+                DiffResult { value: res, diff: jac }
             }
         }
     };
 }
 
 impl<const PWR: i32> NumericalDiff<PWR> {
-    pub fn derivative<F: Fn(dtype) -> dtype>(f: F, x: dtype) -> (dtype, dtype) {
+    pub fn derivative<F: Fn(dtype) -> dtype>(f: F, x: dtype) -> DiffResult<dtype, dtype> {
         let eps = dtype::powi(10.0, -PWR);
 
         let r = f(x);
         let d = (f(x + eps) - f(x - eps)) / (2.0 * eps);
 
-        (r, d)
+        DiffResult { value: r, diff: d }
     }
 
     numerical_maker!(grad, 1, (0, v1, V1));
@@ -164,7 +164,7 @@ macro_rules! numerical_maker_dual {
         paste! {
             #[allow(unused_assignments)]
             fn [<gradient_$num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> DualVec>
-                (f: F, $($name: &$var,)*) -> (dtype, VectorX) {
+                (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
                 let f_single = |$($name: $var,)*| f($( $name.dual_self(), )*).re;
                 Self::[<gradient_$num>](f_single, $($name,)*)
             }
@@ -175,7 +175,7 @@ macro_rules! numerical_maker_dual {
         paste! {
             #[allow(unused_assignments)]
             fn [<jacobian_$num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> VectorX<DualVec>>
-                (f: F, $($name: &$var,)*) -> (VectorX, MatrixX) {
+                (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>{
                 let f_single = |$($name: $var,)*| f($( $name.dual_self(), )*).map(|d| d.re);
                 Self::[<jacobian_$num>](f_single, $($name,)*)
             }
@@ -184,7 +184,7 @@ macro_rules! numerical_maker_dual {
 }
 
 impl<const PWR: i32> Diff for NumericalDiff<PWR> {
-    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> (dtype, dtype) {
+    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> DiffResult<dtype, dtype> {
         let f_single = |x: dtype| f(x.into()).re;
         Self::derivative(f_single, x)
     }

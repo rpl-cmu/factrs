@@ -89,24 +89,29 @@ pub type MatrixXx6<D = dtype> = na::MatrixXx6<D>;
 use crate::variables::Variable;
 use paste::paste;
 
+pub struct DiffResult<V, G> {
+    pub value: V,
+    pub diff: G,
+}
+
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
             fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> DualVec>
-                    (f: F, $($name: &$var,)*) -> (dtype, VectorX);
+                    (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>;
         }
     };
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
             fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> VectorX<DualVec>>
-                    (f: F, $($name: &$var,)*) -> (VectorX, MatrixX);
+                    (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };
 }
 
 pub trait Diff {
-    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> (dtype, dtype);
+    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> DiffResult<dtype, dtype>;
 
     // TODO: Default implementation of gradient that calls jacobian with a small wrapper?
     fn_maker!(grad, 1, (v1: V1));

@@ -1,6 +1,6 @@
 use super::{Residual, Residual1};
 use crate::containers::{Key, Values};
-use crate::linalg::{DualVec, ForwardProp, MatrixX, VectorX};
+use crate::linalg::{DualVec, ForwardProp, DiffResult, MatrixX, VectorX};
 use crate::variables::Variable;
 
 #[derive(Clone, Debug, derive_more::Display)]
@@ -37,7 +37,7 @@ where
 {
     const DIM: usize = <PriorResidual<P> as Residual1<V>>::DIM;
 
-    fn residual_jacobian<K: Key>(&self, v: &Values<K, V>, k: &[K]) -> (VectorX, MatrixX) {
+    fn residual_jacobian<K: Key>(&self, v: &Values<K, V>, k: &[K]) -> DiffResult<VectorX, MatrixX> {
         self.residual1_jacobian(v, k)
     }
 }
@@ -60,10 +60,10 @@ mod test {
         let x1 = P::identity();
         let mut values: Values<Symbol, P> = Values::new();
         values.insert(X(0), x1.clone());
-        let (_, jac) = prior_residual.residual1_jacobian(&values, &[X(0)]);
+        let jac = prior_residual.residual1_jacobian(&values, &[X(0)]).diff;
 
         let f = |v: P| Residual1::<P>::residual1_single(&prior_residual, &v);
-        let jac_n = NumericalDiff::<6>::jacobian_1(f, &x1).1;
+        let jac_n = NumericalDiff::<6>::jacobian_1(f, &x1).diff;
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);

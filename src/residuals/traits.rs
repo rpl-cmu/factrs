@@ -1,5 +1,5 @@
 use crate::containers::{Key, Values};
-use crate::linalg::{Diff, DualVec, MatrixX, VectorX};
+use crate::linalg::{Diff, DualVec, DiffResult, MatrixX, VectorX};
 use crate::variables::Variable;
 use paste::paste;
 
@@ -35,10 +35,14 @@ pub trait Residual<V: Variable>: Sized {
 
     // TODO: Would be nice if this was generic over dtypes, but it'll probably mostly be used with dual vecs
     fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX {
-        self.residual_jacobian(values, keys).0
+        self.residual_jacobian(values, keys).value
     }
 
-    fn residual_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX);
+    fn residual_jacobian<K: Key>(
+        &self,
+        values: &Values<K, V>,
+        keys: &[K],
+    ) -> DiffResult<VectorX, MatrixX>;
 }
 
 // ------------------------- Use Macro to create residuals with set sizes ------------------------- //
@@ -63,7 +67,7 @@ macro_rules! residual_maker {
                     self.[<residual $num>]($($name.dual_self(),)*).map(|r| r.re)
                 }
 
-                fn [<residual $num _jacobian>]<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> (VectorX, MatrixX) {
+                fn [<residual $num _jacobian>]<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> DiffResult<VectorX, MatrixX>{
                     // Unwrap everything
                     $(
                         let $name: &Self::$var = unpack(values, &keys[$idx]);

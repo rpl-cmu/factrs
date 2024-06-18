@@ -266,7 +266,7 @@ mod test {
     fn test_weight(robust: &impl RobustCost, d: dtype) {
         let got = robust.weight(d * d);
         // weight = loss'(d) / d
-        let actual = NumericalDiff::<6>::derivative(|d| robust.loss(d * d), d).1 / d;
+        let actual = NumericalDiff::<6>::derivative(|d| robust.loss(d * d), d).diff / d;
 
         println!("Weight got: {}, Weight actual: {}", got, actual);
         assert_scalar_eq!(got, actual, comp = abs, tol = 1e-6);
