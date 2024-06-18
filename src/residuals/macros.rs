@@ -1,6 +1,8 @@
 #[macro_export]
 macro_rules! make_enum_residual {
-    ( $name:ident, $var:ident, $( $x:ident $(< $gen:ident >)? ),*) => {
+    ( $name:ident, $var:ident, $(,)? ) => {};
+
+    ( $name:ident, $var:ident, $( $x:ident $(< $gen:ident >)? ),* $(,)?) => {
         use paste::paste;
 
         paste! {

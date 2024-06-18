@@ -1,6 +1,8 @@
 #[macro_export]
 macro_rules! make_enum_noise {
-    ( $name:ident, $( $x:ident),*) => {
+    ( $name:ident$(,)? ) => {};
+
+    ( $name:ident, $( $x:ident),* $(,)?) => {
         #[derive(Clone, Debug, derive_more::Display, derive_more::From, derive_more::TryInto)]
         #[try_into(owned, ref, ref_mut)]
         pub enum $name {
