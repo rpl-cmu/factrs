@@ -1,10 +1,6 @@
 use crate::{
-    dtype,
-    factors::{FactorGeneric, LinearFactor},
-    noise::NoiseModel,
-    residuals::Residual,
-    robust::RobustCost,
-    variables::Variable,
+    dtype, factors::FactorGeneric, linear::LinearGraph, noise::NoiseModel, residuals::Residual,
+    robust::RobustCost, variables::Variable,
 };
 
 use super::{Key, Values};
@@ -37,8 +33,9 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
         self.factors.iter().map(|f| f.error(values)).sum()
     }
 
-    pub fn linearize(&self, values: &Values<K, V>) -> Vec<LinearFactor<K>> {
-        self.factors.iter().map(|f| f.linearize(values)).collect()
+    pub fn linearize(&self, values: &Values<K, V>) -> LinearGraph<K> {
+        let factors = self.factors.iter().map(|f| f.linearize(values)).collect();
+        LinearGraph::from_vec(factors)
     }
 }
 

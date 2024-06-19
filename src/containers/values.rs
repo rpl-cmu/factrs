@@ -1,4 +1,5 @@
-use crate::{dtype, linalg::VectorX};
+use crate::dtype;
+use crate::linear::LinearValues;
 use ahash::AHashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Into;
@@ -42,6 +43,7 @@ impl<K: Key, V: Variable<dtype>> Values<K, V> {
         self.values.get(key)
     }
 
+    // TODO: Does this still fail if one is missing?
     pub fn get_multiple<'a>(&self, keys: impl IntoIterator<Item = &'a K>) -> Option<Vec<&V>>
     where
         K: 'a,
@@ -79,12 +81,10 @@ impl<K: Key, V: Variable<dtype>> Values<K, V> {
             .filter_map(|(_, value)| value.try_into().ok())
     }
 
-    pub fn oplus(&mut self, delta: &VectorValues<K>) {
+    pub fn oplus_mut(&mut self, delta: &LinearValues<K>) {
         for (key, value) in delta.iter() {
             if let Some(v) = self.values.get_mut(key) {
-                // TODO: Should we panic here if the dimensions don't match?
-                // TODO: Or should we return result in some way?
-                assert!(v.dim() == value.dim(), "Dimension mismatch in values oplus",);
+                assert!(v.dim() == value.len(), "Dimension mismatch in values oplus",);
                 *v = v.oplus(value);
             }
         }
@@ -131,6 +131,3 @@ impl<K: Key, V: Variable<dtype>> Default for Values<K, V> {
         }
     }
 }
-
-// ------------------------- Type Aliases ------------------------- //
-pub type VectorValues<K> = Values<K, VectorX>;

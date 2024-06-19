@@ -33,6 +33,12 @@ impl fmt::Display for Symbol {
     }
 }
 
+impl fmt::Debug for Symbol {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}{}", self.chr(), self.idx())
+    }
+}
+
 // ------------------------- Helpers ------------------------- //
 #[rustfmt::skip]
 #[allow(non_snake_case)]

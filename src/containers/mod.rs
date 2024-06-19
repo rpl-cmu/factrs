@@ -7,13 +7,10 @@ mod symbol;
 pub use symbol::*;
 
 mod values;
-pub use values::{Values, VectorValues};
+pub use values::Values;
 
 mod order;
-pub use order::Order;
+pub use order::{Idx, Order};
 
 mod graph;
-pub use graph::Graph;
-
-mod graph_linear;
-pub use graph_linear::LinearGraph;
+pub use graph::{Graph, GraphGeneric};
