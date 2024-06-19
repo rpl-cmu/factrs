@@ -8,6 +8,7 @@ pub mod bundle;
 pub mod containers;
 pub mod factors;
 pub mod linalg;
+pub mod linear;
 pub mod noise;
 pub mod residuals;
 pub mod robust;

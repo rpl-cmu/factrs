@@ -1,6 +1,6 @@
 use super::{Residual, Residual1};
 use crate::containers::{Key, Values};
-use crate::linalg::{DualVec, ForwardProp, DiffResult, MatrixX, VectorX};
+use crate::linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX};
 use crate::variables::Variable;
 
 #[derive(Clone, Debug, derive_more::Display)]
@@ -78,13 +78,13 @@ mod test {
 
     #[test]
     fn prior_so3() {
-        let prior = SO3::exp(&dvector![0.1, 0.2, 0.3]);
+        let prior = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
         test_prior_jacobian(prior);
     }
 
     #[test]
     fn prior_se3() {
-        let prior = SE3::exp(&dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0]);
+        let prior = SE3::exp(dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0].as_view());
         test_prior_jacobian(prior);
     }
 }

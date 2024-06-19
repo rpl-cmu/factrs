@@ -61,7 +61,7 @@ macro_rules! make_enum_variable {
                 }
             }
 
-            fn exp(_delta: &$crate::linalg::VectorX<D>) -> Self {
+            fn exp(_delta: $crate::linalg::VectorViewX<D>) -> Self {
                 panic!("Cannot call static exp on enum")
             }
 
@@ -92,7 +92,7 @@ macro_rules! make_enum_variable {
                 }
             }
 
-            fn oplus(&self, delta: &$crate::linalg::VectorX<D>) -> Self {
+            fn oplus(&self, delta: $crate::linalg::VectorViewX<D>) -> Self {
                 match self {
                     $(
                         $name::$x(x) => $name::$x(x.oplus(delta)),

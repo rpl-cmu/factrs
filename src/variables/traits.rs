@@ -1,5 +1,5 @@
 use crate::dtype;
-use crate::linalg::{Const, DualNum, DualVec, Dyn, MatrixX, VectorX};
+use crate::linalg::{Const, DualNum, DualVec, Dyn, MatrixX, VectorViewX, VectorX};
 
 use std::fmt::{Debug, Display};
 
@@ -12,7 +12,7 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn inverse(&self) -> Self;
     fn compose(&self, other: &Self) -> Self;
     // Make exp/log consume their arguments?
-    fn exp(delta: &VectorX<D>) -> Self; // trivial if linear (just itself)
+    fn exp(delta: VectorViewX<D>) -> Self; // trivial if linear (just itself)
     fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
     // Conversion to dual space
@@ -27,7 +27,7 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 
     // Moves to and from vector space
-    fn oplus(&self, delta: &VectorX<D>) -> Self {
+    fn oplus(&self, delta: VectorViewX<D>) -> Self {
         if cfg!(feature = "left") {
             Self::exp(delta).compose(self)
         } else {
@@ -52,12 +52,13 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
     // Applies the tangent vector in dual space
     fn dual(&self, idx: usize, total: usize) -> Self::Dual {
-        self.dual_self().oplus(&self.dual_tangent(idx, total))
+        self.dual_self()
+            .oplus(self.dual_tangent(idx, total).as_view())
     }
 }
 
 pub trait LieGroup<D: DualNum>: Variable<D> {
-    fn hat(xi: &VectorX<D>) -> MatrixX<D>;
+    fn hat(xi: VectorViewX<D>) -> MatrixX<D>;
 
     fn adjoint(&self) -> MatrixX<D>;
 }

@@ -1,5 +1,5 @@
 use crate::dtype;
-use crate::linalg::{dvector, DualNum, DualVec, Matrix3, Matrix4, MatrixX, Vector3, VectorX};
+use crate::linalg::{DualNum, DualVec, Matrix3, Matrix4, MatrixX, Vector3, VectorViewX, VectorX};
 use crate::variables::{LieGroup, Variable, SO3};
 use std::fmt;
 use std::ops;
@@ -56,8 +56,8 @@ impl<D: DualNum> Variable<D> for SE3<D> {
     }
 
     #[allow(non_snake_case)]
-    fn exp(xi: &VectorX<D>) -> Self {
-        let xi_rot = dvector![xi[0].clone(), xi[1].clone(), xi[2].clone()];
+    fn exp(xi: VectorViewX<D>) -> Self {
+        let xi_rot = xi.rows(0, 3);
         let xyz = Vector3::new(xi[3].clone(), xi[4].clone(), xi[5].clone());
 
         let w2 = xi_rot.norm_squared();
@@ -74,10 +74,10 @@ impl<D: DualNum> Variable<D> for SE3<D> {
             C = (D::from(1.0) - A) / w2.clone();
         };
         let I = Matrix3::identity();
-        let wx = SO3::hat(&xi_rot);
+        let wx = SO3::hat(xi_rot);
         let V = I + &wx * B + &wx * &wx * C;
 
-        let rot = SO3::<D>::exp(&xi_rot);
+        let rot = SO3::<D>::exp(xi.rows(0, 3));
 
         SE3 { rot, xyz: V * xyz }
     }
@@ -102,7 +102,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         };
 
         let I = Matrix3::identity();
-        let wx = SO3::hat(&xi_theta);
+        let wx = SO3::hat(xi_theta.as_view());
         let V = I + &wx * B + &wx * &wx * C;
 
         let Vinv = V.try_inverse().expect("V is not invertible");
@@ -123,7 +123,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
 }
 
 impl<D: DualNum> LieGroup<D> for SE3<D> {
-    fn hat(xi: &VectorX<D>) -> MatrixX<D> {
+    fn hat(xi: VectorViewX<D>) -> MatrixX<D> {
         let mut mat = MatrixX::<D>::zeros(4, 4);
         mat[(0, 1)] = -xi[2].clone();
         mat[(0, 2)] = xi[1].clone();
@@ -141,14 +141,10 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
 
     fn adjoint(&self) -> MatrixX<D> {
         let mut mat = MatrixX::<D>::zeros(Self::DIM, Self::DIM);
-        let xyz = dvector![
-            self.xyz[0].clone(),
-            self.xyz[1].clone(),
-            self.xyz[2].clone()
-        ];
+        let xyz = self.xyz.as_view();
 
         let r_mat = self.rot.to_matrix();
-        let t_r_mat = &SO3::hat(&xyz) * &r_mat;
+        let t_r_mat = &SO3::hat(xyz) * &r_mat;
 
         mat.fixed_view_mut::<3, 3>(0, 0).copy_from(&r_mat);
         mat.fixed_view_mut::<3, 3>(3, 3).copy_from(&r_mat);
@@ -183,7 +179,7 @@ impl<D: DualNum> fmt::Display for SE3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::DualNum;
+    use crate::linalg::{dvector, DualNum};
     use matrixcompare::assert_matrix_eq;
     // TODO: Use our jacobian to compare
     use num_dual::jacobian;
@@ -191,7 +187,7 @@ mod tests {
     #[test]
     fn exp_log() {
         let xi = dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0];
-        let se3 = SE3::exp(&xi);
+        let se3 = SE3::exp(xi.as_view());
         let xi_hat = se3.log();
         println!("{} {}", xi, xi_hat);
         assert_matrix_eq!(xi_hat, xi, comp = float);
@@ -201,7 +197,7 @@ mod tests {
     fn matrix() {
         // to_matrix -> from_matrix shoudl give back original vector
         let xi = dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0];
-        let se3 = SE3::exp(&xi);
+        let se3 = SE3::exp(xi.as_view());
         let mat = se3.to_matrix();
 
         let se3_hat = SE3::from_matrix(&mat);
@@ -212,7 +208,7 @@ mod tests {
     #[test]
     fn inverse() {
         let xi = dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0];
-        let se3 = SE3::exp(&xi);
+        let se3 = SE3::exp(xi.as_view());
         let se3_inv = se3.inverse();
 
         let out = &se3 * &se3_inv;
@@ -226,7 +222,7 @@ mod tests {
     fn test_jacobian() {
         // Test jacobian of exp(log(x)) = x
         fn compute<D: DualNum>(v: VectorX<D>) -> VectorX<D> {
-            let se3 = SE3::<D>::exp(&v);
+            let se3 = SE3::<D>::exp(v.as_view());
             let mat = se3.to_matrix();
             let se3 = SE3::<D>::from_matrix(&mat);
             se3.log()

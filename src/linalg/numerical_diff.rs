@@ -33,21 +33,21 @@ macro_rules! numerical_maker {
 
                 for i in 0..num_vars {
                     let mut curr_dim = 0;
-                    for j in 0..tvs[i].dim() {
+                    for j in 0..tvs[i].len() {
                         tvs[i][j] = eps;
                         // TODO: It'd be more efficient to not have to add tangent vectors to each variable
                         // However, I couldn't find a way to do this for a single vector without having to
                         // do a nested iteration of $name which isn't allowed
-                        $(let [<$name _og>] = $name.oplus(&tvs[$idx]);)*
+                        $(let [<$name _og>] = $name.oplus(tvs[$idx].as_view());)*
                         let plus = f($( [<$name _og>], )*);
 
                         tvs[i][j] = -eps;
-                        $(let [<$name _og>] = $name.oplus(&tvs[$idx]);)*
+                        $(let [<$name _og>] = $name.oplus(tvs[$idx].as_view());)*
                         let minus = f($( [<$name _og>], )*);
 
                         grad[curr_dim + j] = (plus - minus) / (2.0 * eps);
                     }
-                    curr_dim += tvs[i].dim();
+                    curr_dim += tvs[i].len();
                 }
 
                 DiffResult { value: res, diff: grad }
@@ -75,22 +75,22 @@ macro_rules! numerical_maker {
 
                 for i in 0..num_vars {
                     let mut curr_dim = 0;
-                    for j in 0..tvs[i].dim() {
+                    for j in 0..tvs[i].len() {
                         tvs[i][j] = eps;
                         // TODO: It'd be more efficient to not have to add tangent vectors to each variable
                         // However, I couldn't find a way to do this for a single vector without having to
                         // do a nested iteration of $name which isn't allowed
-                        $(let [<$name _og>] = $name.oplus(&tvs[$idx]);)*
+                        $(let [<$name _og>] = $name.oplus(tvs[$idx].as_view());)*
                         let plus = f($( [<$name _og>], )*);
 
                         tvs[i][j] = -eps;
-                        $(let [<$name _og>] = $name.oplus(&tvs[$idx]);)*
+                        $(let [<$name _og>] = $name.oplus(tvs[$idx].as_view());)*
                         let minus = f($( [<$name _og>], )*);
 
                         let delta = (plus - minus) / (2.0 * eps);
                         jac.columns_mut(curr_dim + j, 1).copy_from(&delta);
                     }
-                    curr_dim += tvs[i].dim();
+                    curr_dim += tvs[i].len();
                 }
 
                 DiffResult { value: res, diff: jac }

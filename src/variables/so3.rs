@@ -1,5 +1,7 @@
 use crate::dtype;
-use crate::linalg::{dvector, DualNum, DualVec, Matrix3, MatrixX, Vector3, Vector4, VectorX};
+use crate::linalg::{
+    dvector, DualNum, DualVec, Matrix3, MatrixX, Vector3, Vector4, VectorViewX, VectorX,
+};
 use crate::variables::{LieGroup, Variable};
 use std::fmt;
 use std::ops;
@@ -133,7 +135,7 @@ impl<D: DualNum> Variable<D> for SO3<D> {
         SO3 { xyzw }
     }
 
-    fn exp(xi: &VectorX<D>) -> Self {
+    fn exp(xi: VectorViewX<D>) -> Self {
         let mut xyzw = Vector4::zeros();
         let theta = xi.norm();
 
@@ -178,7 +180,7 @@ impl<D: DualNum> Variable<D> for SO3<D> {
 }
 
 impl<D: DualNum> LieGroup<D> for SO3<D> {
-    fn hat(xi: &VectorX<D>) -> MatrixX<D> {
+    fn hat(xi: VectorViewX<D>) -> MatrixX<D> {
         let mut xi_hat = MatrixX::zeros(3, 3);
         xi_hat[(0, 1)] = -xi[2].clone();
         xi_hat[(0, 2)] = xi[1].clone();
@@ -255,7 +257,7 @@ mod tests {
     fn exp_lop() {
         // exp -> log should give back original vector
         let xi = dvector![0.1, 0.2, 0.3];
-        let so3 = SO3::exp(&xi);
+        let so3 = SO3::exp(xi.as_view());
         let log = so3.log();
         println!("xi {xi:?}, {log:?}");
         assert_matrix_eq!(xi, log, comp = float);
@@ -265,7 +267,7 @@ mod tests {
     fn matrix() {
         // to_matrix -> from_matrix should give back original vector
         let xi = dvector![0.1, 0.2, 0.3];
-        let so3_og = SO3::exp(&xi);
+        let so3_og = SO3::exp(xi.as_view());
         let mat = so3_og.to_matrix();
 
         let so3_after = SO3::from_matrix(&mat);
@@ -278,7 +280,7 @@ mod tests {
     fn multiply() {
         // multiply two small x-only angles should give back double angle
         let xi = dvector![0.5, 0.0, 0.0];
-        let so3 = SO3::exp(&xi);
+        let so3 = SO3::exp(xi.as_view());
         let double = &so3 * &so3;
         let xi_double = double.log();
         println!("{:?}", xi_double);
@@ -289,7 +291,7 @@ mod tests {
     fn inverse() {
         // multiply with inverse should give back identity
         let xi = dvector![0.1, 0.2, 0.3];
-        let so3 = SO3::<f64>::exp(&xi);
+        let so3 = SO3::<f64>::exp(xi.as_view());
         let so3_inv = so3.inverse();
         let so3_res = &so3 * &so3_inv;
         let id = SO3::<f64>::identity();
@@ -301,7 +303,7 @@ mod tests {
     fn rotate() {
         // rotate a vector
         let xi = dvector![0.0, 0.0, std::f64::consts::FRAC_PI_2];
-        let so3 = SO3::exp(&xi);
+        let so3 = SO3::exp(xi.as_view());
         let v = Vector3::new(1.0, 0.0, 0.0);
         let v_rot = so3.apply(&v);
         println!("{:?}", v_rot);
@@ -313,7 +315,7 @@ mod tests {
     fn test_jacobian() {
         // Test jacobian of exp(log(x)) = x
         fn compute<D: DualNum>(v: VectorX<D>) -> VectorX<D> {
-            let so3 = SO3::<D>::exp(&v);
+            let so3 = SO3::<D>::exp(v.as_view());
             let mat = so3.to_matrix();
             let so3 = SO3::<D>::from_matrix(&mat);
             so3.log()
@@ -349,11 +351,11 @@ mod tests {
             dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
         }
 
-        let r = SO3::exp(&dvector![0.1, 0.2, 0.3]);
+        let r = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
         let (_x, dx) = var_jacobian(rotate, r.clone());
 
         let v = dvector!(1.0, 2.0, 3.0);
-        let dx_exp = -r.to_matrix() * SO3::hat(&v);
+        let dx_exp = -r.to_matrix() * SO3::hat(v.as_view());
 
         assert_matrix_eq!(dx, dx_exp, comp = float);
     }
