@@ -1,17 +1,26 @@
-use samrs::bundle::DefaultBundle;
 use samrs::containers::{Symbol, Values, X};
 use samrs::factors::Factor;
 use samrs::linalg::dvector;
+use samrs::make_bundle;
 use samrs::noise::GaussianNoise;
 use samrs::residuals::PriorResidual;
-use samrs::robust::GemanMcClure;
+use samrs::robust::{GemanMcClure, Tukey, L2};
 use samrs::variables::{Variable, VariableEnum, Vector3, SO3};
+
+make_bundle!(
+    NewBundle;
+    Symbol;
+    VariableEnum;
+    REnum: L2, GemanMcClure, Tukey;
+    GaussianNoise;
+    PriorResidual<SO3>;
+);
 
 #[allow(dead_code)]
 fn main() {
     let xi = dvector![0.1, 0.2, 0.3];
 
-    let r = SO3::exp(&xi);
+    let r = SO3::exp(xi.as_view());
     let v = Vector3::new(1.0, 2.0, 3.0);
     let e: VariableEnum = r.clone().into();
 
@@ -32,9 +41,9 @@ fn main() {
 
     // : Factor<Symbol, SO3, PriorResidual<SO3>, GaussianNoise, L2>
 
-    let f = Factor::<DefaultBundle>::new(vec![X(0)], PriorResidual::new(&r))
+    let f = Factor::<NewBundle>::new(vec![X(0)], PriorResidual::new(&r))
         .set_noise(GaussianNoise::from_scalar_sigma(1e-2, r.dim()))
-        .set_robust(GemanMcClure::default())
+        .set_robust(Tukey::default())
         .build();
 
     f.error(&values);

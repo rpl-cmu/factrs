@@ -10,6 +10,7 @@ pub mod factors;
 pub mod linalg;
 pub mod linear;
 pub mod noise;
+pub mod optimizers;
 pub mod residuals;
 pub mod robust;
 pub mod variables;
