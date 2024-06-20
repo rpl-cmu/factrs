@@ -1,7 +1,7 @@
-use super::LinearFactor;
 use crate::containers::{Key, Values};
 use crate::dtype;
-use crate::linalg::DiffResult;
+use crate::linalg::{DiffResult, MatrixBlock};
+use crate::linear::LinearFactor;
 use crate::noise::{GaussianNoise, NoiseModel};
 use crate::residuals::Residual;
 use crate::robust::{RobustCost, L2};
@@ -28,6 +28,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
 {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(keys: Vec<K>, residual: impl Into<R>) -> FactorFactory<K, V, R, N, C> {
+        // TODO: Need to check # of keys and residual vars are the same
         let residual = residual.into();
         FactorFactory {
             keys,
@@ -58,6 +59,18 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
         let weight = self.robust.weight(norm2).sqrt();
         let a = weight * a;
         let b = -weight * r;
+
+        // Turn A into a MatrixBlock
+        let idx = self
+            .keys
+            .iter()
+            .scan(0, |sum, k| {
+                let out = Some(*sum);
+                *sum += values.get(k).unwrap().dim();
+                out
+            })
+            .collect::<Vec<_>>();
+        let a = MatrixBlock::new(a, idx);
 
         LinearFactor::new(self.keys.clone(), a, b)
     }
@@ -116,7 +129,7 @@ mod tests {
     use crate::{
         containers::X,
         linalg::{NumericalDiff, Vector3},
-        residuals::PriorResidual,
+        residuals::{BetweenResidual, PriorResidual},
         robust::GemanMcClure,
     };
     use matrixcompare::assert_matrix_eq;
@@ -128,7 +141,6 @@ mod tests {
     fn linearize_a() {
         let prior = Vector3::new(1.0, 2.0, 3.0);
         let x = <Vector3 as Variable>::identity();
-        // let x = Vector3::new(1.0, 2.0, 50.0);
 
         let keys = vec![X(0)];
         let residual = PriorResidual::new(&prior);
@@ -150,7 +162,7 @@ mod tests {
         values.insert(X(0), x);
 
         let linear = factor.linearize(&values);
-        let grad_got = -linear.a.transpose() * linear.b;
+        let grad_got = -linear.a.mat().transpose() * linear.b;
         println!("Received {:}", grad_got);
 
         let grad_num = NumericalDiff::<6>::gradient_1(f, &x).diff;
@@ -160,5 +172,39 @@ mod tests {
     }
 
     #[test]
-    fn linearize_b() {}
+    fn linearize_block() {
+        let bet = Vector3::new(1.0, 2.0, 3.0);
+        let x = <Vector3 as Variable>::identity();
+
+        let keys = vec![X(0), X(1)];
+        let residual = BetweenResidual::new(&bet);
+        let noise = GaussianNoise::from_diag_sigma(&dvector![1e-1, 2e-1, 3e-1]);
+        let robust = GemanMcClure::default();
+
+        let factor = Factor::<DefaultBundle>::new(keys, residual)
+            .set_noise(noise)
+            .set_robust(robust)
+            .build();
+
+        let mut values = Values::new();
+        values.insert(X(0), x);
+        values.insert(X(1), x);
+
+        let linear = factor.linearize(&values);
+
+        println!("Full Mat {:}", linear.a.mat());
+        println!("First Block {:}", linear.a.get_block(0));
+        println!("Second Block {:}", linear.a.get_block(1));
+
+        assert_matrix_eq!(
+            linear.a.get_block(0),
+            linear.a.mat().columns(0, 3),
+            comp = float
+        );
+        assert_matrix_eq!(
+            linear.a.get_block(1),
+            linear.a.mat().columns(3, 3),
+            comp = float
+        );
+    }
 }

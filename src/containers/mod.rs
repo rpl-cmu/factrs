@@ -1,7 +1,7 @@
 // Key
 use std::{cmp, fmt, hash};
-pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone {}
-impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + Clone> Key for T {}
+pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + fmt::Debug + Clone {}
+impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + fmt::Debug + Clone> Key for T {}
 
 mod symbol;
 pub use symbol::*;

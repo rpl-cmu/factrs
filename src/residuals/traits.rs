@@ -1,7 +1,8 @@
 use crate::containers::{Key, Values};
-use crate::linalg::{Diff, DualVec, DiffResult, MatrixX, VectorX};
+use crate::linalg::{Diff, DiffResult, DualVec, MatrixX, VectorX};
 use crate::variables::Variable;
 use paste::paste;
+use std::fmt;
 
 type DualVar<V> = <V as Variable>::Dual;
 
@@ -26,7 +27,7 @@ where
     })
 }
 
-pub trait Residual<V: Variable>: Sized {
+pub trait Residual<V: Variable>: Sized + fmt::Debug {
     const DIM: usize;
 
     fn dim(&self) -> usize {

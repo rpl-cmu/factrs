@@ -85,6 +85,45 @@ pub type MatrixXx4<D = dtype> = na::MatrixXx4<D>;
 pub type MatrixXx5<D = dtype> = na::MatrixXx5<D>;
 pub type MatrixXx6<D = dtype> = na::MatrixXx6<D>;
 
+// Views - aka references of matrices
+pub type MatrixViewX<'a, D = dtype> = na::MatrixView<'a, D, Dyn, Dyn>;
+pub type VectorViewX<'a, D = dtype> = na::VectorView<'a, D, Dyn>;
+
+// ------------------------- MatrixBlocks ------------------------- //
+#[derive(Debug, Clone)]
+pub struct MatrixBlock {
+    mat: MatrixX,
+    idx: Vec<usize>,
+}
+
+impl MatrixBlock {
+    pub fn new(mat: MatrixX, idx: Vec<usize>) -> Self {
+        Self { mat, idx }
+    }
+
+    pub fn get_block(&self, idx: usize) -> MatrixViewX<'_> {
+        let idx_start = self.idx[idx];
+        let idx_end = if idx + 1 < self.idx.len() {
+            self.idx[idx + 1]
+        } else {
+            self.mat.ncols()
+        };
+        self.mat.columns(idx_start, idx_end - idx_start)
+    }
+
+    pub fn mul(&self, idx: usize, x: VectorViewX<'_>) -> VectorX {
+        self.get_block(idx) * x
+    }
+
+    pub fn mat(&self) -> MatrixViewX<'_> {
+        self.mat.as_view()
+    }
+
+    pub fn idx(&self) -> &[usize] {
+        &self.idx
+    }
+}
+
 // ------------------------- Derivatives ------------------------- //
 use crate::variables::Variable;
 use paste::paste;

@@ -19,6 +19,10 @@ pub struct Order<K: Key> {
 }
 
 impl<K: Key> Order<K> {
+    pub fn new(map: HashMap<K, Idx>) -> Self {
+        let dim = map.values().map(|idx| idx.dim).sum();
+        Self { map, dim }
+    }
     pub fn from_values(values: &Values<K, impl Variable>) -> Self {
         let map = values
             .iter()
@@ -68,7 +72,7 @@ mod test {
     use crate::variables::{VariableEnum, Vector2, Vector3, Vector6};
 
     #[test]
-    fn new() {
+    fn from_values() {
         // Create some form of values
         let mut v: Values<Symbol, VariableEnum> = Values::new();
         v.insert(X(0), Vector2::default());
