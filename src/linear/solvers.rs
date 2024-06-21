@@ -6,7 +6,7 @@ use faer::sparse::linalg::solvers;
 use faer::sparse::SparseColMat;
 use faer::Mat;
 
-pub trait LinearSolver {
+pub trait LinearSolver: Default {
     fn solve(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype>;
 }
 

@@ -64,8 +64,6 @@ impl<K: Key> LinearGraph<K> {
             row + f.dim()
         });
 
-        println!("Jacobian: {:?}", jac.len());
-
         let jac = SparseColMat::try_new_from_triplets(total_rows, total_columns, &jac)
             .expect("Failed to form sparse jacobian");
 

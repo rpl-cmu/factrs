@@ -34,12 +34,15 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
             self.compose(&Self::exp(delta))
         }
     }
-    fn ominus(&self, other: &Self) -> VectorX<D> {
+    fn minus(&self, other: &Self) -> Self {
         if cfg!(feature = "left") {
-            (self.compose(&other.inverse())).log()
+            self.compose(&other.inverse())
         } else {
-            (other.inverse().compose(self)).log()
+            other.inverse().compose(self)
         }
+    }
+    fn ominus(&self, other: &Self) -> VectorX<D> {
+        self.minus(other).log()
     }
 
     // Create tangent vector w/ duals set up properly

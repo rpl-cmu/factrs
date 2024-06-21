@@ -20,6 +20,8 @@ nalgebra = { version = "0.32.5", features = ["compare"] }
 num-dual = "0.9.1"
 matrixcompare-core = { version = "0.1", optional = true }
 serde = {version = "1.0.203", optional = true }
+log = "0.4.21"
+
 
 [features]
 f32 = []
@@ -29,4 +31,4 @@ serde = ["dep:serde", "nalgebra/serde", "faer/serde", "ahash/serde"]
 
 [dev-dependencies]
 matrixcompare = "0.3.0"
-
+pretty_env_logger = "0.4"
