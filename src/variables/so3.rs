@@ -360,7 +360,14 @@ mod tests {
         let (_x, dx) = var_jacobian(rotate, r.clone());
 
         let v = dvector!(1.0, 2.0, 3.0);
+
+        #[cfg(not(feature = "left"))]
         let dx_exp = -r.to_matrix() * SO3::hat(v.as_view());
+        #[cfg(feature = "left")]
+        let dx_exp = -SO3::hat(v.as_view());
+
+        println!("Expected: {}", dx_exp);
+        println!("Actual: {}", dx);
 
         assert_matrix_eq!(dx, dx_exp, comp = float);
     }
