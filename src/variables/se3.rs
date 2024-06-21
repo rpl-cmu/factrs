@@ -179,10 +179,14 @@ impl<D: DualNum> fmt::Display for SE3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{dvector, DualNum};
+    use crate::linalg::{dvector, Diff, DiffResult, DualNum, ForwardProp, Vector6};
     use matrixcompare::assert_matrix_eq;
-    // TODO: Use our jacobian to compare
-    use num_dual::jacobian;
+
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
+
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
 
     #[test]
     fn exp_log() {
@@ -221,17 +225,17 @@ mod tests {
     #[test]
     fn test_jacobian() {
         // Test jacobian of exp(log(x)) = x
-        fn compute<D: DualNum>(v: VectorX<D>) -> VectorX<D> {
+        fn compute<D: DualNum>(v: Vector6<D>) -> VectorX<D> {
             let se3 = SE3::<D>::exp(v.as_view());
             let mat = se3.to_matrix();
             let se3 = SE3::<D>::from_matrix(&mat);
             se3.log()
         }
 
-        let v = dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0];
-        let (x, dx) = jacobian(compute, v.clone());
+        let v = Vector6::new(0.1, 0.2, 0.3, 1.0, 2.0, 3.0);
+        let DiffResult { value: x, diff: dx } = ForwardProp::jacobian_1(compute, &v);
 
         assert_matrix_eq!(x, v, comp = float);
-        assert_matrix_eq!(MatrixX::identity(6, 6), dx, comp = float);
+        assert_matrix_eq!(MatrixX::identity(6, 6), dx, comp = abs, tol = TOL);
     }
 }

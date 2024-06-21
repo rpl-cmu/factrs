@@ -77,6 +77,7 @@ impl<'a, K: Key> Iterator for Iter<'a, K> {
 mod test {
     use crate::{
         containers::{Symbol, X},
+        dtype,
         linalg::{Vector2, Vector3, Vector6},
         variables::VariableEnum,
     };
@@ -92,7 +93,7 @@ mod test {
 
         // Create an order
         let order = Order::from_values(&v);
-        let vector = VectorX::from_fn(order.dim(), |i, _| i as f64);
+        let vector = VectorX::from_fn(order.dim(), |i, _| i as dtype);
         (order, vector)
     }
 

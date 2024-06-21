@@ -1,7 +1,9 @@
+#[cfg(not(feature = "f32"))]
 #[allow(non_camel_case_types)]
 pub type dtype = f64;
 
 #[cfg(feature = "f32")]
+#[allow(non_camel_case_types)]
 pub type dtype = f32;
 
 pub mod bundle;

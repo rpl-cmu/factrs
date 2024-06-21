@@ -54,6 +54,16 @@ mod test {
     };
     use matrixcompare::assert_matrix_eq;
 
+    #[cfg(not(feature = "f32"))]
+    const PWR: i32 = 6;
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
+
+    #[cfg(feature = "f32")]
+    const PWR: i32 = 3;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
+
     fn test_prior_jacobian<P: Variable>(prior: P) {
         let prior_residual = PriorResidual::new(&prior);
 
@@ -63,12 +73,12 @@ mod test {
         let jac = prior_residual.residual1_jacobian(&values, &[X(0)]).diff;
 
         let f = |v: P| Residual1::<P>::residual1_single(&prior_residual, &v);
-        let jac_n = NumericalDiff::<6>::jacobian_1(f, &x1).diff;
+        let jac_n = NumericalDiff::<PWR>::jacobian_1(f, &x1).diff;
 
         eprintln!("jac: {:.3}", jac);
         eprintln!("jac_n: {:.3}", jac_n);
 
-        assert_matrix_eq!(jac, jac_n, comp = abs, tol = 1e-6);
+        assert_matrix_eq!(jac, jac_n, comp = abs, tol = TOL);
     }
 
     #[test]

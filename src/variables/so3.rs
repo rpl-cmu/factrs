@@ -253,6 +253,11 @@ mod tests {
     use matrixcompare::{assert_matrix_eq, assert_scalar_eq};
     use num_dual::jacobian;
 
+    #[cfg(feature = "f32")]
+    pub use std::f32::consts;
+    #[cfg(not(feature = "f32"))]
+    pub use std::f64::consts;
+
     #[test]
     fn exp_lop() {
         // exp -> log should give back original vector
@@ -291,10 +296,10 @@ mod tests {
     fn inverse() {
         // multiply with inverse should give back identity
         let xi = dvector![0.1, 0.2, 0.3];
-        let so3 = SO3::<f64>::exp(xi.as_view());
+        let so3 = SO3::<dtype>::exp(xi.as_view());
         let so3_inv = so3.inverse();
         let so3_res = &so3 * &so3_inv;
-        let id = SO3::<f64>::identity();
+        let id = SO3::<dtype>::identity();
         println!("{}", so3_res);
         assert_matrix_eq!(so3_res.xyzw, id.xyzw, comp = float);
     }
@@ -302,7 +307,7 @@ mod tests {
     #[test]
     fn rotate() {
         // rotate a vector
-        let xi = dvector![0.0, 0.0, std::f64::consts::FRAC_PI_2];
+        let xi = dvector![0.0, 0.0, consts::FRAC_PI_2];
         let so3 = SO3::exp(xi.as_view());
         let v = Vector3::new(1.0, 0.0, 0.0);
         let v_rot = so3.apply(&v);
@@ -328,7 +333,7 @@ mod tests {
         assert_matrix_eq!(MatrixX::identity(3, 3), dx, comp = float);
     }
 
-    fn var_jacobian<G>(g: G, r: SO3) -> (VectorX<f64>, MatrixX<f64>)
+    fn var_jacobian<G>(g: G, r: SO3) -> (VectorX<dtype>, MatrixX<dtype>)
     where
         G: FnOnce(SO3<DualVec>) -> VectorX<DualVec>,
     {

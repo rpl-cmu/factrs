@@ -136,7 +136,16 @@ mod tests {
 
     use super::*;
 
-    // Gets a little tricky with the robust cost
+    #[cfg(not(feature = "f32"))]
+    const PWR: i32 = 6;
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
+
+    #[cfg(feature = "f32")]
+    const PWR: i32 = 3;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
+
     #[test]
     fn linearize_a() {
         let prior = Vector3::new(1.0, 2.0, 3.0);
@@ -165,10 +174,10 @@ mod tests {
         let grad_got = -linear.a.mat().transpose() * linear.b;
         println!("Received {:}", grad_got);
 
-        let grad_num = NumericalDiff::<6>::gradient_1(f, &x).diff;
+        let grad_num = NumericalDiff::<PWR>::gradient_1(f, &x).diff;
         println!("Expected {:}", grad_num);
 
-        assert_matrix_eq!(grad_got, grad_num, comp = abs, tol = 1e-6);
+        assert_matrix_eq!(grad_got, grad_num, comp = abs, tol = TOL);
     }
 
     #[test]

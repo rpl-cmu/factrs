@@ -24,7 +24,7 @@ impl<K: Key> LinearGraph<K> {
         self.factors.push(factor);
     }
 
-    pub fn error(&self, values: &LinearValues<K>) -> f64 {
+    pub fn error(&self, values: &LinearValues<K>) -> dtype {
         self.factors.iter().map(|f| f.error(values)).sum()
     }
 
@@ -103,12 +103,12 @@ mod test {
         let mut graph = LinearGraph::new();
 
         // Make a handful of factors
-        let a1 = MatrixX::from_fn(2, 2, |i, j| (i + j) as f64);
+        let a1 = MatrixX::from_fn(2, 2, |i, j| (i + j) as dtype);
         let block1 = MatrixBlock::new(a1, vec![0]);
-        let b1 = VectorX::from_fn(2, |i, j| (i + j) as f64);
+        let b1 = VectorX::from_fn(2, |i, j| (i + j) as dtype);
         graph.add_factor(LinearFactor::new(vec![X(1)], block1.clone(), b1.clone()));
 
-        let a2 = MatrixX::from_fn(3, 5, |i, j| (i + j) as f64);
+        let a2 = MatrixX::from_fn(3, 5, |i, j| (i + j) as dtype);
         let block2 = MatrixBlock::new(a2, vec![0, 2]);
         let b2 = VectorX::from_fn(3, |_, _| 5.0);
         graph.add_factor(LinearFactor::new(

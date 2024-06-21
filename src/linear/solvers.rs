@@ -102,7 +102,7 @@ mod test {
     use super::*;
 
     fn solve<T: LinearSolver>(solver: &mut T) {
-        let a = SparseColMat::<usize, f64>::try_new_from_triplets(
+        let a = SparseColMat::<usize, dtype>::try_new_from_triplets(
             3,
             2,
             &[
@@ -115,9 +115,9 @@ mod test {
             ],
         )
         .unwrap();
-        let b = mat![[15.0], [-3.0], [33.0f64]];
+        let b = mat![[15.0], [-3.0], [33.0]];
 
-        let x_exp = mat![[1.87490103], [-0.56611243]];
+        let x_exp = mat![[1.874901], [-0.566112]];
         let x = solver.solve(&a, &b);
         println!("{:?}", x);
 

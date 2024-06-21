@@ -1,4 +1,5 @@
 use crate::containers::Key;
+use crate::dtype;
 use crate::linalg::{MatrixBlock, VectorX};
 use crate::linear::LinearValues;
 
@@ -24,7 +25,7 @@ impl<K: Key> LinearFactor<K> {
         self.b.len()
     }
 
-    pub fn error(&self, vector: &LinearValues<K>) -> f64 {
+    pub fn error(&self, vector: &LinearValues<K>) -> dtype {
         let ax: VectorX = self
             .keys
             .iter()

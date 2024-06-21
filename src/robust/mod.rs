@@ -263,13 +263,23 @@ mod test {
     use super::*;
     use crate::linalg::NumericalDiff;
 
+    #[cfg(not(feature = "f32"))]
+    const PWR: i32 = 6;
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
+
+    #[cfg(feature = "f32")]
+    const PWR: i32 = 3;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-2;
+
     fn test_weight(robust: &impl RobustCost, d: dtype) {
         let got = robust.weight(d * d);
         // weight = loss'(d) / d
-        let actual = NumericalDiff::<6>::derivative(|d| robust.loss(d * d), d).diff / d;
+        let actual = NumericalDiff::<PWR>::derivative(|d| robust.loss(d * d), d).diff / d;
 
         println!("Weight got: {}, Weight actual: {}", got, actual);
-        assert_scalar_eq!(got, actual, comp = abs, tol = 1e-6);
+        assert_scalar_eq!(got, actual, comp = abs, tol = TOL);
     }
 
     macro_rules! robust_tests {
