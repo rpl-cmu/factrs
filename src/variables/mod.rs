@@ -2,6 +2,9 @@
 mod traits;
 pub use traits::{LieGroup, Variable};
 
+mod so2;
+pub use so2::SO2;
+
 mod so3;
 pub use so3::SO3;
 

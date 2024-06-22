@@ -15,7 +15,7 @@ pub type DualScalar = num_dual::Dual<dtype, dtype>;
 
 // Re-export all nalgebra types to put default dtype on everything
 // Misc imports
-pub use na::{dvector, Const, Dyn, RealField};
+pub use na::{dmatrix, dvector, Const, Dyn, RealField};
 
 pub type Vector<const N: usize, D = dtype> = na::SVector<D, N>;
 pub type VectorX<D = dtype> = na::DVector<D>;

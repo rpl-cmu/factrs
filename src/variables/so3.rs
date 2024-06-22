@@ -259,7 +259,7 @@ mod tests {
     pub use std::f64::consts;
 
     #[test]
-    fn exp_lop() {
+    fn exp_log() {
         // exp -> log should give back original vector
         let xi = dvector![0.1, 0.2, 0.3];
         let so3 = SO3::exp(xi.as_view());
