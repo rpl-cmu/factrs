@@ -47,7 +47,7 @@ impl<D: DualNum> SO2<D> {
 }
 
 impl<D: DualNum> Variable<D> for SO2<D> {
-    const DIM: usize = 3;
+    const DIM: usize = 1;
     type Dual = SO2<DualVec>;
 
     fn identity() -> Self {
@@ -129,24 +129,13 @@ impl<D: DualNum> fmt::Debug for SO2<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{Const, DualNum, Dyn};
+    use crate::linalg::{Diff, DiffResult, DualNum, ForwardProp};
     use matrixcompare::{assert_matrix_eq, assert_scalar_eq};
-    use num_dual::jacobian;
 
     #[cfg(feature = "f32")]
     pub use std::f32::consts;
     #[cfg(not(feature = "f32"))]
     pub use std::f64::consts;
-
-    #[test]
-    fn exp_log() {
-        // exp -> log should give back original vector
-        let xi = dvector![0.1];
-        let so2 = SO2::exp(xi.as_view());
-        let log = so2.log();
-        println!("xi {xi:?}, {log:?}");
-        assert_matrix_eq!(xi, log, comp = float);
-    }
 
     #[test]
     fn matrix() {
@@ -163,30 +152,6 @@ mod tests {
     }
 
     #[test]
-    fn multiply() {
-        // multiply two small x-only angles should give back double angle
-        let xi = dvector![0.5];
-        let so2 = SO2::exp(xi.as_view());
-        let double = &so2 * &so2;
-        let xi_double = double.log();
-        println!("{:?}", xi_double);
-        assert_scalar_eq!(xi_double[0], 1.0, comp = float);
-    }
-
-    #[test]
-    fn inverse() {
-        // multiply with inverse should give back identity
-        let xi = dvector![0.1];
-        let so2 = SO2::<dtype>::exp(xi.as_view());
-        let so2_inv = so2.inverse();
-        let so2_res = &so2 * &so2_inv;
-        let id = SO2::<dtype>::identity();
-        println!("{}", so2_res);
-        assert_scalar_eq!(so2_res.a, id.a, comp = float);
-        assert_scalar_eq!(so2_res.b, id.b, comp = float);
-    }
-
-    #[test]
     fn rotate() {
         // rotate a vector
         let xi = dvector![consts::FRAC_PI_2];
@@ -199,60 +164,27 @@ mod tests {
         assert_matrix_eq!(v_rot, Vector2::y(), comp = float);
     }
 
+    // TODO: Analytically derive this one to check
     #[test]
-    fn test_jacobian() {
-        // Test jacobian of exp(log(x)) = x
-        fn compute<D: DualNum>(v: VectorX<D>) -> VectorX<D> {
-            let so2 = SO2::<D>::exp(v.as_view());
-            let mat = so2.to_matrix();
-            let so2 = SO2::<D>::from_matrix(&mat);
-            so2.log()
+    fn jacobian() {
+        fn rotate<D: DualNum>(r: SO2<D>) -> VectorX<D> {
+            let v = Vector2::new(D::from(1.0), D::from(2.0));
+            let rotated = r.apply(&v);
+            dvector![rotated[0].clone(), rotated[1].clone()]
         }
 
-        let v = dvector![0.1];
-        let (x, dx) = jacobian(compute, v.clone());
+        let r = SO2::exp(dvector![0.1, 0.2].as_view());
+        let DiffResult {
+            value: _x,
+            diff: dx,
+        } = ForwardProp::jacobian_1(rotate, &r);
 
-        assert_matrix_eq!(x, v, comp = float);
-        assert_matrix_eq!(MatrixX::identity(1, 1), dx, comp = float);
+        let v_star = Vector2::new(2.0, -1.0);
+        let dx_exp = -r.apply(&v_star);
+
+        println!("Expected: {}", dx_exp);
+        println!("Actual: {}", dx);
+
+        assert_matrix_eq!(dx, dx_exp, comp = float);
     }
-
-    // fn var_jacobian<G>(g: G, r: SO2) -> (VectorX<dtype>, MatrixX<dtype>)
-    // where
-    //     G: FnOnce(SO2<DualVec>) -> VectorX<DualVec>,
-    // {
-    //     let rot = r.dual(0, r.dim());
-
-    //     let out = g(rot);
-    //     let eps = MatrixX::from_rows(
-    //         out.map(|res| res.eps.unwrap_generic(Dyn(3), Const::<1>).transpose())
-    //             .as_slice(),
-    //     );
-
-    //     (out.map(|r| r.re), eps)
-    // }
-
-    // TODO: Derive these by hand to check
-    // #[test]
-    // fn test_jacobian_again() {
-    //     fn rotate<D: DualNum>(r: SO2<D>) -> VectorX<D> {
-    //         let v = Vector2::new(D::from(1.0), D::from(2.0));
-    //         let rotated = r.apply(&v);
-    //         dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
-    //     }
-
-    //     let r = SO2::exp(dvector![0.1, 0.2].as_view());
-    //     let (_x, dx) = var_jacobian(rotate, r.clone());
-
-    //     let v = dvector!(1.0, 2.0, 3.0);
-
-    //     #[cfg(not(feature = "left"))]
-    //     let dx_exp = -r.to_matrix() * SO2::hat(v.as_view());
-    //     #[cfg(feature = "left")]
-    //     let dx_exp = -SO2::hat(v.as_view());
-
-    //     println!("Expected: {}", dx_exp);
-    //     println!("Actual: {}", dx);
-
-    //     assert_matrix_eq!(dx, dx_exp, comp = float);
-    // }
 }

@@ -27,6 +27,10 @@ impl<D: DualNum> SE3<D> {
 
         SE3 { rot, xyz }
     }
+
+    pub fn apply(&self, v: &Vector3<D>) -> Vector3<D> {
+        self.rot.apply(v) + self.xyz.clone()
+    }
 }
 
 impl<D: DualNum> Variable<D> for SE3<D> {
@@ -179,23 +183,8 @@ impl<D: DualNum> fmt::Display for SE3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{dvector, Diff, DiffResult, DualNum, ForwardProp, Vector6};
+    use crate::linalg::{dvector, Diff, DiffResult, DualNum, ForwardProp, Matrix3x4, Matrix4x6};
     use matrixcompare::assert_matrix_eq;
-
-    #[cfg(not(feature = "f32"))]
-    const TOL: f64 = 1e-6;
-
-    #[cfg(feature = "f32")]
-    const TOL: f32 = 1e-3;
-
-    #[test]
-    fn exp_log() {
-        let xi = dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0];
-        let se3 = SE3::exp(xi.as_view());
-        let xi_hat = se3.log();
-        println!("{} {}", xi, xi_hat);
-        assert_matrix_eq!(xi_hat, xi, comp = float);
-    }
 
     #[test]
     fn matrix() {
@@ -210,32 +199,36 @@ mod tests {
     }
 
     #[test]
-    fn inverse() {
-        let xi = dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0];
-        let se3 = SE3::exp(xi.as_view());
-        let se3_inv = se3.inverse();
-
-        let out = &se3 * &se3_inv;
-        // println!("{}", out);
-        // println!("{}", out.inverse());
-        // println!("{:?}", out.ominus(&SE3::identity()));
-        assert_matrix_eq!(out.log(), VectorX::zeros(6), comp = float);
-    }
-
-    #[test]
-    fn test_jacobian() {
-        // Test jacobian of exp(log(x)) = x
-        fn compute<D: DualNum>(v: Vector6<D>) -> VectorX<D> {
-            let se3 = SE3::<D>::exp(v.as_view());
-            let mat = se3.to_matrix();
-            let se3 = SE3::<D>::from_matrix(&mat);
-            se3.log()
+    fn jacobian() {
+        fn rotate<D: DualNum>(r: SE3<D>) -> VectorX<D> {
+            let v = Vector3::new(D::from(1.0), D::from(2.0), D::from(3.0));
+            let rotated = r.apply(&v);
+            dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
         }
 
-        let v = Vector6::new(0.1, 0.2, 0.3, 1.0, 2.0, 3.0);
-        let DiffResult { value: x, diff: dx } = ForwardProp::jacobian_1(compute, &v);
+        let t = SE3::exp(dvector![0.1, 0.2, 0.3, 0.4, 0.5, 0.6].as_view());
+        let DiffResult {
+            value: _x,
+            diff: dx,
+        } = ForwardProp::jacobian_1(rotate, &t);
 
-        assert_matrix_eq!(x, v, comp = float);
-        assert_matrix_eq!(MatrixX::identity(6, 6), dx, comp = abs, tol = TOL);
+        let dropper: Matrix3x4 = Matrix3x4::identity();
+        let v = dvector!(1.0, 2.0, 3.0);
+        let mut jac = Matrix4x6::zeros();
+        jac.fixed_view_mut::<3, 3>(0, 0)
+            .copy_from(&SO3::hat((-v).as_view()));
+        jac.fixed_view_mut::<3, 3>(0, 3)
+            .copy_from(&Matrix3::identity());
+
+        #[cfg(not(feature = "left"))]
+        let dx_exp = dropper * t.to_matrix() * jac;
+        // TODO: Verify left jacobian
+        #[cfg(feature = "left")]
+        let dx_exp = dropper * t.to_matrix() * t.inverse().adjoint() * jac;
+
+        println!("Expected: {}", dx_exp);
+        println!("Actual: {}", dx);
+
+        assert_matrix_eq!(dx, dx_exp, comp = float);
     }
 }

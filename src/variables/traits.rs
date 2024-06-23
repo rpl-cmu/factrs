@@ -11,7 +11,6 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn identity() -> Self;
     fn inverse(&self) -> Self;
     fn compose(&self, other: &Self) -> Self;
-    // Make exp/log consume their arguments?
     fn exp(delta: VectorViewX<D>) -> Self; // trivial if linear (just itself)
     fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
@@ -60,8 +59,19 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
+// TODO: Expand Lie group definition & move all tests together
 pub trait LieGroup<D: DualNum>: Variable<D> {
+    fn adjoint(&self) -> MatrixX<D>;
+
     fn hat(xi: VectorViewX<D>) -> MatrixX<D>;
 
-    fn adjoint(&self) -> MatrixX<D>;
+    // fn vee(xi: MatrixX<D>) -> VectorX<D>;
+
+    // fn apply(&self, v: &VectorX<D>) -> VectorX<D>;
+
+    // fn hat_swap(&self, xi: VectorViewX<D>) -> MatrixX<D>;
+
+    // fn to_matrix(&self) -> MatrixX<D>;
+
+    // fn from_matrix(mat: &MatrixX<D>) -> Self;
 }

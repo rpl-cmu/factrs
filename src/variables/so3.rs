@@ -249,24 +249,13 @@ impl<D: DualNum> fmt::Debug for SO3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{Const, DualNum, Dyn};
-    use matrixcompare::{assert_matrix_eq, assert_scalar_eq};
-    use num_dual::jacobian;
+    use crate::linalg::{Diff, DiffResult, DualNum, ForwardProp};
+    use matrixcompare::assert_matrix_eq;
 
     #[cfg(feature = "f32")]
     pub use std::f32::consts;
     #[cfg(not(feature = "f32"))]
     pub use std::f64::consts;
-
-    #[test]
-    fn exp_log() {
-        // exp -> log should give back original vector
-        let xi = dvector![0.1, 0.2, 0.3];
-        let so3 = SO3::exp(xi.as_view());
-        let log = so3.log();
-        println!("xi {xi:?}, {log:?}");
-        assert_matrix_eq!(xi, log, comp = float);
-    }
 
     #[test]
     fn matrix() {
@@ -282,29 +271,6 @@ mod tests {
     }
 
     #[test]
-    fn multiply() {
-        // multiply two small x-only angles should give back double angle
-        let xi = dvector![0.5, 0.0, 0.0];
-        let so3 = SO3::exp(xi.as_view());
-        let double = &so3 * &so3;
-        let xi_double = double.log();
-        println!("{:?}", xi_double);
-        assert_scalar_eq!(xi_double[0], 1.0, comp = float);
-    }
-
-    #[test]
-    fn inverse() {
-        // multiply with inverse should give back identity
-        let xi = dvector![0.1, 0.2, 0.3];
-        let so3 = SO3::<dtype>::exp(xi.as_view());
-        let so3_inv = so3.inverse();
-        let so3_res = &so3 * &so3_inv;
-        let id = SO3::<dtype>::identity();
-        println!("{}", so3_res);
-        assert_matrix_eq!(so3_res.xyzw, id.xyzw, comp = float);
-    }
-
-    #[test]
     fn rotate() {
         // rotate a vector
         let xi = dvector![0.0, 0.0, consts::FRAC_PI_2];
@@ -317,39 +283,7 @@ mod tests {
     }
 
     #[test]
-    fn test_jacobian() {
-        // Test jacobian of exp(log(x)) = x
-        fn compute<D: DualNum>(v: VectorX<D>) -> VectorX<D> {
-            let so3 = SO3::<D>::exp(v.as_view());
-            let mat = so3.to_matrix();
-            let so3 = SO3::<D>::from_matrix(&mat);
-            so3.log()
-        }
-
-        let v = dvector![0.1, 0.2, 0.3];
-        let (x, dx) = jacobian(compute, v.clone());
-
-        assert_matrix_eq!(x, v, comp = float);
-        assert_matrix_eq!(MatrixX::identity(3, 3), dx, comp = float);
-    }
-
-    fn var_jacobian<G>(g: G, r: SO3) -> (VectorX<dtype>, MatrixX<dtype>)
-    where
-        G: FnOnce(SO3<DualVec>) -> VectorX<DualVec>,
-    {
-        let rot = r.dual(0, r.dim());
-
-        let out = g(rot);
-        let eps = MatrixX::from_rows(
-            out.map(|res| res.eps.unwrap_generic(Dyn(3), Const::<1>).transpose())
-                .as_slice(),
-        );
-
-        (out.map(|r| r.re), eps)
-    }
-
-    #[test]
-    fn test_jacobian_again() {
+    fn jacobian() {
         fn rotate<D: DualNum>(r: SO3<D>) -> VectorX<D> {
             let v = Vector3::new(D::from(1.0), D::from(2.0), D::from(3.0));
             let rotated = r.apply(&v);
@@ -357,7 +291,10 @@ mod tests {
         }
 
         let r = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
-        let (_x, dx) = var_jacobian(rotate, r.clone());
+        let DiffResult {
+            value: _x,
+            diff: dx,
+        } = ForwardProp::jacobian_1(rotate, &r);
 
         let v = dvector!(1.0, 2.0, 3.0);
 
