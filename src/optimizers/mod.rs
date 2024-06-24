@@ -114,41 +114,50 @@ pub trait Optimizer {
     }
 }
 
+mod macros;
+
 mod gauss_newton;
 pub use gauss_newton::GaussNewton;
 
+mod levenberg_marquardt;
+pub use levenberg_marquardt::LevenMarquardt;
+
+// These aren't tests themselves, but are helpers to test optimizers
 #[cfg(test)]
-mod test {
+pub mod test {
     use faer::assert_matrix_eq;
-    use nalgebra::dvector;
 
     use crate::{
         bundle::DefaultBundle,
         containers::{Graph, X},
         factors::FactorGeneric,
-        linalg::{Vector3, VectorX},
+        linalg::VectorX,
         residuals::{BetweenResidual, PriorResidual, ResidualEnum},
-        variables::{VariableEnum, SE3, SO3},
+        variables::VariableEnum,
     };
 
     use super::*;
 
-    fn prior<T>(p: T)
+    pub fn optimize_prior<O, T>()
     where
         T: Variable + Into<VariableEnum>,
         for<'a> &'a VariableEnum: TryInto<&'a T>,
         PriorResidual<T>: Into<ResidualEnum>,
+        O: Optimizer,
     {
+        let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
+        let p = T::exp(t.as_view());
+
         let mut values = Values::new();
         values.insert(X(0), T::identity());
 
-        let mut graph: Graph<DefaultBundle> = GraphGeneric::new();
+        let mut graph = Graph::<DefaultBundle>::new();
         let res = PriorResidual::new(&p);
         let factor = FactorGeneric::new(vec![X(0)], res).build();
         graph.add_factor(factor);
 
         let params: OptimizerParams = OptimizerParams::default();
-        GaussNewton::optimize(params, &graph, &mut values);
+        O::optimize(params, &graph, &mut values);
 
         let out: &T = values.get(&X(0)).unwrap().try_into().ok().unwrap();
         assert_matrix_eq!(
@@ -159,18 +168,25 @@ mod test {
         );
     }
 
-    fn between<T>(p1: T, p2: T)
+    pub fn optimize_between<O, T>()
     where
+        O: Optimizer,
         T: Variable + Into<VariableEnum>,
         for<'a> &'a VariableEnum: TryInto<&'a T>,
         PriorResidual<T>: Into<ResidualEnum>,
         BetweenResidual<T>: Into<ResidualEnum>,
     {
+        let t = VectorX::from_fn(T::DIM, |_, i| ((i as dtype) - (T::DIM as dtype)) / 10.0);
+        let p1 = T::exp(t.as_view());
+
+        let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
+        let p2 = T::exp(t.as_view());
+
         let mut values = Values::new();
         values.insert(X(0), T::identity());
         values.insert(X(1), T::identity());
 
-        let mut graph: Graph<DefaultBundle> = GraphGeneric::new();
+        let mut graph = Graph::<DefaultBundle>::new();
         let res = PriorResidual::new(&p1);
         let factor = FactorGeneric::new(vec![X(0)], res).build();
         graph.add_factor(factor);
@@ -198,45 +214,5 @@ mod test {
             comp = abs,
             tol = 1e-6
         );
-    }
-
-    #[test]
-    fn priorvector3() {
-        let p = Vector3::new(1.0, 2.0, 3.0);
-        prior(p);
-    }
-
-    #[test]
-    fn priorso3() {
-        let p = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
-        prior(p);
-    }
-
-    #[test]
-    fn priorse3() {
-        pretty_env_logger::init();
-        let p = SE3::exp(dvector![0.1, 0.2, 0.3, 0.4, 0.5, 0.6].as_view());
-        prior(p);
-    }
-
-    #[test]
-    fn betweenvector3() {
-        let p1 = Vector3::new(3.0, 2.0, 1.0);
-        let p2 = Vector3::new(1.0, 2.0, 3.0);
-        between(p1, p2);
-    }
-
-    #[test]
-    fn betweenso3() {
-        let p1 = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
-        let p2 = SO3::exp(dvector![0.3, 0.2, 0.1].as_view());
-        between(p1, p2);
-    }
-
-    #[test]
-    fn betweense3() {
-        let p1 = SE3::exp(dvector![0.1, 0.2, 0.3, 0.4, 0.5, 0.6].as_view());
-        let p2 = SE3::exp(dvector![0.3, 0.2, 0.1, 0.6, 0.5, 0.4].as_view());
-        between(p1, p2);
     }
 }
