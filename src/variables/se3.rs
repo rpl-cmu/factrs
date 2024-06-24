@@ -1,8 +1,13 @@
 use crate::dtype;
-use crate::linalg::{DualNum, DualVec, Matrix3, Matrix4, MatrixX, Vector3, VectorViewX, VectorX};
-use crate::variables::{LieGroup, Variable, SO3};
+use crate::linalg::{
+    Const, DualNum, DualVec, Matrix3, Matrix3x6, Matrix4, Matrix6, MatrixView, Vector3,
+    VectorView3, VectorView6, VectorViewX, VectorX,
+};
+use crate::variables::{MatrixLieGroup, Variable, SO3};
 use std::fmt;
 use std::ops;
+
+use super::Vector6;
 
 #[derive(Clone, Debug)]
 pub struct SE3<D: DualNum = dtype> {
@@ -10,28 +15,7 @@ pub struct SE3<D: DualNum = dtype> {
     xyz: Vector3<D>,
 }
 
-impl<D: DualNum> SE3<D> {
-    pub fn to_matrix(&self) -> Matrix4<D> {
-        let mut mat = Matrix4::<D>::identity();
-        mat.fixed_view_mut::<3, 3>(0, 0)
-            .copy_from(&self.rot.to_matrix());
-        mat.fixed_view_mut::<3, 1>(0, 3).copy_from(&self.xyz);
-        mat
-    }
-
-    pub fn from_matrix(mat: &Matrix4<D>) -> Self {
-        let rot = mat.fixed_view::<3, 3>(0, 0).into();
-        let rot = SO3::from_matrix(&rot);
-
-        let xyz = mat.fixed_view::<3, 1>(0, 3).into();
-
-        SE3 { rot, xyz }
-    }
-
-    pub fn apply(&self, v: &Vector3<D>) -> Vector3<D> {
-        self.rot.apply(v) + self.xyz.clone()
-    }
-}
+impl<D: DualNum> SE3<D> {}
 
 impl<D: DualNum> Variable<D> for SE3<D> {
     const DIM: usize = 6;
@@ -47,21 +31,21 @@ impl<D: DualNum> Variable<D> for SE3<D> {
     fn compose(&self, other: &Self) -> Self {
         SE3 {
             rot: &self.rot * &other.rot,
-            xyz: self.rot.apply(&other.xyz) + self.xyz.clone(),
+            xyz: self.rot.apply(other.xyz.as_view()) + self.xyz.clone(),
         }
     }
 
     fn inverse(&self) -> Self {
         let inv = self.rot.inverse();
         SE3 {
-            xyz: -&inv.apply(&self.xyz),
+            xyz: -&inv.apply(self.xyz.as_view()),
             rot: inv,
         }
     }
 
     #[allow(non_snake_case)]
     fn exp(xi: VectorViewX<D>) -> Self {
-        let xi_rot = xi.rows(0, 3);
+        let xi_rot = xi.fixed_view::<3, 1>(0, 0).clone_owned();
         let xyz = Vector3::new(xi[3].clone(), xi[4].clone(), xi[5].clone());
 
         let w2 = xi_rot.norm_squared();
@@ -78,7 +62,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
             C = (D::from(1.0) - A) / w2.clone();
         };
         let I = Matrix3::identity();
-        let wx = SO3::hat(xi_rot);
+        let wx = SO3::hat(xi_rot.as_view());
         let V = I + &wx * B + &wx * &wx * C;
 
         let rot = SO3::<D>::exp(xi.rows(0, 3));
@@ -126,9 +110,26 @@ impl<D: DualNum> Variable<D> for SE3<D> {
     }
 }
 
-impl<D: DualNum> LieGroup<D> for SE3<D> {
-    fn hat(xi: VectorViewX<D>) -> MatrixX<D> {
-        let mut mat = MatrixX::<D>::zeros(4, 4);
+impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
+    type TangentDim = Const<6>;
+    type MatrixDim = Const<4>;
+    type VectorDim = Const<3>;
+
+    fn adjoint(&self) -> Matrix6<D> {
+        let mut mat = Matrix6::zeros();
+
+        let r_mat = self.rot.to_matrix();
+        let t_r_mat = &SO3::hat(self.xyz.as_view()) * &r_mat;
+
+        mat.fixed_view_mut::<3, 3>(0, 0).copy_from(&r_mat);
+        mat.fixed_view_mut::<3, 3>(3, 3).copy_from(&r_mat);
+        mat.fixed_view_mut::<3, 3>(3, 0).copy_from(&t_r_mat);
+
+        mat
+    }
+
+    fn hat(xi: VectorView6<D>) -> Matrix4<D> {
+        let mut mat = Matrix4::zeros();
         mat[(0, 1)] = -xi[2].clone();
         mat[(0, 2)] = xi[1].clone();
         mat[(1, 0)] = xi[2].clone();
@@ -143,18 +144,45 @@ impl<D: DualNum> LieGroup<D> for SE3<D> {
         mat
     }
 
-    fn adjoint(&self) -> MatrixX<D> {
-        let mut mat = MatrixX::<D>::zeros(Self::DIM, Self::DIM);
-        let xyz = self.xyz.as_view();
+    fn vee(xi: MatrixView<4, 4, D>) -> Vector6<D> {
+        Vector6::new(
+            xi[(2, 1)].clone(),
+            xi[(0, 2)].clone(),
+            xi[(1, 0)].clone(),
+            xi[(0, 3)].clone(),
+            xi[(1, 3)].clone(),
+            xi[(2, 3)].clone(),
+        )
+    }
 
-        let r_mat = self.rot.to_matrix();
-        let t_r_mat = &SO3::hat(xyz) * &r_mat;
-
-        mat.fixed_view_mut::<3, 3>(0, 0).copy_from(&r_mat);
-        mat.fixed_view_mut::<3, 3>(3, 3).copy_from(&r_mat);
-        mat.fixed_view_mut::<3, 3>(3, 0).copy_from(&t_r_mat);
-
+    fn hat_swap(xi: VectorView3<D>) -> Matrix3x6<D> {
+        let mut mat = Matrix3x6::zeros();
+        mat.fixed_view_mut::<3, 3>(0, 0)
+            .copy_from(&SO3::hat_swap(xi.as_view()));
+        mat.fixed_view_mut::<3, 3>(0, 3)
+            .copy_from(&Matrix3::identity());
         mat
+    }
+
+    fn apply(&self, v: VectorView3<D>) -> Vector3<D> {
+        self.rot.apply(v) + self.xyz.clone()
+    }
+
+    fn to_matrix(&self) -> Matrix4<D> {
+        let mut mat = Matrix4::<D>::identity();
+        mat.fixed_view_mut::<3, 3>(0, 0)
+            .copy_from(&self.rot.to_matrix());
+        mat.fixed_view_mut::<3, 1>(0, 3).copy_from(&self.xyz);
+        mat
+    }
+
+    fn from_matrix(mat: MatrixView<4, 4, D>) -> Self {
+        let rot = mat.fixed_view::<3, 3>(0, 0).clone_owned();
+        let rot = SO3::from_matrix(rot.as_view());
+
+        let xyz = mat.fixed_view::<3, 1>(0, 3).into();
+
+        SE3 { rot, xyz }
     }
 }
 
@@ -193,7 +221,7 @@ mod tests {
         let se3 = SE3::exp(xi.as_view());
         let mat = se3.to_matrix();
 
-        let se3_hat = SE3::from_matrix(&mat);
+        let se3_hat = SE3::from_matrix(mat.as_view());
 
         assert_matrix_eq!(se3.ominus(&se3_hat), VectorX::zeros(6), comp = float);
     }
@@ -202,7 +230,7 @@ mod tests {
     fn jacobian() {
         fn rotate<D: DualNum>(r: SE3<D>) -> VectorX<D> {
             let v = Vector3::new(D::from(1.0), D::from(2.0), D::from(3.0));
-            let rotated = r.apply(&v);
+            let rotated = r.apply(v.as_view());
             dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
         }
 
@@ -213,7 +241,7 @@ mod tests {
         } = ForwardProp::jacobian_1(rotate, &t);
 
         let dropper: Matrix3x4 = Matrix3x4::identity();
-        let v = dvector!(1.0, 2.0, 3.0);
+        let v = Vector3::new(1.0, 2.0, 3.0);
         let mut jac = Matrix4x6::zeros();
         jac.fixed_view_mut::<3, 3>(0, 0)
             .copy_from(&SO3::hat((-v).as_view()));

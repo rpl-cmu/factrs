@@ -1,5 +1,5 @@
 use crate::dtype;
-use nalgebra as na;
+use nalgebra::{self as na, allocator::Allocator};
 
 // Setup dual num
 pub trait DualNum:
@@ -15,8 +15,9 @@ pub type DualScalar = num_dual::Dual<dtype, dtype>;
 
 // Re-export all nalgebra types to put default dtype on everything
 // Misc imports
-pub use na::{dmatrix, dvector, Const, Dyn, RealField};
+pub use na::{dmatrix, dvector, Const, Dim, Dyn, RealField};
 
+// Vectors
 pub type Vector<const N: usize, D = dtype> = na::SVector<D, N>;
 pub type VectorX<D = dtype> = na::DVector<D>;
 pub type Vector1<D = dtype> = na::SVector<D, 1>;
@@ -26,6 +27,16 @@ pub type Vector4<D = dtype> = na::SVector<D, 4>;
 pub type Vector5<D = dtype> = na::SVector<D, 5>;
 pub type Vector6<D = dtype> = na::SVector<D, 6>;
 
+pub type VectorView<'a, const N: usize, D = dtype> = na::VectorView<'a, D, Const<N>>;
+pub type VectorViewX<'a, D = dtype> = na::VectorView<'a, D, Dyn>;
+pub type VectorView1<'a, D = dtype> = na::VectorView<'a, D, Const<1>>;
+pub type VectorView2<'a, D = dtype> = na::VectorView<'a, D, Const<2>>;
+pub type VectorView3<'a, D = dtype> = na::VectorView<'a, D, Const<3>>;
+pub type VectorView4<'a, D = dtype> = na::VectorView<'a, D, Const<4>>;
+pub type VectorView5<'a, D = dtype> = na::VectorView<'a, D, Const<5>>;
+pub type VectorView6<'a, D = dtype> = na::VectorView<'a, D, Const<6>>;
+
+// Matrices
 // square
 pub type MatrixX<D = dtype> = na::DMatrix<D>;
 pub type Matrix1<D = dtype> = na::Matrix1<D>;
@@ -87,7 +98,20 @@ pub type MatrixXx6<D = dtype> = na::MatrixXx6<D>;
 
 // Views - aka references of matrices
 pub type MatrixViewX<'a, D = dtype> = na::MatrixView<'a, D, Dyn, Dyn>;
-pub type VectorViewX<'a, D = dtype> = na::VectorView<'a, D, Dyn>;
+
+pub type Matrix<const R: usize, const C: usize = 1, D = dtype> = na::Matrix<
+    D,
+    Const<R>,
+    Const<C>,
+    <na::DefaultAllocator as Allocator<D, Const<R>, Const<C>>>::Buffer,
+>;
+pub type MatrixView<'a, const R: usize, const C: usize = 1, D = dtype> =
+    na::MatrixView<'a, D, Const<R>, Const<C>>;
+
+// Generic, taking in sizes with Const
+pub type MatrixDim<R, C = Const<1>, D = dtype> =
+    na::Matrix<D, R, C, <na::DefaultAllocator as Allocator<D, R, C>>::Buffer>;
+pub type MatrixViewDim<'a, R, C = Const<1>, D = dtype> = na::MatrixView<'a, D, R, C>;
 
 // ------------------------- MatrixBlocks ------------------------- //
 #[derive(Debug, Clone)]

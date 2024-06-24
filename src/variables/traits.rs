@@ -1,5 +1,9 @@
 use crate::dtype;
-use crate::linalg::{Const, DualNum, DualVec, Dyn, MatrixX, VectorViewX, VectorX};
+use crate::linalg::{
+    Const, Dim, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim,
+    VectorViewX, VectorX,
+};
+use nalgebra as na;
 
 use std::fmt::{Debug, Display};
 
@@ -59,19 +63,38 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
-// TODO: Expand Lie group definition & move all tests together
-pub trait LieGroup<D: DualNum>: Variable<D> {
-    fn adjoint(&self) -> MatrixX<D>;
+pub trait MatrixLieGroup<D: DualNum>: Variable<D>
+where
+    na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
+    na::DefaultAllocator: na::allocator::Allocator<D, Self::MatrixDim, Self::MatrixDim>,
+    na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Self::TangentDim>,
+    na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Const<1>>,
+    na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Const<1>>,
+{
+    type TangentDim: Dim;
+    type MatrixDim: Dim;
+    type VectorDim: Dim;
 
-    fn hat(xi: VectorViewX<D>) -> MatrixX<D>;
+    fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, D>;
 
-    // fn vee(xi: MatrixX<D>) -> VectorX<D>;
+    fn hat(
+        xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, D>,
+    ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, D>;
 
-    // fn apply(&self, v: &VectorX<D>) -> VectorX<D>;
+    fn vee(
+        xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, D>,
+    ) -> MatrixDim<Self::TangentDim, Const<1>, D>;
 
-    // fn hat_swap(&self, xi: VectorViewX<D>) -> MatrixX<D>;
+    fn hat_swap(
+        xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, D>,
+    ) -> MatrixDim<Self::VectorDim, Self::TangentDim, D>;
 
-    // fn to_matrix(&self) -> MatrixX<D>;
+    fn apply(
+        &self,
+        v: MatrixViewDim<'_, Self::VectorDim, Const<1>, D>,
+    ) -> MatrixDim<Self::VectorDim, Const<1>, D>;
 
-    // fn from_matrix(mat: &MatrixX<D>) -> Self;
+    fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, D>;
+
+    fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, D>) -> Self;
 }

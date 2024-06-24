@@ -1,8 +1,13 @@
 use crate::dtype;
-use crate::linalg::{DualNum, DualVec, Matrix2, Matrix3, MatrixX, Vector2, VectorViewX, VectorX};
-use crate::variables::{LieGroup, Variable, SO2};
+use crate::linalg::{
+    Const, DualNum, DualVec, Matrix2, Matrix2x3, Matrix3, MatrixView, Vector2, VectorView2,
+    VectorView3, VectorViewX, VectorX,
+};
+use crate::variables::{MatrixLieGroup, Variable, SO2};
 use std::fmt;
 use std::ops;
+
+use super::Vector3;
 
 #[derive(Clone, Debug)]
 pub struct SE2<D: DualNum = dtype> {
@@ -11,25 +16,11 @@ pub struct SE2<D: DualNum = dtype> {
 }
 
 impl<D: DualNum> SE2<D> {
-    pub fn to_matrix(&self) -> Matrix3<D> {
-        let mut mat = Matrix3::<D>::identity();
-        mat.fixed_view_mut::<2, 2>(0, 0)
-            .copy_from(&self.rot.to_matrix());
-        mat.fixed_view_mut::<2, 1>(0, 2).copy_from(&self.xy);
-        mat
-    }
-
-    pub fn from_matrix(mat: &Matrix3<D>) -> Self {
-        let rot = mat.fixed_view::<2, 2>(0, 0).into();
-        let rot = SO2::from_matrix(&rot);
-
-        let xy = mat.fixed_view::<2, 1>(0, 2).into();
-
-        SE2 { rot, xy }
-    }
-
-    pub fn apply(&self, v: &Vector2<D>) -> Vector2<D> {
-        self.rot.apply(v) + self.xy.clone()
+    pub fn new(theta: D, x: D, y: D) -> Self {
+        SE2 {
+            rot: SO2::from_theta(theta),
+            xy: Vector2::new(x, y),
+        }
     }
 }
 
@@ -47,14 +38,14 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     fn compose(&self, other: &Self) -> Self {
         SE2 {
             rot: &self.rot * &other.rot,
-            xy: self.rot.apply(&other.xy) + self.xy.clone(),
+            xy: self.rot.apply(other.xy.as_view()) + self.xy.clone(),
         }
     }
 
     fn inverse(&self) -> Self {
         let inv = self.rot.inverse();
         SE2 {
-            xy: -&inv.apply(&self.xy),
+            xy: -&inv.apply(self.xy.as_view()),
             rot: inv,
         }
     }
@@ -113,9 +104,25 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     }
 }
 
-impl<D: DualNum> LieGroup<D> for SE2<D> {
-    fn hat(xi: VectorViewX<D>) -> MatrixX<D> {
-        let mut mat = MatrixX::<D>::zeros(3, 3);
+impl<D: DualNum> MatrixLieGroup<D> for SE2<D> {
+    type TangentDim = Const<3>;
+    type MatrixDim = Const<3>;
+    type VectorDim = Const<2>;
+
+    fn adjoint(&self) -> Matrix3<D> {
+        let mut mat = Matrix3::<D>::zeros();
+
+        let r_mat = self.rot.to_matrix();
+
+        mat.fixed_view_mut::<2, 2>(0, 0).copy_from(&r_mat);
+        mat[(0, 2)] = self.xy[2].clone();
+        mat[(1, 2)] = -self.xy[1].clone();
+
+        mat
+    }
+
+    fn hat(xi: VectorView3<D>) -> Matrix3<D> {
+        let mut mat = Matrix3::<D>::zeros();
         mat[(0, 1)] = -xi[0].clone();
         mat[(1, 0)] = xi[0].clone();
 
@@ -125,16 +132,39 @@ impl<D: DualNum> LieGroup<D> for SE2<D> {
         mat
     }
 
-    fn adjoint(&self) -> MatrixX<D> {
-        let mut mat = MatrixX::<D>::zeros(Self::DIM, Self::DIM);
+    fn vee(xi: MatrixView<3, 3, D>) -> Vector3<D> {
+        Vector3::new(xi[(1, 0)].clone(), xi[(0, 1)].clone(), xi[(0, 2)].clone())
+    }
 
-        let r_mat = self.rot.to_matrix();
+    fn apply(&self, v: VectorView2<D>) -> Vector2<D> {
+        &self.rot.apply(v) + &self.xy
+    }
 
-        mat.fixed_view_mut::<2, 2>(0, 0).copy_from(&r_mat);
-        mat[(0, 2)] = self.xy[2].clone();
-        mat[(1, 2)] = -self.xy[1].clone();
+    fn hat_swap(xi: VectorView2<D>) -> Matrix2x3<D> {
+        let mut mat = Matrix2x3::<D>::zeros();
+        mat.fixed_view_mut::<2, 1>(0, 0)
+            .copy_from(&SO2::hat_swap(xi.as_view()));
 
+        mat.fixed_view_mut::<2, 2>(0, 1)
+            .copy_from(&Matrix2::identity());
         mat
+    }
+
+    fn to_matrix(&self) -> Matrix3<D> {
+        let mut mat = Matrix3::<D>::identity();
+        mat.fixed_view_mut::<2, 2>(0, 0)
+            .copy_from(&self.rot.to_matrix());
+        mat.fixed_view_mut::<2, 1>(0, 2).copy_from(&self.xy);
+        mat
+    }
+
+    fn from_matrix(mat: MatrixView<3, 3, D>) -> Self {
+        let rot = mat.fixed_view::<2, 2>(0, 0).clone_owned();
+        let rot = SO2::from_matrix(rot.as_view());
+
+        let xy = mat.fixed_view::<2, 1>(0, 2).into();
+
+        SE2 { rot, xy }
     }
 }
 
@@ -173,7 +203,7 @@ mod tests {
         let se2 = SE2::exp(xi.as_view());
         let mat = se2.to_matrix();
 
-        let se2_hat = SE2::from_matrix(&mat);
+        let se2_hat = SE2::from_matrix(mat.as_view());
 
         assert_matrix_eq!(se2.ominus(&se2_hat), VectorX::zeros(3), comp = float);
     }
@@ -182,7 +212,7 @@ mod tests {
     fn jacobian() {
         fn rotate<D: DualNum>(r: SE2<D>) -> VectorX<D> {
             let v = Vector2::new(D::from(1.0), D::from(2.0));
-            let rotated = r.apply(&v);
+            let rotated = r.apply(v.as_view());
             dvector![rotated[0].clone(), rotated[1].clone()]
         }
 

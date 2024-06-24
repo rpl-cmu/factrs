@@ -1,12 +1,13 @@
-use nalgebra::dmatrix;
-
 use crate::dtype;
-use crate::linalg::{dvector, DualNum, DualVec, Matrix2, MatrixX, VectorViewX, VectorX};
-use crate::variables::{LieGroup, Variable};
+use crate::linalg::{
+    dvector, Const, DualNum, DualVec, Matrix1, Matrix2, MatrixView, VectorView1, VectorView2,
+    VectorViewX, VectorX,
+};
+use crate::variables::{MatrixLieGroup, Variable};
 use std::fmt;
 use std::ops;
 
-use super::Vector2;
+use super::{Vector1, Vector2};
 
 #[derive(Clone)]
 pub struct SO2<D: DualNum = dtype> {
@@ -20,29 +21,6 @@ impl<D: DualNum> SO2<D> {
             a: theta.clone().cos(),
             b: theta.clone().sin(),
         }
-    }
-
-    pub fn from_matrix(mat: &Matrix2<D>) -> Self {
-        SO2 {
-            a: mat[(0, 0)].clone(),
-            b: mat[(1, 0)].clone(),
-        }
-    }
-
-    pub fn to_matrix(&self) -> Matrix2<D> {
-        Matrix2::new(
-            self.a.clone(),
-            -self.b.clone(),
-            self.b.clone(),
-            self.a.clone(),
-        )
-    }
-
-    pub fn apply(&self, v: &Vector2<D>) -> Vector2<D> {
-        Vector2::new(
-            v[0].clone() * self.a.clone() - v[1].clone() * self.b.clone(),
-            v[0].clone() * self.b.clone() + v[1].clone() * self.a.clone(),
-        )
     }
 }
 
@@ -88,13 +66,48 @@ impl<D: DualNum> Variable<D> for SO2<D> {
     }
 }
 
-impl<D: DualNum> LieGroup<D> for SO2<D> {
-    fn hat(xi: VectorViewX<D>) -> MatrixX<D> {
-        dmatrix![D::from(0.0), -xi[0].clone(); xi[0].clone(), D::from(0.0)]
+impl<D: DualNum> MatrixLieGroup<D> for SO2<D> {
+    type TangentDim = Const<1>;
+    type MatrixDim = Const<2>;
+    type VectorDim = Const<2>;
+
+    fn adjoint(&self) -> Matrix1<D> {
+        Matrix1::identity()
     }
 
-    fn adjoint(&self) -> MatrixX<D> {
-        MatrixX::identity(2, 2)
+    fn hat(xi: VectorView1<D>) -> Matrix2<D> {
+        Matrix2::new(D::from(0.0), -xi[0].clone(), xi[0].clone(), D::from(0.0))
+    }
+
+    fn vee(xi: MatrixView<2, 2, D>) -> Vector1<D> {
+        Vector1::new(xi[(1, 0)].clone())
+    }
+
+    fn hat_swap(xi: VectorView2<D>) -> Vector2<D> {
+        Vector2::new(-xi[1].clone(), xi[0].clone())
+    }
+
+    fn apply(&self, v: VectorView2<D>) -> Vector2<D> {
+        Vector2::new(
+            v[0].clone() * self.a.clone() - v[1].clone() * self.b.clone(),
+            v[0].clone() * self.b.clone() + v[1].clone() * self.a.clone(),
+        )
+    }
+
+    fn from_matrix(mat: MatrixView<2, 2, D>) -> Self {
+        SO2 {
+            a: mat[(0, 0)].clone(),
+            b: mat[(1, 0)].clone(),
+        }
+    }
+
+    fn to_matrix(&self) -> Matrix2<D> {
+        Matrix2::new(
+            self.a.clone(),
+            -self.b.clone(),
+            self.b.clone(),
+            self.a.clone(),
+        )
     }
 }
 
@@ -144,7 +157,7 @@ mod tests {
         let so2_og = SO2::exp(xi.as_view());
         let mat = so2_og.to_matrix();
 
-        let so2_after = SO2::from_matrix(&mat);
+        let so2_after = SO2::from_matrix(mat.as_view());
         println!("{:}", so2_og);
         println!("{:}", so2_after);
         assert_scalar_eq!(so2_og.a, so2_after.a, comp = float);
@@ -157,7 +170,7 @@ mod tests {
         let xi = dvector![consts::FRAC_PI_2];
         let so2 = SO2::exp(xi.as_view());
         let v = Vector2::new(1.0, 0.0);
-        let v_rot = so2.apply(&v);
+        let v_rot = so2.apply(v.as_view());
         println!("{:?}", v_rot);
         println!("{}", so2.to_matrix());
         println!("{}", so2);
@@ -169,7 +182,7 @@ mod tests {
     fn jacobian() {
         fn rotate<D: DualNum>(r: SO2<D>) -> VectorX<D> {
             let v = Vector2::new(D::from(1.0), D::from(2.0));
-            let rotated = r.apply(&v);
+            let rotated = r.apply(v.as_view());
             dvector![rotated[0].clone(), rotated[1].clone()]
         }
 
@@ -180,7 +193,7 @@ mod tests {
         } = ForwardProp::jacobian_1(rotate, &r);
 
         let v_star = Vector2::new(2.0, -1.0);
-        let dx_exp = -r.apply(&v_star);
+        let dx_exp = -r.apply(v_star.as_view());
 
         println!("Expected: {}", dx_exp);
         println!("Actual: {}", dx);

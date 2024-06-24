@@ -128,3 +128,94 @@ macro_rules! make_enum_variable {
 
     };
 }
+
+#[macro_export]
+macro_rules! assert_variable_eq {
+    ($x:expr, $y:expr) => {
+        matrixcompare::assert_matrix_eq!($x.ominus(&$y), VectorX::zeros($x.dim()));
+    };
+    ($x:expr, $y:expr, comp = exact) => {
+        matrixcompare::assert_matrix_eq!($x.ominus(&$y), VectorX::zeros($x.dim()), comp = exact);
+    };
+    ($x:expr, $y:expr, comp = abs, tol = $tol:expr) => {
+        matrixcompare::assert_matrix_eq!(
+            $x.ominus(&$y),
+            VectorX::zeros($x.dim()),
+            comp = abs,
+            tol = $tol
+        );
+    };
+    ($x:expr, $y:expr, comp = ulp, tol = $tol:expr) => {
+        matrixcompare::assert_matrix_eq!(
+            $x.ominus(&$y),
+            VectorX::zeros($x.dim()),
+            comp = ulp,
+            tol = $tol
+        );
+    };
+    ($x:expr, $y:expr, comp = float) => {
+        matrixcompare::assert_matrix_eq!($x.ominus(&$y), VectorX::zeros($x.dim()), comp = float);
+    };
+    ($x:expr, $y:expr, comp = float, $($key:ident = $val:expr),+) => {
+        matrixcompare::assert_matrix_eq!(
+            $x.ominus(&$y),
+            VectorX::zeros($x.dim()),
+            comp = float,
+            $($key:ident = $val:expr),+
+        );
+    };
+}
+
+#[macro_export]
+macro_rules! test_variable {
+    ($($var:ident),*) => {
+        use paste::paste;
+        // Return a misc element for our tests
+        fn element<T: Variable>(scale: dtype) -> T {
+            let xi = VectorX::from_fn(T::DIM, |_, i| scale * ((i + 1) as dtype) / 10.0);
+            T::exp(xi.as_view())
+        }
+
+        paste! {
+            $(
+                #[test]
+                #[allow(non_snake_case)]
+                fn identity() {
+                    let var : $var = element(1.0);
+                    let id = <$var as Variable>::identity();
+                    $crate::assert_variable_eq!(var, var.compose(&id), comp = abs, tol = 1e-6);
+                    $crate::assert_variable_eq!(var, id.compose(&var), comp = abs, tol = 1e-6);
+                }
+
+                #[test]
+                #[allow(non_snake_case)]
+                fn inverse() {
+                    let var : $var = element(1.0);
+                    let inv = Variable::inverse(&var);
+                    let id = <$var as Variable>::identity();
+                    println!("{:?}", var);
+                    println!("{:?}", inv);
+                    $crate::assert_variable_eq!(var.compose(&inv), id, comp = abs, tol = 1e-6);
+                    $crate::assert_variable_eq!(inv.compose(&var), id, comp = abs, tol = 1e-6);
+                }
+
+                #[test]
+                #[allow(non_snake_case)]
+                fn associativity() {
+                    let var1 : $var = element(1.0);
+                    let var2 : $var = element(2.0);
+                    let var3 : $var = element(3.0);
+                    $crate::assert_variable_eq!(var1.compose(&var2).compose(&var3), var1.compose(&var2.compose(&var3)), comp = abs, tol = 1e-6);
+                }
+
+                #[test]
+                #[allow(non_snake_case)]
+                fn exp_log() {
+                    let var : $var = element(1.0);
+                    let out = <$var as Variable>::exp(var.log().as_view());
+                    $crate::assert_variable_eq!(var, out, comp = abs, tol = 1e-6);
+                }
+            )*
+        }
+    };
+}
