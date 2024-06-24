@@ -7,7 +7,9 @@ use faer::sparse::SparseColMat;
 use faer::Mat;
 
 pub trait LinearSolver: Default {
-    fn solve(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype>;
+    fn solve_symmetric(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype>;
+
+    fn solve_lst_sq(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype>;
 }
 
 // ------------------------- Cholesky Linear Solver ------------------------- //
@@ -18,7 +20,22 @@ pub struct CholeskySolver {
 }
 
 impl LinearSolver for CholeskySolver {
-    fn solve(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
+    fn solve_symmetric(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
+        if self.sparsity_pattern.is_none() {
+            self.sparsity_pattern =
+                Some(solvers::SymbolicCholesky::try_new(a.symbolic(), faer::Side::Lower).unwrap());
+        }
+
+        solvers::Cholesky::try_new_with_symbolic(
+            self.sparsity_pattern.clone().unwrap(),
+            a.as_ref(),
+            faer::Side::Lower,
+        )
+        .unwrap()
+        .solve(&b)
+    }
+
+    fn solve_lst_sq(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
         let ata = a
             .as_ref()
             .transpose()
@@ -28,19 +45,7 @@ impl LinearSolver for CholeskySolver {
 
         let atb = a.as_ref().transpose().mul(b);
 
-        if self.sparsity_pattern.is_none() {
-            self.sparsity_pattern = Some(
-                solvers::SymbolicCholesky::try_new(ata.symbolic(), faer::Side::Lower).unwrap(),
-            );
-        }
-
-        solvers::Cholesky::try_new_with_symbolic(
-            self.sparsity_pattern.clone().unwrap(),
-            ata.as_ref(),
-            faer::Side::Lower,
-        )
-        .unwrap()
-        .solve(&atb)
+        self.solve_symmetric(&ata, &atb)
     }
 }
 
@@ -52,7 +57,11 @@ pub struct QRSolver {
 }
 
 impl LinearSolver for QRSolver {
-    fn solve(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
+    fn solve_symmetric(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
+        self.solve_lst_sq(a, b)
+    }
+
+    fn solve_lst_sq(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
         if self.sparsity_pattern.is_none() {
             self.sparsity_pattern = Some(solvers::SymbolicQr::try_new(a.symbolic()).unwrap());
         }
@@ -75,7 +84,17 @@ pub struct LUSolver {
 }
 
 impl LinearSolver for LUSolver {
-    fn solve(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
+    fn solve_symmetric(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
+        if self.sparsity_pattern.is_none() {
+            self.sparsity_pattern = Some(solvers::SymbolicLu::try_new(a.symbolic()).unwrap());
+        }
+
+        solvers::Lu::try_new_with_symbolic(self.sparsity_pattern.clone().unwrap(), a.as_ref())
+            .unwrap()
+            .solve(&b)
+    }
+
+    fn solve_lst_sq(&mut self, a: &SparseColMat<usize, dtype>, b: &Mat<dtype>) -> Mat<dtype> {
         let ata = a
             .as_ref()
             .transpose()
@@ -84,13 +103,7 @@ impl LinearSolver for LUSolver {
             .mul(a.as_ref());
         let atb = a.as_ref().transpose().mul(b);
 
-        if self.sparsity_pattern.is_none() {
-            self.sparsity_pattern = Some(solvers::SymbolicLu::try_new(ata.symbolic()).unwrap());
-        }
-
-        solvers::Lu::try_new_with_symbolic(self.sparsity_pattern.clone().unwrap(), ata.as_ref())
-            .unwrap()
-            .solve(&atb)
+        self.solve_symmetric(&ata, &atb)
     }
 }
 
@@ -118,7 +131,7 @@ mod test {
         let b = mat![[15.0], [-3.0], [33.0]];
 
         let x_exp = mat![[1.874901], [-0.566112]];
-        let x = solver.solve(&a, &b);
+        let x = solver.solve_lst_sq(&a, &b);
         println!("{:?}", x);
 
         assert_matrix_eq!(x, x_exp, comp = abs, tol = 1e-6);

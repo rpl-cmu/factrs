@@ -38,7 +38,7 @@ impl Optimizer for GaussNewton {
         // Solve Ax = b
         let delta = params
             .solver
-            .solve(&j, &r)
+            .solve_lst_sq(&j, &r)
             .as_ref()
             .into_nalgebra()
             .column(0)
