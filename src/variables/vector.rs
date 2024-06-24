@@ -30,3 +30,14 @@ impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
         self.map(|x| x.into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::linalg::Vector6;
+    use crate::test_variable;
+
+    // Be lazy and only test Vector6 - others should work the same
+    test_variable!(Vector6);
+}

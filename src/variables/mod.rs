@@ -21,6 +21,8 @@ mod macros;
 use crate::make_enum_variable;
 make_enum_variable!(
     VariableEnum,
+    SO2,
+    SE2,
     SO3,
     SE3,
     Vector1,
@@ -30,23 +32,3 @@ make_enum_variable!(
     Vector5,
     Vector6
 );
-
-// ------------------------- Assert Variables are Equal ------------------------- //
-
-#[cfg(test)]
-mod test {
-    
-    
-
-    
-
-    // TODO: Find a way to expose this better
-    // Try to test all the lie group rules
-    // Closure should come by default (test manifold structure for SO(3) somehow?)
-    // identity
-    // inverse
-    // associativity
-    // exp/log are invertible near the origin
-
-    // variable_tests!(Vector1, Vector2, Vector3, Vector4, Vector5, Vector6, SO2, SE2, SO3, SE3);
-}

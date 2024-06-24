@@ -1,7 +1,6 @@
 use crate::dtype;
 use crate::linalg::{
-    Const, Dim, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim,
-    VectorViewX, VectorX,
+    Const, Dim, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
 };
 use nalgebra as na;
 
@@ -63,7 +62,7 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
-pub trait MatrixLieGroup<D: DualNum>: Variable<D>
+pub trait MatrixLieGroup<D: DualNum = dtype>: Variable<D>
 where
     na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
     na::DefaultAllocator: na::allocator::Allocator<D, Self::MatrixDim, Self::MatrixDim>,

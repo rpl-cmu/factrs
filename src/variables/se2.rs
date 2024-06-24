@@ -193,52 +193,10 @@ impl<D: DualNum> fmt::Display for SE2<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{dvector, Diff, DiffResult, DualNum, ForwardProp, Matrix2x3, Matrix3};
-    use matrixcompare::assert_matrix_eq;
 
-    #[test]
-    fn matrix() {
-        // to_matrix -> from_matrix shoudl give back original vector
-        let xi = dvector![0.1, 0.2, 0.3];
-        let se2 = SE2::exp(xi.as_view());
-        let mat = se2.to_matrix();
+    use crate::{test_lie, test_variable};
 
-        let se2_hat = SE2::from_matrix(mat.as_view());
+    test_variable!(SO2);
 
-        assert_matrix_eq!(se2.ominus(&se2_hat), VectorX::zeros(3), comp = float);
-    }
-
-    #[test]
-    fn jacobian() {
-        fn rotate<D: DualNum>(r: SE2<D>) -> VectorX<D> {
-            let v = Vector2::new(D::from(1.0), D::from(2.0));
-            let rotated = r.apply(v.as_view());
-            dvector![rotated[0].clone(), rotated[1].clone()]
-        }
-
-        let t = SE2::exp(dvector![0.1, 0.2, 0.3].as_view());
-        let DiffResult {
-            value: _x,
-            diff: dx,
-        } = ForwardProp::jacobian_1(rotate, &t);
-
-        let dropper: Matrix2x3 = Matrix2x3::identity();
-        let v = dvector!(1.0, 2.0);
-        let mut jac = Matrix3::zeros();
-        jac[(0, 0)] = -v[1];
-        jac[(1, 0)] = v[0];
-        jac.fixed_view_mut::<2, 2>(0, 1)
-            .copy_from(&Matrix2::identity());
-
-        #[cfg(not(feature = "left"))]
-        let dx_exp = dropper * t.to_matrix() * jac;
-        // TODO: Verify left jacobian
-        #[cfg(feature = "left")]
-        let dx_exp = dropper * t.to_matrix() * t.inverse().adjoint() * jac;
-
-        println!("Expected: {}", dx_exp);
-        println!("Actual: {}", dx);
-
-        assert_matrix_eq!(dx, dx_exp, comp = float);
-    }
+    test_lie!(SO2);
 }

@@ -262,67 +262,10 @@ impl<D: DualNum> fmt::Debug for SO3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{Diff, DiffResult, DualNum, ForwardProp};
-    use matrixcompare::assert_matrix_eq;
 
-    #[cfg(feature = "f32")]
-    pub use std::f32::consts;
-    #[cfg(not(feature = "f32"))]
-    pub use std::f64::consts;
-
-    use crate::test_variable;
+    use crate::{test_lie, test_variable};
 
     test_variable!(SO3);
 
-    #[test]
-    fn matrix() {
-        // to_matrix -> from_matrix should give back original vector
-        let xi = dvector![0.1, 0.2, 0.3];
-        let so3_og = SO3::exp(xi.as_view());
-        let mat = so3_og.to_matrix();
-
-        let so3_after = SO3::from_matrix(mat.as_view());
-        println!("{:}", so3_og);
-        println!("{:}", so3_after);
-        assert_matrix_eq!(so3_og.xyzw, so3_after.xyzw, comp = float);
-    }
-
-    #[test]
-    fn rotate() {
-        // rotate a vector
-        let xi = dvector![0.0, 0.0, consts::FRAC_PI_2];
-        let so3 = SO3::exp(xi.as_view());
-        let v = Vector3::new(1.0, 0.0, 0.0);
-        let v_rot = so3.apply(v.as_view());
-        println!("{:?}", v_rot);
-        println!("{}", so3.to_matrix());
-        assert_matrix_eq!(v_rot, Vector3::y(), comp = float);
-    }
-
-    #[test]
-    fn jacobian() {
-        fn rotate<D: DualNum>(r: SO3<D>) -> VectorX<D> {
-            let v = Vector3::new(D::from(1.0), D::from(2.0), D::from(3.0));
-            let rotated = r.apply(v.as_view());
-            dvector![rotated[0].clone(), rotated[1].clone(), rotated[2].clone()]
-        }
-
-        let r = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
-        let DiffResult {
-            value: _x,
-            diff: dx,
-        } = ForwardProp::jacobian_1(rotate, &r);
-
-        let v = Vector3::new(1.0, 2.0, 3.0);
-
-        #[cfg(not(feature = "left"))]
-        let dx_exp = -r.to_matrix() * SO3::hat(v.as_view());
-        #[cfg(feature = "left")]
-        let dx_exp = -SO3::hat(v.as_view());
-
-        println!("Expected: {}", dx_exp);
-        println!("Actual: {}", dx);
-
-        assert_matrix_eq!(dx, dx_exp, comp = float);
-    }
+    test_lie!(SO3);
 }

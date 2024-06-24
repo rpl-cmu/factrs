@@ -142,62 +142,10 @@ impl<D: DualNum> fmt::Debug for SO2<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::linalg::{Diff, DiffResult, DualNum, ForwardProp};
-    use matrixcompare::{assert_matrix_eq, assert_scalar_eq};
 
-    #[cfg(feature = "f32")]
-    pub use std::f32::consts;
-    #[cfg(not(feature = "f32"))]
-    pub use std::f64::consts;
+    use crate::{test_lie, test_variable};
 
-    #[test]
-    fn matrix() {
-        // to_matrix -> from_matrix should give back original vector
-        let xi = dvector![0.1];
-        let so2_og = SO2::exp(xi.as_view());
-        let mat = so2_og.to_matrix();
+    test_variable!(SO2);
 
-        let so2_after = SO2::from_matrix(mat.as_view());
-        println!("{:}", so2_og);
-        println!("{:}", so2_after);
-        assert_scalar_eq!(so2_og.a, so2_after.a, comp = float);
-        assert_scalar_eq!(so2_og.b, so2_after.b, comp = float);
-    }
-
-    #[test]
-    fn rotate() {
-        // rotate a vector
-        let xi = dvector![consts::FRAC_PI_2];
-        let so2 = SO2::exp(xi.as_view());
-        let v = Vector2::new(1.0, 0.0);
-        let v_rot = so2.apply(v.as_view());
-        println!("{:?}", v_rot);
-        println!("{}", so2.to_matrix());
-        println!("{}", so2);
-        assert_matrix_eq!(v_rot, Vector2::y(), comp = float);
-    }
-
-    // TODO: Analytically derive this one to check
-    #[test]
-    fn jacobian() {
-        fn rotate<D: DualNum>(r: SO2<D>) -> VectorX<D> {
-            let v = Vector2::new(D::from(1.0), D::from(2.0));
-            let rotated = r.apply(v.as_view());
-            dvector![rotated[0].clone(), rotated[1].clone()]
-        }
-
-        let r = SO2::exp(dvector![0.1, 0.2].as_view());
-        let DiffResult {
-            value: _x,
-            diff: dx,
-        } = ForwardProp::jacobian_1(rotate, &r);
-
-        let v_star = Vector2::new(2.0, -1.0);
-        let dx_exp = -r.apply(v_star.as_view());
-
-        println!("Expected: {}", dx_exp);
-        println!("Actual: {}", dx);
-
-        assert_matrix_eq!(dx, dx_exp, comp = float);
-    }
+    test_lie!(SO2);
 }
