@@ -1,118 +1,5 @@
-use crate::{
-    containers::{GraphGeneric, Key, Values},
-    dtype,
-    linear::{CholeskySolver, LinearSolver},
-    noise::NoiseModel,
-    residuals::Residual,
-    robust::RobustCost,
-    variables::Variable,
-};
-
-pub struct OptimizerParams<S: LinearSolver = CholeskySolver> {
-    pub max_iterations: usize,
-    pub error_tol_relative: dtype,
-    pub error_tol_absolute: dtype,
-    pub error_tol: dtype,
-    pub solver: S,
-}
-
-impl<S: LinearSolver> Default for OptimizerParams<S> {
-    fn default() -> Self {
-        Self {
-            max_iterations: 100,
-            error_tol_relative: 1e-6,
-            error_tol_absolute: 1e-6,
-            error_tol: 0.0,
-            solver: S::default(),
-        }
-    }
-}
-
-pub trait Optimizer {
-    fn iterate<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: LinearSolver>(
-        params: &mut OptimizerParams<S>,
-        graph: &GraphGeneric<K, V, R, N, C>,
-        values: &mut Values<K, V>,
-    );
-
-    fn optimize<
-        K: Key,
-        V: Variable,
-        R: Residual<V>,
-        N: NoiseModel,
-        C: RobustCost,
-        S: LinearSolver,
-    >(
-        params: OptimizerParams<S>,
-        graph: &GraphGeneric<K, V, R, N, C>,
-        values: &mut Values<K, V>,
-    ) {
-        let mut params = params;
-
-        // Check if we need to optimize at all
-        let mut error_old = graph.error(values);
-        if error_old <= params.error_tol {
-            log::info!("Error is already below tolerance, skipping optimization");
-            return;
-        }
-
-        log::info!(
-            "{:^5} | {:^12} | {:^12} | {:^12}",
-            "Iter",
-            "Error",
-            "ErrorAbs",
-            "ErrorRel"
-        );
-        log::info!(
-            "{:^5} | {:^12} | {:^12} | {:^12}",
-            "-----",
-            "------------",
-            "------------",
-            "------------"
-        );
-        log::info!(
-            "{:^5} | {:^12.4e} | {:^12} | {:^12}",
-            0,
-            error_old,
-            "-",
-            "-"
-        );
-
-        // Begin iterations
-        let mut error_new = error_old;
-        for i in 1..params.max_iterations + 1 {
-            error_old = error_new;
-            Self::iterate(&mut params, graph, values);
-
-            // Evaluate error again to see how we did
-            error_new = graph.error(values);
-
-            // Check if we need to stop
-            if error_new <= params.error_tol {
-                log::info!("Error is below tolerance, stopping optimization");
-                return;
-            }
-            let error_decrease_abs = error_old - error_new;
-            if error_decrease_abs <= params.error_tol_absolute {
-                log::info!("Error decrease is below absolute tolerance, stopping optimization");
-                return;
-            }
-            let error_decrease_rel = error_decrease_abs / error_old;
-            if error_decrease_rel <= params.error_tol_relative {
-                log::info!("Error decrease is below relative tolerance, stopping optimization");
-                return;
-            }
-
-            log::info!(
-                "{:^5} | {:^12.4e} | {:^12.4e} | {:^12.4e}",
-                i,
-                error_new,
-                error_decrease_abs,
-                error_decrease_rel
-            )
-        }
-    }
-}
+mod traits;
+pub use traits::{OptError, OptResult, Optimizer, OptimizerParams};
 
 mod macros;
 
@@ -129,11 +16,14 @@ pub mod test {
 
     use crate::{
         bundle::DefaultBundle,
-        containers::{Graph, X},
+        containers::{Graph, Symbol, Values, X},
+        dtype,
         factors::FactorGeneric,
         linalg::VectorX,
+        noise::NoiseEnum,
         residuals::{BetweenResidual, PriorResidual, ResidualEnum},
-        variables::VariableEnum,
+        robust::RobustEnum,
+        variables::{Variable, VariableEnum},
     };
 
     use super::*;
@@ -143,7 +33,7 @@ pub mod test {
         T: Variable + Into<VariableEnum>,
         for<'a> &'a VariableEnum: TryInto<&'a T>,
         PriorResidual<T>: Into<ResidualEnum>,
-        O: Optimizer,
+        O: Optimizer<Symbol, VariableEnum, ResidualEnum, NoiseEnum, RobustEnum>,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
         let p = T::exp(t.as_view());
@@ -156,8 +46,8 @@ pub mod test {
         let factor = FactorGeneric::new(vec![X(0)], res).build();
         graph.add_factor(factor);
 
-        let params: OptimizerParams = OptimizerParams::default();
-        O::optimize(params, &graph, &mut values);
+        let mut opt = O::new(graph);
+        values = opt.optimize(values).unwrap();
 
         let out: &T = values.get(&X(0)).unwrap().try_into().ok().unwrap();
         assert_matrix_eq!(
@@ -170,7 +60,7 @@ pub mod test {
 
     pub fn optimize_between<O, T>()
     where
-        O: Optimizer,
+        O: Optimizer<Symbol, VariableEnum, ResidualEnum, NoiseEnum, RobustEnum>,
         T: Variable + Into<VariableEnum>,
         for<'a> &'a VariableEnum: TryInto<&'a T>,
         PriorResidual<T>: Into<ResidualEnum>,
@@ -196,8 +86,8 @@ pub mod test {
         let factor = FactorGeneric::new(vec![X(0), X(1)], res).build();
         graph.add_factor(factor);
 
-        let params: OptimizerParams = OptimizerParams::default();
-        GaussNewton::optimize(params, &graph, &mut values);
+        let mut opt = O::new(graph);
+        values = opt.optimize(values).unwrap();
 
         let out1 = values.get(&X(0)).unwrap().try_into().ok().unwrap();
         assert_matrix_eq!(

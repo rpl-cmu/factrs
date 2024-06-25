@@ -10,33 +10,52 @@ use crate::{
     variables::Variable,
 };
 
-use super::{Optimizer, OptimizerParams};
+use super::{OptResult, Optimizer, OptimizerParams};
 
 #[derive(Default)]
-pub struct GaussNewton;
+pub struct GaussNewton<
+    K: Key,
+    V: Variable,
+    R: Residual<V>,
+    N: NoiseModel,
+    C: RobustCost,
+    S: LinearSolver,
+> {
+    graph: GraphGeneric<K, V, R, N, C>,
+    solver: S,
+    pub params: OptimizerParams,
+}
 
-impl Optimizer for GaussNewton {
-    fn iterate<
-        K: Key,
-        V: Variable,
-        R: Residual<V>,
-        N: NoiseModel,
-        C: RobustCost,
-        S: LinearSolver,
-    >(
-        params: &mut OptimizerParams<S>,
-        graph: &GraphGeneric<K, V, R, N, C>,
-        values: &mut Values<K, V>,
-    ) {
+impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: LinearSolver>
+    Optimizer<K, V, R, N, C> for GaussNewton<K, V, R, N, C, S>
+{
+    fn new(graph: GraphGeneric<K, V, R, N, C>) -> Self {
+        Self {
+            graph,
+            solver: S::default(),
+            params: OptimizerParams::default(),
+        }
+    }
+
+    fn graph(&self) -> &GraphGeneric<K, V, R, N, C> {
+        &self.graph
+    }
+
+    fn params(&self) -> &OptimizerParams {
+        &self.params
+    }
+
+    // TODO: Should probably have some form of error handling here
+    fn step(&mut self, mut values: Values<K, V>) -> OptResult<K, V> {
         // Make an ordering
-        let order = Order::from_values(values);
+        let order = Order::from_values(&values);
 
         // Solve the linear system
-        let linear_graph = graph.linearize(values);
+        let linear_graph = self.graph.linearize(&values);
         let DiffResult { value: r, diff: j } = linear_graph.residual_jacobian(&order);
 
         // Solve Ax = b
-        let delta = params
+        let delta = self
             .solver
             .solve_lst_sq(&j, &r)
             .as_ref()
@@ -47,13 +66,18 @@ impl Optimizer for GaussNewton {
         // Update the values
         let dx = LinearValues::from_order_and_values(order, delta);
         values.oplus_mut(&dx);
+
+        Ok(values)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_optimizer;
+    use crate::{
+        containers::Symbol, linear::CholeskySolver, noise::NoiseEnum, residuals::ResidualEnum,
+        robust::RobustEnum, test_optimizer, variables::VariableEnum,
+    };
 
-    test_optimizer!(GaussNewton);
+    test_optimizer!(GaussNewton<Symbol, VariableEnum, ResidualEnum, NoiseEnum, RobustEnum, CholeskySolver>);
 }

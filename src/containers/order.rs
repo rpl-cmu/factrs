@@ -6,13 +6,13 @@ use std::collections::hash_map::Iter as HashMapIter;
 use super::{Key, Values};
 
 // Since the map isn't ordered, we need to track both idx and len of each variable
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Idx {
     pub idx: usize,
     pub dim: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Order<K: Key> {
     map: HashMap<K, Idx>,
     dim: usize,
