@@ -230,8 +230,6 @@ macro_rules! test_variable {
 #[macro_export]
 macro_rules! test_lie {
     ($var:ident) => {
-        use $crate::linalg::{Diff, Dim};
-
         fn tangent<T: Variable>(scale: dtype) -> $crate::linalg::VectorX {
             VectorX::from_fn(T::DIM, |_, i| scale * ((i + 1) as dtype) / 10.0)
         }
@@ -254,6 +252,9 @@ macro_rules! test_lie {
         }
 
         // TODO: Someway to test rotate & adjoint functions?
+
+        #[cfg(not(feature = "left"))]
+        use $crate::linalg::{Diff, Dim};
 
         #[cfg(not(feature = "left"))]
         #[test]

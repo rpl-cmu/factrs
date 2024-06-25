@@ -84,7 +84,7 @@ pub trait Optimizer {
             error_old = error_new;
             Self::iterate(&mut params, graph, values);
 
-            // Evaulate error again to see how we did
+            // Evaluate error again to see how we did
             error_new = graph.error(values);
 
             // Check if we need to stop
