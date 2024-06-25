@@ -1,5 +1,6 @@
 use super::{Residual, Residual1};
 use crate::containers::{Key, Values};
+use crate::impl_residual;
 use crate::linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX};
 use crate::variables::Variable;
 
@@ -24,23 +25,12 @@ where
     type V1 = P;
     type Differ = ForwardProp;
 
-    fn residual1(&self, v: P::Dual) -> VectorX<DualVec> {
+    fn residual1(&self, v: <Self::V1 as Variable>::Dual) -> VectorX<DualVec> {
         self.prior.ominus(&v)
     }
 }
 
-// TODO: This is mostly boilerplate, can we generate this?
-// Can't use blanket implementation for Residual b/c there'll be potential overlap with Residual2, Residual3, etc.
-impl<V: Variable, P: Variable> Residual<V> for PriorResidual<P>
-where
-    for<'a> &'a V: std::convert::TryInto<&'a P>,
-{
-    const DIM: usize = <PriorResidual<P> as Residual1<V>>::DIM;
-
-    fn residual_jacobian<K: Key>(&self, v: &Values<K, V>, k: &[K]) -> DiffResult<VectorX, MatrixX> {
-        self.residual1_jacobian(v, k)
-    }
-}
+impl_residual!(1, PriorResidual<P : Variable>, P);
 
 #[cfg(test)]
 mod test {

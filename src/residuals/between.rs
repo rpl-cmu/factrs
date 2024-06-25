@@ -1,9 +1,10 @@
 use super::{Residual, Residual2};
 use crate::containers::{Key, Values};
+use crate::impl_residual;
 use crate::linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX};
 use crate::variables::Variable;
 
-// // Between Variable
+// Between Variable
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct BetweenResidual<P: Variable> {
     delta: P::Dual,
@@ -31,13 +32,4 @@ where
     }
 }
 
-impl<V: Variable, P: Variable> Residual<V> for BetweenResidual<P>
-where
-    for<'a> &'a V: std::convert::TryInto<&'a P>,
-{
-    const DIM: usize = <Self as Residual2<V>>::DIM;
-
-    fn residual_jacobian<K: Key>(&self, v: &Values<K, V>, k: &[K]) -> DiffResult<VectorX, MatrixX> {
-        self.residual2_jacobian(v, k)
-    }
-}
+impl_residual!(2, BetweenResidual<P : Variable>, P);

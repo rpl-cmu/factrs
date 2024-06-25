@@ -42,3 +42,24 @@ macro_rules! make_enum_residual {
 
     };
 }
+
+#[macro_export]
+macro_rules! impl_residual {
+    ($num:expr, $name:ident $(< $T:ident : $Trait:ident >)?, $($vars:ident),* ) => {
+        use paste::paste;
+        paste!{
+            impl<V: Variable, $($T: $Trait)?> Residual<V> for $name $(< $T >)?
+            where
+                $(
+                    for<'a> &'a V: std::convert::TryInto<&'a $vars>,
+                )*
+            {
+                const DIM: usize = <Self as [<Residual $num>]<V>>::DIM;
+
+                fn residual_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> DiffResult<VectorX, MatrixX> {
+                    self.[<residual $num _jacobian>](values, keys)
+                }
+            }
+        }
+    };
+}
