@@ -87,21 +87,8 @@ pub trait Optimizer<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: Robus
             // Evaluate error again to see how we did
             error_new = self.error(&values);
 
-            // Check if we need to stop
-            if error_new <= self.params().error_tol {
-                log::info!("Error is below tolerance, stopping optimization");
-                return Ok(values);
-            }
             let error_decrease_abs = error_old - error_new;
-            if error_decrease_abs <= self.params().error_tol_absolute {
-                log::info!("Error decrease is below absolute tolerance, stopping optimization");
-                return Ok(values);
-            }
             let error_decrease_rel = error_decrease_abs / error_old;
-            if error_decrease_rel <= self.params().error_tol_relative {
-                log::info!("Error decrease is below relative tolerance, stopping optimization");
-                return Ok(values);
-            }
 
             log::info!(
                 "{:^5} | {:^12.4e} | {:^12.4e} | {:^12.4e}",
@@ -109,7 +96,21 @@ pub trait Optimizer<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: Robus
                 error_new,
                 error_decrease_abs,
                 error_decrease_rel
-            )
+            );
+
+            // Check if we need to stop
+            if error_new <= self.params().error_tol {
+                log::info!("Error is below tolerance, stopping optimization");
+                return Ok(values);
+            }
+            if error_decrease_abs <= self.params().error_tol_absolute {
+                log::info!("Error decrease is below absolute tolerance, stopping optimization");
+                return Ok(values);
+            }
+            if error_decrease_rel <= self.params().error_tol_relative {
+                log::info!("Error decrease is below relative tolerance, stopping optimization");
+                return Ok(values);
+            }
         }
 
         Err(OptError::MaxIterations(values))

@@ -24,6 +24,18 @@ impl<D: DualNum> SE2<D> {
             xy: Vector2::new(x, y),
         }
     }
+
+    pub fn x(&self) -> D {
+        self.xy[0].clone()
+    }
+
+    pub fn y(&self) -> D {
+        self.xy[1].clone()
+    }
+
+    pub fn theta(&self) -> D {
+        self.rot.log()[0].clone()
+    }
 }
 
 impl<D: DualNum> Variable<D> for SE2<D> {

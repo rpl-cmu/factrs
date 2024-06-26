@@ -3,14 +3,6 @@ name = "samrs"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "mybin"
-path = "src/bin.rs"
-
-[[bin]]
-name = "m3500"
-path = "examples/m3500.rs"
-
 [dependencies]
 ahash = "0.8.11"
 derive_more = "0.99.17"
@@ -34,4 +26,5 @@ serde = ["dep:serde", "nalgebra/serde", "faer/serde", "ahash/serde"]
 
 [dev-dependencies]
 matrixcompare = "0.3.0"
+plotters = "0.3.6"
 pretty_env_logger = "0.4"
