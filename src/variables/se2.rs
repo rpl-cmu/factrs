@@ -52,7 +52,7 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     fn compose(&self, other: &Self) -> Self {
         SE2 {
             rot: &self.rot * &other.rot,
-            xy: self.rot.apply(other.xy.as_view()) + self.xy.clone(),
+            xy: self.rot.apply(other.xy.as_view()) + &self.xy,
         }
     }
 
@@ -65,6 +65,7 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     }
 
     #[allow(non_snake_case)]
+    #[allow(clippy::needless_borrow)]
     fn exp(xi: VectorViewX<D>) -> Self {
         let theta = xi[0].clone();
         let xy = Vector2::new(xi[1].clone(), xi[2].clone());
@@ -80,10 +81,10 @@ impl<D: DualNum> Variable<D> for SE2<D> {
                 A = D::from(1.0);
                 B = D::from(0.0);
             } else {
-                A = theta.clone().sin() / theta.clone();
-                B = (D::from(1.0) - theta.clone().cos()) / theta.clone();
+                A = (&theta).sin() / (&theta);
+                B = (D::from(1.0) - (&theta).cos()) / (&theta);
             };
-            let V = Matrix2::new(A.clone(), -B.clone(), B.clone(), A.clone());
+            let V = Matrix2::new(A.clone(), -B.clone(), B, A);
             V * xy
         };
 
@@ -91,11 +92,12 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     }
 
     #[allow(non_snake_case)]
+    #[allow(clippy::needless_borrow)]
     fn log(&self) -> VectorX<D> {
         let theta = self.rot.log()[0].clone();
 
         let xy = if cfg!(feature = "fake_exp") {
-            self.xy.clone()
+            &self.xy
         } else {
             let A;
             let B;
@@ -103,13 +105,13 @@ impl<D: DualNum> Variable<D> for SE2<D> {
                 A = D::from(1.0);
                 B = D::from(0.0);
             } else {
-                A = theta.clone().sin() / theta.clone();
-                B = (D::from(1.0) - theta.clone().cos()) / theta.clone();
+                A = (&theta).sin() / (&theta);
+                B = (D::from(1.0) - (&theta).cos()) / (&theta);
             };
-            let V = Matrix2::new(A.clone(), -B.clone(), B.clone(), A.clone());
+            let V = Matrix2::new(A.clone(), -B.clone(), B, A);
 
             let Vinv = V.try_inverse().expect("V is not invertible");
-            &Vinv * &self.xy
+            &(&Vinv * &self.xy)
         };
 
         dvector![theta, xy[0].clone(), xy[1].clone()]

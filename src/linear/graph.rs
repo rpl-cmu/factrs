@@ -64,6 +64,8 @@ impl<K: Key> LinearGraph<K> {
             row + f.dim()
         });
 
+        // TODO: This is quite slow to sort things - it'd be faster if we sorted indices by rows, not columns as they shoudl be closer to sorted
+        // However, the default implementation of SparseRowMat just used SparseColMat and then tranposes
         let jac = SparseColMat::try_new_from_triplets(total_rows, total_columns, &jac)
             .expect("Failed to form sparse jacobian");
 

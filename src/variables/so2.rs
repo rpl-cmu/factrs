@@ -16,10 +16,11 @@ pub struct SO2<D: DualNum = dtype> {
 }
 
 impl<D: DualNum> SO2<D> {
+    #[allow(clippy::needless_borrow)]
     pub fn from_theta(theta: D) -> Self {
         SO2 {
-            a: theta.clone().cos(),
-            b: theta.clone().sin(),
+            a: (&theta).cos(),
+            b: (&theta).sin(),
         }
     }
 }
@@ -44,8 +45,8 @@ impl<D: DualNum> Variable<D> for SO2<D> {
 
     fn compose(&self, other: &Self) -> Self {
         SO2 {
-            a: self.a.clone() * other.a.clone() - self.b.clone() * other.b.clone(),
-            b: self.a.clone() * other.b.clone() + self.b.clone() * other.a.clone(),
+            a: self.a.clone() * &other.a - self.b.clone() * &other.b,
+            b: self.a.clone() * &other.b + self.b.clone() * &other.a,
         }
     }
 
@@ -89,8 +90,8 @@ impl<D: DualNum> MatrixLieGroup<D> for SO2<D> {
 
     fn apply(&self, v: VectorView2<D>) -> Vector2<D> {
         Vector2::new(
-            v[0].clone() * self.a.clone() - v[1].clone() * self.b.clone(),
-            v[0].clone() * self.b.clone() + v[1].clone() * self.a.clone(),
+            v[0].clone() * &self.a - v[1].clone() * &self.b,
+            v[0].clone() * &self.b + v[1].clone() * &self.a,
         )
     }
 
