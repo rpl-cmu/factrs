@@ -1,5 +1,5 @@
 use crate::{
-    containers::{GraphGeneric, Key, Values},
+    containers::{Graph, Key, Values},
     dtype,
     noise::NoiseModel,
     residuals::Residual,
@@ -35,9 +35,9 @@ impl Default for OptimizerParams {
 }
 
 pub trait Optimizer<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
-    fn new(graph: GraphGeneric<K, V, R, N, C>) -> Self;
+    fn new(graph: Graph<K, V, R, N, C>) -> Self;
 
-    fn graph(&self) -> &GraphGeneric<K, V, R, N, C>;
+    fn graph(&self) -> &Graph<K, V, R, N, C>;
 
     fn params(&self) -> &OptimizerParams;
 

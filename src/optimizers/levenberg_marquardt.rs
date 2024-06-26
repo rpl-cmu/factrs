@@ -5,7 +5,7 @@ use faer::sparse::SparseColMat;
 use faer_ext::IntoNalgebra;
 
 use crate::{
-    containers::{GraphGeneric, Key, Order, Values},
+    containers::{Graph, Key, Order, Values},
     dtype,
     linalg::DiffResult,
     linear::{LinearSolver, LinearValues},
@@ -43,7 +43,7 @@ pub struct LevenMarquardt<
     C: RobustCost,
     S: LinearSolver,
 > {
-    graph: GraphGeneric<K, V, R, N, C>,
+    graph: Graph<K, V, R, N, C>,
     solver: S,
     pub params_base: OptimizerParams,
     pub params_leven: LevenParams,
@@ -53,7 +53,7 @@ pub struct LevenMarquardt<
 impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: LinearSolver>
     Optimizer<K, V, R, N, C> for LevenMarquardt<K, V, R, N, C, S>
 {
-    fn new(graph: GraphGeneric<K, V, R, N, C>) -> Self {
+    fn new(graph: Graph<K, V, R, N, C>) -> Self {
         Self {
             graph,
             solver: S::default(),
@@ -63,7 +63,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
         }
     }
 
-    fn graph(&self) -> &GraphGeneric<K, V, R, N, C> {
+    fn graph(&self) -> &Graph<K, V, R, N, C> {
         &self.graph
     }
 

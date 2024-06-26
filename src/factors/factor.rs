@@ -7,7 +7,7 @@ use crate::residuals::Residual;
 use crate::robust::{RobustCost, L2};
 use crate::variables::Variable;
 
-pub struct FactorGeneric<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
+pub struct Factor<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
     keys: Vec<K>,
     residual: R,
     noise: N,
@@ -23,9 +23,7 @@ pub struct FactorFactory<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: 
     _phantom: std::marker::PhantomData<V>,
 }
 
-impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
-    FactorGeneric<K, V, R, N, C>
-{
+impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K, V, R, N, C> {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(keys: Vec<K>, residual: impl Into<R>) -> FactorFactory<K, V, R, N, C> {
         // TODO: Need to check # of keys and residual vars are the same
@@ -97,10 +95,10 @@ where
         self
     }
 
-    pub fn build(self) -> FactorGeneric<K, V, R, N, C> {
+    pub fn build(self) -> Factor<K, V, R, N, C> {
         let d = self.residual.dim();
         // TODO: Should we cater to situations where noise or robustness has a different default?
-        FactorGeneric {
+        Factor {
             keys: self.keys,
             residual: self.residual,
             noise: self
@@ -114,7 +112,7 @@ where
 
 // Type alias to make life easier
 use crate::bundle::{Bundle, DefaultBundle};
-pub type Factor<B = DefaultBundle> = FactorGeneric<
+pub type FactorBundled<B = DefaultBundle> = Factor<
     <B as Bundle>::Key,
     <B as Bundle>::Variable,
     <B as Bundle>::Residual,
@@ -156,7 +154,7 @@ mod tests {
         let noise = GaussianNoise::from_diag_sigma(&dvector![1e-1, 2e-1, 3e-1]);
         let robust = GemanMcClure::default();
 
-        let factor = Factor::<DefaultBundle>::new(keys, residual)
+        let factor = FactorBundled::<DefaultBundle>::new(keys, residual)
             .set_noise(noise)
             .set_robust(robust)
             .build();
@@ -190,7 +188,7 @@ mod tests {
         let noise = GaussianNoise::from_diag_sigma(&dvector![1e-1, 2e-1, 3e-1]);
         let robust = GemanMcClure::default();
 
-        let factor = Factor::<DefaultBundle>::new(keys, residual)
+        let factor = FactorBundled::<DefaultBundle>::new(keys, residual)
             .set_noise(noise)
             .set_robust(robust)
             .build();

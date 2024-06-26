@@ -1,12 +1,12 @@
 use crate::{
-    dtype, factors::FactorGeneric, linear::LinearGraph, noise::NoiseModel, residuals::Residual,
+    dtype, factors::Factor, linear::LinearGraph, noise::NoiseModel, residuals::Residual,
     robust::RobustCost, variables::Variable,
 };
 
 use super::{Key, Values};
 
 use crate::bundle::{Bundle, DefaultBundle};
-pub type Graph<B = DefaultBundle> = GraphGeneric<
+pub type GraphBundled<B = DefaultBundle> = Graph<
     <B as Bundle>::Key,
     <B as Bundle>::Variable,
     <B as Bundle>::Residual,
@@ -14,18 +14,16 @@ pub type Graph<B = DefaultBundle> = GraphGeneric<
     <B as Bundle>::Robust,
 >;
 
-pub struct GraphGeneric<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
-    factors: Vec<FactorGeneric<K, V, R, N, C>>,
+pub struct Graph<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
+    factors: Vec<Factor<K, V, R, N, C>>,
 }
 
-impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
-    GraphGeneric<K, V, R, N, C>
-{
+impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Graph<K, V, R, N, C> {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn add_factor(&mut self, factor: FactorGeneric<K, V, R, N, C>) {
+    pub fn add_factor(&mut self, factor: Factor<K, V, R, N, C>) {
         self.factors.push(factor);
     }
 
@@ -40,7 +38,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost>
 }
 
 impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Default
-    for GraphGeneric<K, V, R, N, C>
+    for Graph<K, V, R, N, C>
 {
     fn default() -> Self {
         Self {

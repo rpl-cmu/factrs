@@ -2,7 +2,7 @@ use faer_ext::IntoNalgebra;
 
 use crate::{
     bundle::Bundle,
-    containers::{GraphGeneric, Key, Order, Values},
+    containers::{Graph, Key, Order, Values},
     linalg::DiffResult,
     linear::{CholeskySolver, LinearSolver, LinearValues},
     noise::NoiseModel,
@@ -22,7 +22,7 @@ pub struct GaussNewton<
     C: RobustCost,
     S: LinearSolver = CholeskySolver,
 > {
-    graph: GraphGeneric<K, V, R, N, C>,
+    graph: Graph<K, V, R, N, C>,
     solver: S,
     pub params: OptimizerParams,
 }
@@ -30,7 +30,7 @@ pub struct GaussNewton<
 impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: LinearSolver>
     Optimizer<K, V, R, N, C> for GaussNewton<K, V, R, N, C, S>
 {
-    fn new(graph: GraphGeneric<K, V, R, N, C>) -> Self {
+    fn new(graph: Graph<K, V, R, N, C>) -> Self {
         Self {
             graph,
             solver: S::default(),
@@ -38,7 +38,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
         }
     }
 
-    fn graph(&self) -> &GraphGeneric<K, V, R, N, C> {
+    fn graph(&self) -> &Graph<K, V, R, N, C> {
         &self.graph
     }
 

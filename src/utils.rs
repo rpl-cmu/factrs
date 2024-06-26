@@ -4,14 +4,16 @@ use std::io::{BufRead, BufReader};
 use nalgebra::dvector;
 
 use crate::bundle::Bundle;
-use crate::containers::{Graph, Symbol, Values, X};
-use crate::factors::Factor;
+use crate::containers::{GraphBundled, Symbol, Values, X};
+use crate::factors::FactorBundled;
 use crate::noise::GaussianNoise;
 use crate::residuals::{BetweenResidual, PriorResidual};
 use crate::robust::L2;
 use crate::{dtype, variables::*};
 
-pub fn load_g20<B: Bundle<Key = Symbol>>(file: &str) -> (Graph<B>, Values<B::Key, B::Variable>)
+pub fn load_g20<B: Bundle<Key = Symbol>>(
+    file: &str,
+) -> (GraphBundled<B>, Values<B::Key, B::Variable>)
 where
     B::Variable: From<SE2>,
     B::Residual: From<BetweenResidual<SE2>>,
@@ -22,7 +24,7 @@ where
     let file = File::open(file).expect("File not found!");
 
     let mut values: Values<Symbol, B::Variable> = Values::new();
-    let mut graph = Graph::<B>::new();
+    let mut graph = GraphBundled::<B>::new();
 
     for line in BufReader::new(file).lines() {
         let line = line.unwrap();
@@ -39,9 +41,11 @@ where
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor =
-                        Factor::<B>::new(vec![key.clone()], PriorResidual::new(&var.clone()))
-                            .build();
+                    let factor = FactorBundled::<B>::new(
+                        vec![key.clone()],
+                        PriorResidual::new(&var.clone()),
+                    )
+                    .build();
                     graph.add_factor(factor);
                 }
 
@@ -65,7 +69,7 @@ where
                 let key2 = X(id_curr);
                 let var = SE2::new(theta, x, y);
                 let noise = GaussianNoise::from_diag_inf(&inf);
-                let factor = Factor::<B>::new(vec![key1, key2], BetweenResidual::new(&var))
+                let factor = FactorBundled::<B>::new(vec![key1, key2], BetweenResidual::new(&var))
                     .set_noise(noise)
                     .build();
                 graph.add_factor(factor);

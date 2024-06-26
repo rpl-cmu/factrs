@@ -16,9 +16,9 @@ pub mod test {
 
     use crate::{
         bundle::DefaultBundle,
-        containers::{Graph, Symbol, Values, X},
+        containers::{GraphBundled, Symbol, Values, X},
         dtype,
-        factors::FactorGeneric,
+        factors::Factor,
         linalg::VectorX,
         noise::NoiseEnum,
         residuals::{BetweenResidual, PriorResidual, ResidualEnum},
@@ -41,9 +41,9 @@ pub mod test {
         let mut values = Values::new();
         values.insert(X(0), T::identity());
 
-        let mut graph = Graph::<DefaultBundle>::new();
+        let mut graph = GraphBundled::<DefaultBundle>::new();
         let res = PriorResidual::new(&p);
-        let factor = FactorGeneric::new(vec![X(0)], res).build();
+        let factor = Factor::new(vec![X(0)], res).build();
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
@@ -76,14 +76,14 @@ pub mod test {
         values.insert(X(0), T::identity());
         values.insert(X(1), T::identity());
 
-        let mut graph = Graph::<DefaultBundle>::new();
+        let mut graph = GraphBundled::<DefaultBundle>::new();
         let res = PriorResidual::new(&p1);
-        let factor = FactorGeneric::new(vec![X(0)], res).build();
+        let factor = Factor::new(vec![X(0)], res).build();
         graph.add_factor(factor);
 
         let diff = p2.minus(&p1);
         let res = BetweenResidual::new(&diff);
-        let factor = FactorGeneric::new(vec![X(0), X(1)], res).build();
+        let factor = Factor::new(vec![X(0), X(1)], res).build();
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);

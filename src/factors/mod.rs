@@ -1,2 +1,2 @@
 mod factor;
-pub use factor::{Factor, FactorGeneric};
+pub use factor::{Factor, FactorBundled};
