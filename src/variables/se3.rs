@@ -18,7 +18,7 @@ pub struct SE3<D: DualNum = dtype> {
 impl<D: DualNum> SE3<D> {}
 
 impl<D: DualNum> Variable<D> for SE3<D> {
-    const DIM: usize = 6;
+    type Dim = Const<6>;
     type Dual = SE3<DualVec>;
 
     fn identity() -> Self {

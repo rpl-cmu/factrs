@@ -1,13 +1,13 @@
 use crate::dtype;
 use crate::linalg::{
-    Const, Dim, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
+    Const, DimName, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
 };
-use nalgebra as na;
 
 use std::fmt::{Debug, Display};
 
 pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
-    const DIM: usize;
+    type Dim: DimName;
+    const DIM: usize = Self::Dim::USIZE;
     type Dual: Variable<DualVec>;
 
     // Group operations
@@ -62,6 +62,8 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
+use nalgebra as na;
+
 pub trait MatrixLieGroup<D: DualNum = dtype>: Variable<D>
 where
     na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
@@ -70,9 +72,9 @@ where
     na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Const<1>>,
     na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Const<1>>,
 {
-    type TangentDim: Dim;
-    type MatrixDim: Dim;
-    type VectorDim: Dim;
+    type TangentDim: DimName;
+    type MatrixDim: DimName;
+    type VectorDim: DimName;
 
     fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, D>;
 

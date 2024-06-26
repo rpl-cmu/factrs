@@ -29,7 +29,7 @@ macro_rules! make_enum_variable {
 
         // Implement the trait for each enum
         impl<D: $crate::linalg::DualNum> $crate::variables::Variable<D> for $name<D> {
-            const DIM: usize = 0;
+            type Dim = $crate::linalg::Const<0>;
             type Dual = $name<$crate::linalg::DualVec>;
 
             fn dim(&self) -> usize {

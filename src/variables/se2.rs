@@ -39,7 +39,7 @@ impl<D: DualNum> SE2<D> {
 }
 
 impl<D: DualNum> Variable<D> for SE2<D> {
-    const DIM: usize = 3;
+    type Dim = Const<3>;
     type Dual = SE2<DualVec>;
 
     fn identity() -> Self {

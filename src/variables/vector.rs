@@ -1,9 +1,9 @@
-use crate::linalg::{DualNum, DualVec, Vector, VectorViewX, VectorX};
+use crate::linalg::{Const, DualNum, DualVec, Vector, VectorViewX, VectorX};
 use crate::variables::Variable;
 
 // ------------------------- Our needs ------------------------- //
 impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
-    const DIM: usize = N;
+    type Dim = Const<N>;
     type Dual = Vector<N, DualVec>;
 
     fn identity() -> Self {

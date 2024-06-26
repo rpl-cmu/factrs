@@ -26,7 +26,7 @@ impl<D: DualNum> SO2<D> {
 }
 
 impl<D: DualNum> Variable<D> for SO2<D> {
-    const DIM: usize = 1;
+    type Dim = Const<1>;
     type Dual = SO2<DualVec>;
 
     fn identity() -> Self {
