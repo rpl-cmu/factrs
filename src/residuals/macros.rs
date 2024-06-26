@@ -19,6 +19,16 @@ macro_rules! make_enum_residual {
         impl $crate::residuals::Residual<$var> for $name {
             const DIM: usize = 0;
 
+            fn residual<K: $crate::containers::Key>(&self, values: &$crate::containers::Values<K, $var>, keys: &[K]) -> $crate::linalg::VectorX {
+                paste! {
+                    match self {
+                        $(
+                            $name::[<$x $($gen)?>](x) => $crate::residuals::Residual::<$var>::residual(x, values, keys),
+                        )*
+                    }
+                }
+            }
+
             fn residual_jacobian<K: $crate::containers::Key>(&self, values: &$crate::containers::Values<K, $var>, keys: &[K]) -> $crate::linalg::DiffResult<$crate::linalg::VectorX, $crate::linalg::MatrixX> {
                 paste! {
                     match self {
@@ -55,6 +65,10 @@ macro_rules! impl_residual {
                 )*
             {
                 const DIM: usize = <Self as [<Residual $num>]<V>>::DIM;
+
+                fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX {
+                    self.[<residual $num _single>](values, keys)
+                }
 
                 fn residual_jacobian<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> DiffResult<VectorX, MatrixX> {
                     self.[<residual $num _jacobian>](values, keys)

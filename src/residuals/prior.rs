@@ -62,7 +62,11 @@ mod test {
         values.insert(X(0), x1.clone());
         let jac = prior_residual.residual1_jacobian(&values, &[X(0)]).diff;
 
-        let f = |v: P| Residual1::<P>::residual1_single(&prior_residual, &v);
+        let f = |v: P| {
+            let mut vals = Values::new();
+            vals.insert(X(0), v.clone());
+            Residual1::<P>::residual1_single(&prior_residual, &vals, &[X(0)])
+        };
         let jac_n = NumericalDiff::<PWR>::jacobian_1(f, &x1).diff;
 
         eprintln!("jac: {:.3}", jac);

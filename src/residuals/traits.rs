@@ -34,10 +34,7 @@ pub trait Residual<V: Variable>: Sized + fmt::Debug {
         Self::DIM
     }
 
-    // TODO: Would be nice if this was generic over dtypes, but it'll probably mostly be used with dual vecs
-    fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX {
-        self.residual_jacobian(values, keys).value
-    }
+    fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX;
 
     fn residual_jacobian<K: Key>(
         &self,
@@ -64,7 +61,11 @@ macro_rules! residual_maker {
 
                 fn [<residual $num>](&self, $($name: DualVar<Self::$var>,)*) -> VectorX<DualVec>;
 
-                fn [<residual $num _single>](&self, $($name: &Self::$var,)*) -> VectorX {
+                fn [<residual $num _single>]<K : Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX {
+                    // Unwrap everything
+                    $(
+                        let $name: &Self::$var = unpack(values, &keys[$idx]);
+                    )*
                     self.[<residual $num>]($($name.dual_self(),)*).map(|r| r.re)
                 }
 
