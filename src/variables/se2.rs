@@ -1,3 +1,5 @@
+use nalgebra::dvector;
+
 use crate::dtype;
 use crate::linalg::{
     Const, DualNum, DualVec, Matrix2, Matrix2x3, Matrix3, MatrixView, Vector2, VectorView2,
@@ -9,7 +11,7 @@ use std::ops;
 
 use super::Vector3;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SE2<D: DualNum = dtype> {
     rot: SO2<D>,
     xy: Vector2<D>,
@@ -55,45 +57,50 @@ impl<D: DualNum> Variable<D> for SE2<D> {
         let theta = xi[0].clone();
         let xy = Vector2::new(xi[1].clone(), xi[2].clone());
 
-        let A;
-        let B;
-        if theta < D::from(1e-5) {
-            A = D::from(1.0);
-            B = D::from(0.0);
-        } else {
-            A = theta.clone().sin() / theta.clone();
-            B = (D::from(1.0) - theta.clone().cos()) / theta.clone();
-        };
-        let V = Matrix2::new(A.clone(), -B.clone(), B.clone(), A.clone());
-
         let rot = SO2::<D>::exp(xi.rows(0, 1));
 
-        SE2 { rot, xy: V * xy }
+        let xy = if cfg!(feature = "fake_exp") {
+            xy
+        } else {
+            let A;
+            let B;
+            if theta < D::from(1e-5) {
+                A = D::from(1.0);
+                B = D::from(0.0);
+            } else {
+                A = theta.clone().sin() / theta.clone();
+                B = (D::from(1.0) - theta.clone().cos()) / theta.clone();
+            };
+            let V = Matrix2::new(A.clone(), -B.clone(), B.clone(), A.clone());
+            V * xy
+        };
+
+        SE2 { rot, xy }
     }
 
     #[allow(non_snake_case)]
     fn log(&self) -> VectorX<D> {
-        let mut xi = VectorX::zeros(3);
         let theta = self.rot.log()[0].clone();
 
-        let A;
-        let B;
-        if theta < D::from(1e-5) {
-            A = D::from(1.0);
-            B = D::from(0.0);
+        let xy = if cfg!(feature = "fake_exp") {
+            self.xy.clone()
         } else {
-            A = theta.clone().sin() / theta.clone();
-            B = (D::from(1.0) - theta.clone().cos()) / theta.clone();
+            let A;
+            let B;
+            if theta < D::from(1e-5) {
+                A = D::from(1.0);
+                B = D::from(0.0);
+            } else {
+                A = theta.clone().sin() / theta.clone();
+                B = (D::from(1.0) - theta.clone().cos()) / theta.clone();
+            };
+            let V = Matrix2::new(A.clone(), -B.clone(), B.clone(), A.clone());
+
+            let Vinv = V.try_inverse().expect("V is not invertible");
+            &Vinv * &self.xy
         };
-        let V = Matrix2::new(A.clone(), -B.clone(), B.clone(), A.clone());
 
-        let Vinv = V.try_inverse().expect("V is not invertible");
-        let xy = &Vinv * &self.xy;
-
-        xi[0] = theta;
-        xi.as_mut_slice()[1..3].clone_from_slice(xy.as_slice());
-
-        xi
+        dvector![theta, xy[0].clone(), xy[1].clone()]
     }
 
     fn dual_self(&self) -> Self::Dual {
@@ -186,7 +193,19 @@ impl<D: DualNum> ops::Mul for &SE2<D> {
 
 impl<D: DualNum> fmt::Display for SE2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {:?}", self.rot, self.xy)
+        write!(
+            f,
+            "SE2({:.3}, {:.3}, {:.3})",
+            self.rot.log()[0],
+            self.xy[0],
+            self.xy[1]
+        )
+    }
+}
+
+impl<D: DualNum> fmt::Debug for SE2<D> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 

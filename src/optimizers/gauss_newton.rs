@@ -1,9 +1,10 @@
 use faer_ext::IntoNalgebra;
 
 use crate::{
+    bundle::Bundle,
     containers::{GraphGeneric, Key, Order, Values},
     linalg::DiffResult,
-    linear::{LinearSolver, LinearValues},
+    linear::{CholeskySolver, LinearSolver, LinearValues},
     noise::NoiseModel,
     residuals::Residual,
     robust::RobustCost,
@@ -19,7 +20,7 @@ pub struct GaussNewton<
     R: Residual<V>,
     N: NoiseModel,
     C: RobustCost,
-    S: LinearSolver,
+    S: LinearSolver = CholeskySolver,
 > {
     graph: GraphGeneric<K, V, R, N, C>,
     solver: S,
@@ -70,6 +71,15 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
         Ok(values)
     }
 }
+
+pub type GaussNewtonBundled<B, S = CholeskySolver> = GaussNewton<
+    <B as Bundle>::Key,
+    <B as Bundle>::Variable,
+    <B as Bundle>::Residual,
+    <B as Bundle>::Noise,
+    <B as Bundle>::Robust,
+    S,
+>;
 
 #[cfg(test)]
 mod test {

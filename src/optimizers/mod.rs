@@ -4,7 +4,7 @@ pub use traits::{OptError, OptResult, Optimizer, OptimizerParams};
 mod macros;
 
 mod gauss_newton;
-pub use gauss_newton::GaussNewton;
+pub use gauss_newton::{GaussNewton, GaussNewtonBundled};
 
 mod levenberg_marquardt;
 pub use levenberg_marquardt::LevenMarquardt;

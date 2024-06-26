@@ -3,11 +3,13 @@ name = "samrs"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
 name = "mybin"
 path = "src/bin.rs"
 
+[[bin]]
+name = "m3500"
+path = "examples/m3500.rs"
 
 [dependencies]
 ahash = "0.8.11"
@@ -26,6 +28,7 @@ log = "0.4.21"
 [features]
 f32 = []
 left = []
+fake_exp = []
 compare = ["dep:matrixcompare-core", "nalgebra/compare", "faer/matrixcompare"]
 serde = ["dep:serde", "nalgebra/serde", "faer/serde", "ahash/serde"]
 

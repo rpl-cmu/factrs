@@ -46,28 +46,32 @@ impl<D: DualNum> Variable<D> for SE3<D> {
     #[allow(non_snake_case)]
     fn exp(xi: VectorViewX<D>) -> Self {
         let xi_rot = xi.fixed_view::<3, 1>(0, 0).clone_owned();
-        let xyz = Vector3::new(xi[3].clone(), xi[4].clone(), xi[5].clone());
-
-        let w2 = xi_rot.norm_squared();
-
-        let B;
-        let C;
-        if w2.clone() < D::from(1e-5) {
-            B = D::from(0.5);
-            C = D::from(1.0 / 6.0);
-        } else {
-            let w = w2.clone().sqrt();
-            let A = w.clone().sin() / w.clone();
-            B = (D::from(1.0) - w.clone().cos()) / w2.clone();
-            C = (D::from(1.0) - A) / w2.clone();
-        };
-        let I = Matrix3::identity();
-        let wx = SO3::hat(xi_rot.as_view());
-        let V = I + &wx * B + &wx * &wx * C;
-
         let rot = SO3::<D>::exp(xi.rows(0, 3));
 
-        SE3 { rot, xyz: V * xyz }
+        let xyz = Vector3::new(xi[3].clone(), xi[4].clone(), xi[5].clone());
+
+        let xyz = if cfg!(feature = "fake_exp") {
+            xyz
+        } else {
+            let w2 = xi_rot.norm_squared();
+            let B;
+            let C;
+            if w2.clone() < D::from(1e-5) {
+                B = D::from(0.5);
+                C = D::from(1.0 / 6.0);
+            } else {
+                let w = w2.clone().sqrt();
+                let A = w.clone().sin() / w.clone();
+                B = (D::from(1.0) - w.clone().cos()) / w2.clone();
+                C = (D::from(1.0) - A) / w2.clone();
+            };
+            let I = Matrix3::identity();
+            let wx = SO3::hat(xi_rot.as_view());
+            let V = I + &wx * B + &wx * &wx * C;
+            V * xyz
+        };
+
+        SE3 { rot, xyz }
     }
 
     #[allow(non_snake_case)]
@@ -75,26 +79,29 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         let mut xi = VectorX::zeros(6);
         let xi_theta = self.rot.log();
 
-        let w2 = xi_theta.norm_squared();
-
-        let B;
-        let C;
-        if w2.clone() < D::from(1e-5) {
-            B = D::from(0.5);
-            C = D::from(1.0 / 6.0);
+        let xyz = if cfg!(feature = "fake_exp") {
+            self.xyz.clone()
         } else {
-            let w = w2.clone().sqrt();
-            let A = w.clone().sin() / w.clone();
-            B = (D::from(1.0) - w.clone().cos()) / w2.clone();
-            C = (D::from(1.0) - A) / w2.clone();
+            let w2 = xi_theta.norm_squared();
+            let B;
+            let C;
+            if w2.clone() < D::from(1e-5) {
+                B = D::from(0.5);
+                C = D::from(1.0 / 6.0);
+            } else {
+                let w = w2.clone().sqrt();
+                let A = w.clone().sin() / w.clone();
+                B = (D::from(1.0) - w.clone().cos()) / w2.clone();
+                C = (D::from(1.0) - A) / w2.clone();
+            };
+
+            let I = Matrix3::identity();
+            let wx = SO3::hat(xi_theta.as_view());
+            let V = I + &wx * B + &wx * &wx * C;
+
+            let Vinv = V.try_inverse().expect("V is not invertible");
+            &Vinv * &self.xyz
         };
-
-        let I = Matrix3::identity();
-        let wx = SO3::hat(xi_theta.as_view());
-        let V = I + &wx * B + &wx * &wx * C;
-
-        let Vinv = V.try_inverse().expect("V is not invertible");
-        let xyz = &Vinv * &self.xyz;
 
         xi.as_mut_slice()[0..3].clone_from_slice(xi_theta.as_slice());
         xi.as_mut_slice()[3..6].clone_from_slice(xyz.as_slice());

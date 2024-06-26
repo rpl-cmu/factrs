@@ -129,7 +129,7 @@ impl<D: DualNum> ops::Mul for &SO2<D> {
 
 impl<D: DualNum> fmt::Display for SO2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "SO2({:.3})", self.log())
+        write!(f, "SO2({:.3})", self.log()[0])
     }
 }
 

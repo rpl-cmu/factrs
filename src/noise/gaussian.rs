@@ -48,6 +48,11 @@ impl GaussianNoise {
         Self { sqrt_inf }
     }
 
+    pub fn from_diag_inf(inf: &VectorX) -> Self {
+        let sqrt_inf = MatrixX::<dtype>::from_diagonal(&inf.map(|x| x.sqrt()));
+        Self { sqrt_inf }
+    }
+
     pub fn from_matrix_cov(cov: &MatrixX<dtype>) -> Self {
         // TODO: Double check if I want upper or lower triangular cholesky
         let sqrt_inf = cov
