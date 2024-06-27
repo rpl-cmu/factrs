@@ -1,5 +1,5 @@
 use super::{Residual, Residual1};
-use crate::containers::{Key, Values};
+use crate::containers::Values;
 use crate::impl_residual;
 use crate::linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX};
 use crate::variables::Variable;
@@ -17,10 +17,7 @@ impl<P: Variable> PriorResidual<P> {
     }
 }
 
-impl<P: Variable, V: Variable> Residual1<V> for PriorResidual<P>
-where
-    for<'a> &'a V: std::convert::TryInto<&'a P>,
-{
+impl<P: Variable + 'static> Residual1 for PriorResidual<P> {
     type DimOut = P::Dim;
     type V1 = P;
     type Differ = ForwardProp;
@@ -37,7 +34,7 @@ mod test {
 
     use super::*;
     use crate::{
-        containers::{Symbol, X},
+        containers::X,
         linalg::dvector,
         linalg::NumericalDiff,
         variables::{Vector3, SE3, SO3},
@@ -54,18 +51,18 @@ mod test {
     #[cfg(feature = "f32")]
     const TOL: f32 = 1e-3;
 
-    fn test_prior_jacobian<P: Variable>(prior: P) {
+    fn test_prior_jacobian<P: Variable + 'static>(prior: P) {
         let prior_residual = PriorResidual::new(&prior);
 
         let x1 = P::identity();
-        let mut values: Values<Symbol, P> = Values::new();
+        let mut values = Values::new();
         values.insert(X(0), x1.clone());
         let jac = prior_residual.residual1_jacobian(&values, &[X(0)]).diff;
 
         let f = |v: P| {
             let mut vals = Values::new();
             vals.insert(X(0), v.clone());
-            Residual1::<P>::residual1_single(&prior_residual, &vals, &[X(0)])
+            Residual1::residual1_single(&prior_residual, &vals, &[X(0)])
         };
         let jac_n = NumericalDiff::<PWR>::jacobian_1(f, &x1).diff;
 

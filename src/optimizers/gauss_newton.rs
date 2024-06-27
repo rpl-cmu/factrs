@@ -1,36 +1,22 @@
 use faer_ext::IntoNalgebra;
 
 use crate::{
-    bundle::Bundle,
-    containers::{Graph, Key, Order, Values},
+    containers::{Graph, Order, Values},
     linalg::DiffResult,
     linear::{CholeskySolver, LinearSolver, LinearValues},
-    noise::NoiseModel,
-    residuals::Residual,
-    robust::RobustCost,
-    variables::Variable,
 };
 
 use super::{OptResult, Optimizer, OptimizerParams};
 
 #[derive(Default)]
-pub struct GaussNewton<
-    K: Key,
-    V: Variable,
-    R: Residual<V>,
-    N: NoiseModel,
-    C: RobustCost,
-    S: LinearSolver = CholeskySolver,
-> {
-    graph: Graph<K, V, R, N, C>,
+pub struct GaussNewton<S: LinearSolver = CholeskySolver> {
+    graph: Graph,
     solver: S,
     pub params: OptimizerParams,
 }
 
-impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: LinearSolver>
-    Optimizer<K, V, R, N, C> for GaussNewton<K, V, R, N, C, S>
-{
-    fn new(graph: Graph<K, V, R, N, C>) -> Self {
+impl<S: LinearSolver> Optimizer for GaussNewton<S> {
+    fn new(graph: Graph) -> Self {
         Self {
             graph,
             solver: S::default(),
@@ -38,7 +24,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
         }
     }
 
-    fn graph(&self) -> &Graph<K, V, R, N, C> {
+    fn graph(&self) -> &Graph {
         &self.graph
     }
 
@@ -47,7 +33,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
     }
 
     // TODO: Should probably have some form of error handling here
-    fn step(&mut self, mut values: Values<K, V>) -> OptResult<K, V> {
+    fn step(&mut self, mut values: Values) -> OptResult {
         // Make an ordering
         let order = Order::from_values(&values);
 
@@ -72,22 +58,10 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
     }
 }
 
-pub type GaussNewtonBundled<B, S = CholeskySolver> = GaussNewton<
-    <B as Bundle>::Key,
-    <B as Bundle>::Variable,
-    <B as Bundle>::Residual,
-    <B as Bundle>::Noise,
-    <B as Bundle>::Robust,
-    S,
->;
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{
-        containers::Symbol, linear::CholeskySolver, noise::NoiseEnum, residuals::ResidualEnum,
-        robust::RobustEnum, test_optimizer, variables::VariableEnum,
-    };
+    use crate::test_optimizer;
 
-    test_optimizer!(GaussNewton<Symbol, VariableEnum, ResidualEnum, NoiseEnum, RobustEnum, CholeskySolver>);
+    test_optimizer!(GaussNewton);
 }

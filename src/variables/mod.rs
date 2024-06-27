@@ -1,6 +1,6 @@
 // ------------------------- Import all variable types ------------------------- //
 mod traits;
-pub use traits::{MatrixLieGroup, Variable};
+pub use traits::{MatrixLieGroup, Variable, VariableSafe};
 
 mod so2;
 pub use so2::SO2;
@@ -18,17 +18,3 @@ mod vector;
 pub use crate::linalg::{Vector1, Vector2, Vector3, Vector4, Vector5, Vector6};
 
 mod macros;
-use crate::make_enum_variable;
-make_enum_variable!(
-    VariableEnum,
-    SO2,
-    SE2,
-    SO3,
-    SE3,
-    Vector1,
-    Vector2,
-    Vector3,
-    Vector4,
-    Vector5,
-    Vector6
-);

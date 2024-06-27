@@ -1,4 +1,4 @@
-use crate::containers::{Key, Order};
+use crate::containers::Order;
 use crate::dtype;
 use crate::linalg::DiffResult;
 use crate::linear::LinearFactor;
@@ -7,31 +7,32 @@ use faer_ext::IntoFaer;
 
 use super::LinearValues;
 
-pub struct LinearGraph<K: Key> {
-    factors: Vec<LinearFactor<K>>,
+#[derive(Default)]
+pub struct LinearGraph {
+    factors: Vec<LinearFactor>,
 }
 
-impl<K: Key> LinearGraph<K> {
+impl LinearGraph {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn from_vec(factors: Vec<LinearFactor<K>>) -> Self {
+    pub fn from_vec(factors: Vec<LinearFactor>) -> Self {
         Self { factors }
     }
 
-    pub fn add_factor(&mut self, factor: LinearFactor<K>) {
+    pub fn add_factor(&mut self, factor: LinearFactor) {
         self.factors.push(factor);
     }
 
-    pub fn error(&self, values: &LinearValues<K>) -> dtype {
+    pub fn error(&self, values: &LinearValues) -> dtype {
         self.factors.iter().map(|f| f.error(values)).sum()
     }
 
     #[allow(unused_variables)]
     pub fn residual_jacobian(
         &self,
-        order: &Order<K>,
+        order: &Order,
     ) -> DiffResult<faer::Mat<dtype>, SparseColMat<usize, dtype>> {
         let total_rows = self.factors.iter().map(|f| f.dim()).sum();
         let total_columns = order.dim();
@@ -76,13 +77,6 @@ impl<K: Key> LinearGraph<K> {
     }
 }
 
-impl<K: Key> Default for LinearGraph<K> {
-    fn default() -> Self {
-        Self {
-            factors: Vec::new(),
-        }
-    }
-}
 
 #[cfg(test)]
 mod test {

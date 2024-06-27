@@ -1,9 +1,8 @@
 use ahash::HashMap;
 
-use crate::variables::Variable;
 use std::collections::hash_map::Iter as HashMapIter;
 
-use super::{Key, Values};
+use super::{Symbol, Values};
 
 // Since the map isn't ordered, we need to track both idx and len of each variable
 #[derive(Debug, Clone)]
@@ -13,17 +12,17 @@ pub struct Idx {
 }
 
 #[derive(Debug, Clone)]
-pub struct Order<K: Key> {
-    map: HashMap<K, Idx>,
+pub struct Order {
+    map: HashMap<Symbol, Idx>,
     dim: usize,
 }
 
-impl<K: Key> Order<K> {
-    pub fn new(map: HashMap<K, Idx>) -> Self {
+impl Order {
+    pub fn new(map: HashMap<Symbol, Idx>) -> Self {
         let dim = map.values().map(|idx| idx.dim).sum();
         Self { map, dim }
     }
-    pub fn from_values(values: &Values<K, impl Variable>) -> Self {
+    pub fn from_values(values: &Values) -> Self {
         let map = values
             .iter()
             .scan(0, |idx, (key, val)| {
@@ -37,14 +36,14 @@ impl<K: Key> Order<K> {
                     },
                 ))
             })
-            .collect::<HashMap<K, Idx>>();
+            .collect::<HashMap<Symbol, Idx>>();
 
         let dim = map.values().map(|idx| idx.dim).sum();
 
         Self { map, dim }
     }
 
-    pub fn get(&self, key: &K) -> Option<&Idx> {
+    pub fn get(&self, key: &Symbol) -> Option<&Idx> {
         self.map.get(key)
     }
 
@@ -60,7 +59,7 @@ impl<K: Key> Order<K> {
         self.map.is_empty()
     }
 
-    pub fn iter(&self) -> HashMapIter<K, Idx> {
+    pub fn iter(&self) -> HashMapIter<Symbol, Idx> {
         self.map.iter()
     }
 }
@@ -68,13 +67,15 @@ impl<K: Key> Order<K> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::containers::{Symbol, Values, X};
-    use crate::variables::{VariableEnum, Vector2, Vector3, Vector6};
+    use crate::{
+        containers::{Values, X},
+        variables::{Vector2, Vector3, Vector6},
+    };
 
     #[test]
     fn from_values() {
         // Create some form of values
-        let mut v: Values<Symbol, VariableEnum> = Values::new();
+        let mut v = Values::new();
         v.insert(X(0), Vector2::default());
         v.insert(X(1), Vector6::default());
         v.insert(X(2), Vector3::default());

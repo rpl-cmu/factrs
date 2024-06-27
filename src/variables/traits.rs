@@ -3,6 +3,7 @@ use crate::linalg::{
     Const, DimName, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
 };
 
+use downcast_rs::{impl_downcast, Downcast};
 use std::fmt::{Debug, Display};
 
 pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
@@ -59,6 +60,36 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn dual(&self, idx: usize, total: usize) -> Self::Dual {
         self.dual_self()
             .oplus(self.dual_tangent(idx, total).as_view())
+    }
+}
+
+pub trait VariableSafe: Debug + Display + Downcast {
+    fn clone_box(&self) -> Box<dyn VariableSafe>;
+
+    fn dim(&self) -> usize;
+
+    fn oplus_mut(&mut self, delta: VectorViewX);
+}
+
+impl<T: Variable + 'static> VariableSafe for T {
+    fn clone_box(&self) -> Box<dyn VariableSafe> {
+        Box::new((*self).clone())
+    }
+
+    fn dim(&self) -> usize {
+        self.dim()
+    }
+
+    fn oplus_mut(&mut self, delta: VectorViewX) {
+        *self = self.oplus(delta);
+    }
+}
+
+impl_downcast!(VariableSafe);
+
+impl Clone for Box<dyn VariableSafe> {
+    fn clone(&self) -> Self {
+        self.clone_box()
     }
 }
 

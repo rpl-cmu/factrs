@@ -1,18 +1,13 @@
 use std::ops::Mul;
 
-use faer::scale;
-use faer::sparse::SparseColMat;
+use faer::{scale, sparse::SparseColMat};
 use faer_ext::IntoNalgebra;
 
 use crate::{
-    containers::{Graph, Key, Order, Values},
+    containers::{Graph, Order, Values},
     dtype,
     linalg::DiffResult,
-    linear::{LinearSolver, LinearValues},
-    noise::NoiseModel,
-    residuals::Residual,
-    robust::RobustCost,
-    variables::Variable,
+    linear::{CholeskySolver, LinearSolver, LinearValues},
 };
 
 use super::{OptError, OptResult, Optimizer, OptimizerParams};
@@ -35,25 +30,16 @@ impl Default for LevenParams {
     }
 }
 
-pub struct LevenMarquardt<
-    K: Key,
-    V: Variable,
-    R: Residual<V>,
-    N: NoiseModel,
-    C: RobustCost,
-    S: LinearSolver,
-> {
-    graph: Graph<K, V, R, N, C>,
+pub struct LevenMarquardt<S: LinearSolver = CholeskySolver> {
+    graph: Graph,
     solver: S,
     pub params_base: OptimizerParams,
     pub params_leven: LevenParams,
     lambda: dtype,
 }
 
-impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: LinearSolver>
-    Optimizer<K, V, R, N, C> for LevenMarquardt<K, V, R, N, C, S>
-{
-    fn new(graph: Graph<K, V, R, N, C>) -> Self {
+impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
+    fn new(graph: Graph) -> Self {
         Self {
             graph,
             solver: S::default(),
@@ -63,7 +49,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
         }
     }
 
-    fn graph(&self) -> &Graph<K, V, R, N, C> {
+    fn graph(&self) -> &Graph {
         &self.graph
     }
 
@@ -73,7 +59,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
 
     // TODO: Some form of logging of the lambda value
     // TODO: More sophisticated stopping criteria based on magnitude of the gradient
-    fn step(&mut self, mut values: Values<K, V>) -> OptResult<K, V> {
+    fn step(&mut self, mut values: Values) -> OptResult {
         // Make an ordering
         let order = Order::from_values(&values);
 
@@ -152,10 +138,7 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost, S: Linea
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{
-        containers::Symbol, linear::CholeskySolver, noise::NoiseEnum, residuals::ResidualEnum,
-        robust::RobustEnum, test_optimizer, variables::VariableEnum,
-    };
+    use crate::test_optimizer;
 
-    test_optimizer!(LevenMarquardt<Symbol, VariableEnum, ResidualEnum, NoiseEnum, RobustEnum, CholeskySolver>);
+    test_optimizer!(LevenMarquardt);
 }

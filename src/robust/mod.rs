@@ -1,10 +1,26 @@
-use crate::{dtype, make_enum_robust};
+use crate::dtype;
 
 // TODO: Consider changing names to \rho and w
-pub trait RobustCost: Sized + Default {
+pub trait RobustCost: Default {
     fn loss(&self, d2: dtype) -> dtype;
 
     fn weight(&self, d2: dtype) -> dtype;
+}
+
+pub trait RobustCostSafe {
+    fn loss(&self, d2: dtype) -> dtype;
+
+    fn weight(&self, d2: dtype) -> dtype;
+}
+
+impl<T: RobustCost> RobustCostSafe for T {
+    fn loss(&self, d2: dtype) -> dtype {
+        self.loss(d2)
+    }
+
+    fn weight(&self, d2: dtype) -> dtype {
+        self.weight(d2)
+    }
 }
 
 // ------------------------- L2 Norm ------------------------- //
@@ -240,22 +256,6 @@ impl RobustCost for Tukey {
     }
 }
 
-// ------------------------- Make Enum ------------------------- //
-
-mod macros;
-
-make_enum_robust!(
-    RobustEnum,
-    L2,
-    L1,
-    Huber,
-    Fair,
-    Cauchy,
-    GemanMcClure,
-    Welsch,
-    Tukey
-);
-
 #[cfg(test)]
 mod test {
     use matrixcompare::assert_scalar_eq;
@@ -302,8 +302,8 @@ mod test {
                     #[allow(non_snake_case)]
                     fn [<$robust _center>]() {
                         let robust = $robust::default();
-                        println!("Center: {}", robust.loss(0.0));
-                        assert_scalar_eq!(robust.loss(0.0), 0.0, comp=float);
+                        println!("Center: {}", RobustCost::loss(&robust, 0.0));
+                        assert_scalar_eq!(RobustCost::loss(&robust, 0.0), 0.0, comp=float);
                     }
 
                 )*

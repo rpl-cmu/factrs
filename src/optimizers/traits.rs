@@ -1,20 +1,16 @@
 use crate::{
-    containers::{Graph, Key, Values},
+    containers::{Graph, Values},
     dtype,
-    noise::NoiseModel,
-    residuals::Residual,
-    robust::RobustCost,
-    variables::Variable,
 };
 
 #[derive(Debug)]
-pub enum OptError<K: Key, V: Variable> {
-    MaxIterations(Values<K, V>),
+pub enum OptError {
+    MaxIterations(Values),
     InvalidSystem,
     FailedToStep,
 }
 
-pub type OptResult<K, V> = Result<Values<K, V>, OptError<K, V>>;
+pub type OptResult = Result<Values, OptError>;
 
 pub struct OptimizerParams {
     pub max_iterations: usize,
@@ -34,21 +30,21 @@ impl Default for OptimizerParams {
     }
 }
 
-pub trait Optimizer<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
-    fn new(graph: Graph<K, V, R, N, C>) -> Self;
+pub trait Optimizer {
+    fn new(graph: Graph) -> Self;
 
-    fn graph(&self) -> &Graph<K, V, R, N, C>;
+    fn graph(&self) -> &Graph;
 
     fn params(&self) -> &OptimizerParams;
 
-    fn step(&mut self, values: Values<K, V>) -> OptResult<K, V>;
+    fn step(&mut self, values: Values) -> OptResult;
 
-    fn error(&self, values: &Values<K, V>) -> dtype {
+    fn error(&self, values: &Values) -> dtype {
         self.graph().error(values)
     }
 
     // TODO: Custom logging based on optimizer
-    fn optimize(&mut self, mut values: Values<K, V>) -> OptResult<K, V> {
+    fn optimize(&mut self, mut values: Values) -> OptResult {
         // Check if we need to optimize at all
         let mut error_old = self.error(&values);
         if error_old <= self.params().error_tol {

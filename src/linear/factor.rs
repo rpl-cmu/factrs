@@ -1,15 +1,17 @@
-use crate::containers::Key;
-use crate::dtype;
-use crate::linalg::{MatrixBlock, VectorX};
-use crate::linear::LinearValues;
+use crate::{
+    containers::Symbol,
+    dtype,
+    linalg::{MatrixBlock, VectorX},
+    linear::LinearValues,
+};
 
-pub struct LinearFactor<K: Key> {
-    pub keys: Vec<K>,
+pub struct LinearFactor {
+    pub keys: Vec<Symbol>,
     pub a: MatrixBlock,
     pub b: VectorX,
 }
-impl<K: Key> LinearFactor<K> {
-    pub fn new(keys: Vec<K>, a: MatrixBlock, b: VectorX) -> Self {
+impl LinearFactor {
+    pub fn new(keys: Vec<Symbol>, a: MatrixBlock, b: VectorX) -> Self {
         assert!(
             keys.len() == a.idx().len(),
             "Mismatch between keys and matrix blocks in LinearFactor::new"
@@ -25,7 +27,7 @@ impl<K: Key> LinearFactor<K> {
         self.b.len()
     }
 
-    pub fn error(&self, vector: &LinearValues<K>) -> dtype {
+    pub fn error(&self, vector: &LinearValues) -> dtype {
         let ax: VectorX = self
             .keys
             .iter()

@@ -1,24 +1,19 @@
-use crate::dtype;
 use crate::linear::LinearValues;
 use ahash::AHashMap;
-use std::collections::hash_map::Entry;
-use std::convert::Into;
-use std::default::Default;
-use std::fmt;
-use std::iter::IntoIterator;
+use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator};
 
-use super::Key;
-use crate::variables::Variable;
+use super::Symbol;
+use crate::variables::VariableSafe;
 
 // Since we won't be passing dual numbers through any of this,
 // we can just use dtype rather than using generics with DualNum
 
 #[derive(Clone)]
-pub struct Values<K: Key, V: Variable<dtype>> {
-    values: AHashMap<K, V>,
+pub struct Values {
+    values: AHashMap<Symbol, Box<dyn VariableSafe>>,
 }
 
-impl<K: Key, V: Variable<dtype>> Values<K, V> {
+impl Values {
     pub fn new() -> Self {
         Self::default()
     }
@@ -31,67 +26,67 @@ impl<K: Key, V: Variable<dtype>> Values<K, V> {
         self.values.is_empty()
     }
 
-    pub fn entry(&mut self, key: K) -> Entry<K, V> {
+    pub fn entry(&mut self, key: Symbol) -> Entry<Symbol, Box<dyn VariableSafe>> {
         self.values.entry(key)
     }
 
-    pub fn insert(&mut self, key: K, value: impl Into<V>) -> Option<V> {
-        self.values.insert(key, value.into())
+    pub fn insert(
+        &mut self,
+        key: Symbol,
+        value: impl VariableSafe,
+    ) -> Option<Box<dyn VariableSafe>> {
+        // TODO: Avoid cloning here?
+        self.values.insert(key, value.clone_box())
     }
 
-    pub fn get(&self, key: &K) -> Option<&V> {
+    pub fn get(&self, key: &Symbol) -> Option<&Box<dyn VariableSafe>> {
         self.values.get(key)
     }
 
-    // TODO: Does this still fail if one is missing?
-    pub fn get_multiple<'a>(&self, keys: impl IntoIterator<Item = &'a K>) -> Option<Vec<&V>>
-    where
-        K: 'a,
-    {
-        keys.into_iter().map(|key| self.values.get(key)).collect()
+    // TODO: This should be some kind of error
+    pub fn get_cast<T: VariableSafe>(&self, key: &Symbol) -> Option<&T> {
+        self.values
+            .get(key)
+            .and_then(|value| value.downcast_ref::<T>())
     }
 
-    pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+    // TODO: Does this still fail if one is missing?
+    // pub fn get_multiple<'a>(&self, keys: impl IntoIterator<Item = &'a Symbol>) -> Option<Vec<&V>>
+    // where
+    //     Symbol: 'a,
+    // {
+    //     keys.into_iter().map(|key| self.values.get(key)).collect()
+    // }
+
+    pub fn get_mut(&mut self, key: &Symbol) -> Option<&mut Box<dyn VariableSafe>> {
         self.values.get_mut(key)
     }
 
-    pub fn remove(&mut self, key: &K) -> Option<V> {
+    pub fn remove(&mut self, key: &Symbol) -> Option<Box<dyn VariableSafe>> {
         self.values.remove(key)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&Symbol, &Box<dyn VariableSafe>)> {
         self.values.iter()
     }
 
-    pub fn filter<'a, T: 'a>(&'a self) -> impl Iterator<Item = &'a T>
-    where
-        &'a V: TryInto<&'a T>,
-    {
+    pub fn filter<'a, T: 'a + VariableSafe>(&'a self) -> impl Iterator<Item = &'a T> {
         self.values
             .iter()
-            .filter_map(|(_, value)| value.try_into().ok())
+            .filter_map(|(_, value)| value.downcast_ref::<T>())
     }
 
-    pub fn into_filter<T>(self) -> impl Iterator<Item = T>
-    where
-        V: TryInto<T>,
-    {
-        self.values
-            .into_iter()
-            .filter_map(|(_, value)| value.try_into().ok())
-    }
-
-    pub fn oplus_mut(&mut self, delta: &LinearValues<K>) {
+    pub fn oplus_mut(&mut self, delta: &LinearValues) {
         for (key, value) in delta.iter() {
             if let Some(v) = self.values.get_mut(key) {
                 assert!(v.dim() == value.len(), "Dimension mismatch in values oplus",);
-                *v = v.oplus(value);
+                v.oplus_mut(value);
             }
         }
     }
 }
 
-impl<K: Key, V: Variable<dtype>> fmt::Display for Values<K, V> {
+impl fmt::Display for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
             writeln!(f, "{{")?;
@@ -109,22 +104,22 @@ impl<K: Key, V: Variable<dtype>> fmt::Display for Values<K, V> {
     }
 }
 
-impl<K: Key, V: Variable<dtype>> fmt::Debug for Values<K, V> {
+impl fmt::Debug for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
 }
 
-impl<K: Key, V: Variable<dtype>> IntoIterator for Values<K, V> {
-    type Item = (K, V);
-    type IntoIter = std::collections::hash_map::IntoIter<K, V>;
+impl IntoIterator for Values {
+    type Item = (Symbol, Box<dyn VariableSafe>);
+    type IntoIter = std::collections::hash_map::IntoIter<Symbol, Box<dyn VariableSafe>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.values.into_iter()
     }
 }
 
-impl<K: Key, V: Variable<dtype>> Default for Values<K, V> {
+impl Default for Values {
     fn default() -> Self {
         Self {
             values: AHashMap::new(),

@@ -1,4 +1,4 @@
-use crate::containers::{Key, Values};
+use crate::containers::{Symbol, Values};
 use crate::linalg::{Diff, DiffResult, Dim, DualVec, MatrixX, VectorX};
 use crate::variables::Variable;
 use paste::paste;
@@ -7,27 +7,7 @@ use std::fmt;
 type DualVar<V> = <V as Variable>::Dual;
 
 // ------------------------- Base Residual Trait & Helpers ------------------------- //
-pub fn unpack<'a, V, W, K>(values: &'a Values<K, V>, k: &K) -> &'a W
-where
-    W: Variable,
-    V: Variable,
-    &'a V: std::convert::TryInto<&'a W>,
-    K: Key,
-{
-    let v1 = values
-        .get(k)
-        .unwrap_or_else(|| panic!("Key not found: {}", k));
-
-    v1.try_into().unwrap_or_else(|_| {
-        panic!(
-            "Variable type mismatch: expected {} for key {}",
-            std::any::type_name::<W>(),
-            k
-        )
-    })
-}
-
-pub trait Residual<V: Variable>: fmt::Debug {
+pub trait Residual: fmt::Debug {
     type DimOut: Dim;
     type NumVars: Dim;
 
@@ -35,24 +15,32 @@ pub trait Residual<V: Variable>: fmt::Debug {
         Self::DimOut::try_to_usize().unwrap()
     }
 
-    fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX;
+    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
 
-    fn residual_jacobian<K: Key>(
-        &self,
-        values: &Values<K, V>,
-        keys: &[K],
-    ) -> DiffResult<VectorX, MatrixX>;
+    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
+}
+
+pub trait ResidualSafe {
+    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
+
+    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
+}
+
+impl<T: Residual> ResidualSafe for T {
+    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
+        self.residual(values, keys)
+    }
+
+    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
+        self.residual_jacobian(values, keys)
+    }
 }
 
 // ------------------------- Use Macro to create residuals with set sizes ------------------------- //
 macro_rules! residual_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
-            pub trait [<Residual $num>]<V: Variable>: Residual<V>
-            where
-                $(
-                    for<'a> &'a V: std::convert::TryInto<&'a Self::$var>,
-                )*
+            pub trait [<Residual $num>]: Residual
             {
                 $(
                     type $var: Variable;
@@ -62,18 +50,32 @@ macro_rules! residual_maker {
 
                 fn [<residual $num>](&self, $($name: DualVar<Self::$var>,)*) -> VectorX<DualVec>;
 
-                fn [<residual $num _single>]<K : Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX {
+                fn [<residual $num _single>](&self, values: &Values, keys: &[Symbol]) -> VectorX
+                where
+                    $(
+                        Self::$var: 'static,
+                    )*
+                 {
                     // Unwrap everything
                     $(
-                        let $name: &Self::$var = unpack(values, &keys[$idx]);
+                        let $name: &Self::$var = values.get_cast(&keys[$idx]).unwrap_or_else(|| {
+                            panic!("Key not found in values: {:?} with type {}", keys[$idx], std::any::type_name::<Self::$var>())
+                        });
                     )*
                     self.[<residual $num>]($($name.dual_self(),)*).map(|r| r.re)
                 }
 
-                fn [<residual $num _jacobian>]<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> DiffResult<VectorX, MatrixX>{
+                fn [<residual $num _jacobian>](&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>
+                where
+                    $(
+                        Self::$var: 'static,
+                    )*
+                {
                     // Unwrap everything
                     $(
-                        let $name: &Self::$var = unpack(values, &keys[$idx]);
+                        let $name: &Self::$var = values.get_cast(&keys[$idx]).unwrap_or_else(|| {
+                            panic!("Key not found in values: {:?} with type {}", keys[$idx], std::any::type_name::<Self::$var>())
+                        });
                     )*
                     Self::Differ::[<jacobian_ $num>](|$($name,)*| self.[<residual $num>]($($name,)*), $($name,)*)
                 }

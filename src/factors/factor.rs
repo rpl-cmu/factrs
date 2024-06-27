@@ -1,50 +1,49 @@
-use crate::containers::{Key, Values};
-use crate::dtype;
-use crate::linalg::{DiffResult, MatrixBlock};
-use crate::linear::LinearFactor;
-use crate::noise::{GaussianNoise, NoiseModel};
-use crate::residuals::Residual;
-use crate::robust::{RobustCost, L2};
-use crate::variables::Variable;
+use crate::{
+    containers::{Symbol, Values},
+    dtype,
+    linalg::{Const, DiffResult, MatrixBlock},
+    linear::LinearFactor,
+    noise::{NoiseModel, NoiseModelSafe},
+    residuals::{Residual, ResidualSafe},
+    robust::{RobustCost, RobustCostSafe},
+};
 
-pub struct Factor<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
-    keys: Vec<K>,
-    residual: R,
-    noise: N,
-    robust: C,
-    _phantom: std::marker::PhantomData<V>,
+pub struct Factor {
+    keys: Vec<Symbol>,
+    residual: Box<dyn ResidualSafe>,
+    noise: Box<dyn NoiseModelSafe>,
+    robust: Box<dyn RobustCostSafe>,
 }
 
-pub struct FactorFactory<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> {
-    keys: Vec<K>,
-    residual: R,
-    noise: Option<N>,
-    robust: Option<C>,
-    _phantom: std::marker::PhantomData<V>,
-}
-
-impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K, V, R, N, C> {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(keys: Vec<K>, residual: impl Into<R>) -> FactorFactory<K, V, R, N, C> {
-        // TODO: Need to check # of keys and residual vars are the same
-        let residual = residual.into();
-        FactorFactory {
-            keys,
-            residual,
-            noise: None,
-            robust: None,
-            _phantom: std::marker::PhantomData,
+impl Factor {
+    // TODO: Defaults for noise and robust
+    pub fn new<const NUM_VARS: usize, const DIM_OUT: usize, R, N, C>(
+        keys: &[Symbol; NUM_VARS],
+        residual: R,
+        noise: N,
+        robust: C,
+    ) -> Self
+    where
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
+        C: 'static + RobustCost,
+    {
+        Self {
+            keys: keys.to_vec(),
+            residual: Box::new(residual),
+            noise: Box::new(noise),
+            robust: Box::new(robust),
         }
     }
 
-    pub fn error(&self, values: &Values<K, V>) -> dtype {
+    pub fn error(&self, values: &Values) -> dtype {
         let r = self.residual.residual(values, &self.keys);
         let r = self.noise.whiten_vec(&r);
         let norm2 = r.norm_squared();
         self.robust.loss(norm2)
     }
 
-    pub fn linearize(&self, values: &Values<K, V>) -> LinearFactor<K> {
+    pub fn linearize(&self, values: &Values) -> LinearFactor {
         // Compute residual and jacobian
         let DiffResult { value: r, diff: a } = self.residual.residual_jacobian(values, &self.keys);
 
@@ -74,61 +73,16 @@ impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> Factor<K
     }
 }
 
-impl<K: Key, V: Variable, R: Residual<V>, N: NoiseModel, C: RobustCost> FactorFactory<K, V, R, N, C>
-where
-    N: From<GaussianNoise>,
-    C: From<L2>,
-{
-    pub fn set_noise(mut self, noise: impl Into<N>) -> Self {
-        let noise = noise.into();
-        assert_eq!(
-            noise.dim(),
-            self.residual.dim(),
-            "Noise dimension must match residual dimension"
-        );
-        self.noise = Some(noise);
-        self
-    }
-
-    pub fn set_robust(mut self, robust: impl Into<C>) -> Self {
-        self.robust = Some(robust.into());
-        self
-    }
-
-    pub fn build(self) -> Factor<K, V, R, N, C> {
-        let d = self.residual.dim();
-        // TODO: Should we cater to situations where noise or robustness has a different default?
-        Factor {
-            keys: self.keys,
-            residual: self.residual,
-            noise: self
-                .noise
-                .unwrap_or_else(|| GaussianNoise::identity(d).into()),
-            robust: self.robust.unwrap_or_else(|| L2.into()),
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-
-// Type alias to make life easier
-use crate::bundle::{Bundle, DefaultBundle};
-pub type FactorBundled<B = DefaultBundle> = Factor<
-    <B as Bundle>::Key,
-    <B as Bundle>::Variable,
-    <B as Bundle>::Residual,
-    <B as Bundle>::Noise,
-    <B as Bundle>::Robust,
->;
-
 #[cfg(test)]
 mod tests {
-    use nalgebra::dvector;
 
     use crate::{
         containers::X,
         linalg::{NumericalDiff, Vector3},
+        noise::GaussianNoise,
         residuals::{BetweenResidual, PriorResidual},
         robust::GemanMcClure,
+        variables::Variable,
     };
     use matrixcompare::assert_matrix_eq;
 
@@ -149,15 +103,11 @@ mod tests {
         let prior = Vector3::new(1.0, 2.0, 3.0);
         let x = <Vector3 as Variable>::identity();
 
-        let keys = vec![X(0)];
         let residual = PriorResidual::new(&prior);
-        let noise = GaussianNoise::from_diag_sigma(&dvector![1e-1, 2e-1, 3e-1]);
+        let noise = GaussianNoise::from_diag_sigma(&Vector3::new(1e-1, 2e-1, 3e-1));
         let robust = GemanMcClure::default();
 
-        let factor = FactorBundled::<DefaultBundle>::new(keys, residual)
-            .set_noise(noise)
-            .set_robust(robust)
-            .build();
+        let factor = Factor::new(&[X(0)], residual, noise, robust);
 
         let f = |x: Vector3| {
             let mut values = Values::new();
@@ -183,15 +133,11 @@ mod tests {
         let bet = Vector3::new(1.0, 2.0, 3.0);
         let x = <Vector3 as Variable>::identity();
 
-        let keys = vec![X(0), X(1)];
         let residual = BetweenResidual::new(&bet);
-        let noise = GaussianNoise::from_diag_sigma(&dvector![1e-1, 2e-1, 3e-1]);
+        let noise = GaussianNoise::from_diag_sigma(&Vector3::new(1e-1, 2e-1, 3e-1));
         let robust = GemanMcClure::default();
 
-        let factor = FactorBundled::<DefaultBundle>::new(keys, residual)
-            .set_noise(noise)
-            .set_robust(robust)
-            .build();
+        let factor = Factor::new(&[X(0), X(1)], residual, noise, robust);
 
         let mut values = Values::new();
         values.insert(X(0), x);

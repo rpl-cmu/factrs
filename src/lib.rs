@@ -6,7 +6,6 @@ pub type dtype = f64;
 #[allow(non_camel_case_types)]
 pub type dtype = f32;
 
-pub mod bundle;
 pub mod containers;
 pub mod factors;
 pub mod linalg;

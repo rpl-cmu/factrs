@@ -1,30 +1,24 @@
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
-use nalgebra::dvector;
 
-use crate::bundle::Bundle;
-use crate::containers::{GraphBundled, Symbol, Values, X};
-use crate::factors::FactorBundled;
-use crate::noise::GaussianNoise;
-use crate::residuals::{BetweenResidual, PriorResidual};
-use crate::robust::L2;
-use crate::{dtype, variables::*};
+use crate::{
+    containers::{Graph, Values, X},
+    dtype,
+    factors::Factor,
+    noise::GaussianNoise,
+    residuals::{BetweenResidual, PriorResidual},
+    robust::L2,
+    variables::*,
+};
 
-pub fn load_g20<B: Bundle<Key = Symbol>>(
-    file: &str,
-) -> (GraphBundled<B>, Values<B::Key, B::Variable>)
-where
-    B::Variable: From<SE2>,
-    B::Residual: From<BetweenResidual<SE2>>,
-    B::Residual: From<PriorResidual<SE2>>,
-    B::Noise: From<GaussianNoise>,
-    B::Robust: From<L2>,
-{
+pub fn load_g20(file: &str) -> (Graph, Values) {
     let file = File::open(file).expect("File not found!");
 
-    let mut values: Values<Symbol, B::Variable> = Values::new();
-    let mut graph = GraphBundled::<B>::new();
+    let mut values: Values = Values::new();
+    let mut graph = Graph::new();
 
     for line in BufReader::new(file).lines() {
         let line = line.unwrap();
@@ -41,11 +35,12 @@ where
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor = FactorBundled::<B>::new(
-                        vec![key.clone()],
+                    let factor = Factor::new(
+                        &[key.clone()],
                         PriorResidual::new(&var.clone()),
-                    )
-                    .build();
+                        GaussianNoise::identity(),
+                        L2,
+                    );
                     graph.add_factor(factor);
                 }
 
@@ -59,19 +54,17 @@ where
                 let y = parts[4].parse::<dtype>().unwrap();
                 let theta = parts[5].parse::<dtype>().unwrap();
                 // TODO: Handle non diagonal
-                let inf = dvector![
+                let inf = Vector3::new(
                     parts[6].parse::<dtype>().unwrap(),
                     parts[9].parse::<dtype>().unwrap(),
                     parts[11].parse::<dtype>().unwrap(),
-                ];
+                );
 
                 let key1 = X(id_prev);
                 let key2 = X(id_curr);
                 let var = SE2::new(theta, x, y);
                 let noise = GaussianNoise::from_diag_inf(&inf);
-                let factor = FactorBundled::<B>::new(vec![key1, key2], BetweenResidual::new(&var))
-                    .set_noise(noise)
-                    .build();
+                let factor = Factor::new(&[key1, key2], BetweenResidual::new(&var), noise, L2);
                 graph.add_factor(factor);
             }
             _ => {
