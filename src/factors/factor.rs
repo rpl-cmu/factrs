@@ -3,9 +3,9 @@ use crate::{
     dtype,
     linalg::{Const, DiffResult, MatrixBlock},
     linear::LinearFactor,
-    noise::{NoiseModel, NoiseModelSafe},
+    noise::{GaussianNoise, NoiseModel, NoiseModelSafe},
     residuals::{Residual, ResidualSafe},
-    robust::{RobustCost, RobustCostSafe},
+    robust::{RobustCost, RobustCostSafe, L2},
 };
 
 pub struct Factor {
@@ -16,8 +16,39 @@ pub struct Factor {
 }
 
 impl Factor {
-    // TODO: Defaults for noise and robust
-    pub fn new<const NUM_VARS: usize, const DIM_OUT: usize, R, N, C>(
+    pub fn new_base<const NUM_VARS: usize, const DIM_OUT: usize, R>(
+        keys: &[Symbol; NUM_VARS],
+        residual: R,
+    ) -> Self
+    where
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+    {
+        Self {
+            keys: keys.to_vec(),
+            residual: Box::new(residual),
+            noise: Box::new(GaussianNoise::<DIM_OUT>::identity()),
+            robust: Box::new(L2),
+        }
+    }
+
+    pub fn new_noise<const NUM_VARS: usize, const DIM_OUT: usize, R, N>(
+        keys: &[Symbol; NUM_VARS],
+        residual: R,
+        noise: N,
+    ) -> Self
+    where
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
+    {
+        Self {
+            keys: keys.to_vec(),
+            residual: Box::new(residual),
+            noise: Box::new(noise),
+            robust: Box::new(L2),
+        }
+    }
+
+    pub fn new_full<const NUM_VARS: usize, const DIM_OUT: usize, R, N, C>(
         keys: &[Symbol; NUM_VARS],
         residual: R,
         noise: N,
@@ -107,7 +138,7 @@ mod tests {
         let noise = GaussianNoise::from_diag_sigma(&Vector3::new(1e-1, 2e-1, 3e-1));
         let robust = GemanMcClure::default();
 
-        let factor = Factor::new(&[X(0)], residual, noise, robust);
+        let factor = Factor::new_full(&[X(0)], residual, noise, robust);
 
         let f = |x: Vector3| {
             let mut values = Values::new();
@@ -137,7 +168,7 @@ mod tests {
         let noise = GaussianNoise::from_diag_sigma(&Vector3::new(1e-1, 2e-1, 3e-1));
         let robust = GemanMcClure::default();
 
-        let factor = Factor::new(&[X(0), X(1)], residual, noise, robust);
+        let factor = Factor::new_full(&[X(0), X(1)], residual, noise, robust);
 
         let mut values = Values::new();
         values.insert(X(0), x);

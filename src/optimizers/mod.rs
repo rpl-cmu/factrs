@@ -19,9 +19,7 @@ pub mod test {
         dtype,
         factors::Factor,
         linalg::VectorX,
-        noise::GaussianNoise,
         residuals::{BetweenResidual, PriorResidual},
-        robust::L2,
         variables::Variable,
     };
 
@@ -40,7 +38,7 @@ pub mod test {
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(&p);
-        let factor = Factor::new(&[X(0)], res, GaussianNoise::identity(), L2);
+        let factor = Factor::new_base(&[X(0)], res);
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
@@ -72,12 +70,12 @@ pub mod test {
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(&p1);
-        let factor = Factor::new(&[X(0)], res, GaussianNoise::identity(), L2);
+        let factor = Factor::new_base(&[X(0)], res);
         graph.add_factor(factor);
 
         let diff = p2.minus(&p1);
         let res = BetweenResidual::new(&diff);
-        let factor = Factor::new(&[X(0), X(1)], res, GaussianNoise::identity(), L2);
+        let factor = Factor::new_base(&[X(0), X(1)], res);
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);

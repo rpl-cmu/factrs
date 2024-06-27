@@ -3,14 +3,12 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-
 use crate::{
     containers::{Graph, Values, X},
     dtype,
     factors::Factor,
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
-    robust::L2,
     variables::*,
 };
 
@@ -35,12 +33,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor = Factor::new(
-                        &[key.clone()],
-                        PriorResidual::new(&var.clone()),
-                        GaussianNoise::identity(),
-                        L2,
-                    );
+                    let factor = Factor::new_base(&[key.clone()], PriorResidual::new(&var.clone()));
                     graph.add_factor(factor);
                 }
 
@@ -64,7 +57,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let key2 = X(id_curr);
                 let var = SE2::new(theta, x, y);
                 let noise = GaussianNoise::from_diag_inf(&inf);
-                let factor = Factor::new(&[key1, key2], BetweenResidual::new(&var), noise, L2);
+                let factor = Factor::new_noise(&[key1, key2], BetweenResidual::new(&var), noise);
                 graph.add_factor(factor);
             }
             _ => {
