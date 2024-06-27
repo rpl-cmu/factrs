@@ -21,7 +21,7 @@ impl<P: Variable, V: Variable> Residual1<V> for PriorResidual<P>
 where
     for<'a> &'a V: std::convert::TryInto<&'a P>,
 {
-    const DIM: usize = P::DIM;
+    type DimOut = P::Dim;
     type V1 = P;
     type Differ = ForwardProp;
 

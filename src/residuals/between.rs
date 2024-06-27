@@ -22,7 +22,7 @@ impl<P: Variable, V: Variable> Residual2<V> for BetweenResidual<P>
 where
     for<'a> &'a V: std::convert::TryInto<&'a P>,
 {
-    const DIM: usize = P::DIM;
+    type DimOut = P::Dim;
     type Differ = ForwardProp;
     type V1 = P;
     type V2 = P;

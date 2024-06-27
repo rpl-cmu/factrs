@@ -17,7 +17,8 @@ macro_rules! make_enum_residual {
 
         // Implement the trait for the specified enum
         impl $crate::residuals::Residual<$var> for $name {
-            const DIM: usize = 0;
+            type NumVars = $crate::linalg::Const<0>;
+            type DimOut = $crate::linalg::Const<0>;
 
             fn residual<K: $crate::containers::Key>(&self, values: &$crate::containers::Values<K, $var>, keys: &[K]) -> $crate::linalg::VectorX {
                 paste! {
@@ -39,11 +40,11 @@ macro_rules! make_enum_residual {
                 }
             }
 
-            fn dim(&self) -> usize {
+            fn dim_out(&self) -> usize {
                 paste! {
                     match self {
                         $(
-                            $name::[<$x $($gen)?>](x) => $crate::residuals::Residual::<$var>::dim(x),
+                            $name::[<$x $($gen)?>](x) => $crate::residuals::Residual::<$var>::dim_out(x),
                         )*
                     }
                 }
@@ -64,7 +65,8 @@ macro_rules! impl_residual {
                     for<'a> &'a V: std::convert::TryInto<&'a $vars>,
                 )*
             {
-                const DIM: usize = <Self as [<Residual $num>]<V>>::DIM;
+                type DimOut = <Self as [<Residual $num>]<V>>::DimOut;
+                type NumVars = $crate::linalg::Const<$num>;
 
                 fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX {
                     self.[<residual $num _single>](values, keys)

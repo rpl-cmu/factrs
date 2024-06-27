@@ -1,5 +1,5 @@
 use crate::containers::{Key, Values};
-use crate::linalg::{Diff, DiffResult, DualVec, MatrixX, VectorX};
+use crate::linalg::{Diff, DiffResult, Dim, DualVec, MatrixX, VectorX};
 use crate::variables::Variable;
 use paste::paste;
 use std::fmt;
@@ -27,11 +27,12 @@ where
     })
 }
 
-pub trait Residual<V: Variable>: Sized + fmt::Debug {
-    const DIM: usize;
+pub trait Residual<V: Variable>: fmt::Debug {
+    type DimOut: Dim;
+    type NumVars: Dim;
 
-    fn dim(&self) -> usize {
-        Self::DIM
+    fn dim_out(&self) -> usize {
+        Self::DimOut::try_to_usize().unwrap()
     }
 
     fn residual<K: Key>(&self, values: &Values<K, V>, keys: &[K]) -> VectorX;
@@ -56,7 +57,7 @@ macro_rules! residual_maker {
                 $(
                     type $var: Variable;
                 )*
-                const DIM: usize;
+                type DimOut: Dim;
                 type Differ: Diff;
 
                 fn [<residual $num>](&self, $($name: DualVar<Self::$var>,)*) -> VectorX<DualVec>;
