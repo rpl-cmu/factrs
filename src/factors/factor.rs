@@ -69,7 +69,7 @@ impl Factor {
 
     pub fn error(&self, values: &Values) -> dtype {
         let r = self.residual.residual(values, &self.keys);
-        let r = self.noise.whiten_vec(&r);
+        let r = self.noise.whiten_vec(r.as_view());
         let norm2 = r.norm_squared();
         self.robust.loss(norm2)
     }
@@ -79,8 +79,8 @@ impl Factor {
         let DiffResult { value: r, diff: a } = self.residual.residual_jacobian(values, &self.keys);
 
         // Whiten residual and jacobian
-        let r = self.noise.whiten_vec(&r);
-        let a = self.noise.whiten_mat(&a);
+        let r = self.noise.whiten_vec(r.as_view());
+        let a = self.noise.whiten_mat(a.as_view());
 
         // Weight according to robust cost
         let norm2 = r.norm_squared();
@@ -135,7 +135,7 @@ mod tests {
         let x = <Vector3 as Variable>::identity();
 
         let residual = PriorResidual::new(&prior);
-        let noise = GaussianNoise::from_diag_sigma(&Vector3::new(1e-1, 2e-1, 3e-1));
+        let noise = GaussianNoise::from_diag_sigma(Vector3::new(1e-1, 2e-1, 3e-1).as_view());
         let robust = GemanMcClure::default();
 
         let factor = Factor::new_full(&[X(0)], residual, noise, robust);
@@ -165,7 +165,7 @@ mod tests {
         let x = <Vector3 as Variable>::identity();
 
         let residual = BetweenResidual::new(&bet);
-        let noise = GaussianNoise::from_diag_sigma(&Vector3::new(1e-1, 2e-1, 3e-1));
+        let noise = GaussianNoise::from_diag_sigma(Vector3::new(1e-1, 2e-1, 3e-1).as_view());
         let robust = GemanMcClure::default();
 
         let factor = Factor::new_full(&[X(0), X(1)], residual, noise, robust);
