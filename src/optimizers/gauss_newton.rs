@@ -32,7 +32,6 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
         &self.params
     }
 
-    // TODO: Should probably have some form of error handling here
     fn step(&mut self, mut values: Values) -> OptResult {
         // Make an ordering
         let order = Order::from_values(&values);

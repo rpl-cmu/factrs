@@ -135,7 +135,7 @@ mod tests {
         let x = <Vector3 as Variable>::identity();
 
         let residual = PriorResidual::new(&prior);
-        let noise = GaussianNoise::from_diag_sigma(Vector3::new(1e-1, 2e-1, 3e-1).as_view());
+        let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
         let factor = Factor::new_full(&[X(0)], residual, noise, robust);
@@ -165,7 +165,7 @@ mod tests {
         let x = <Vector3 as Variable>::identity();
 
         let residual = BetweenResidual::new(&bet);
-        let noise = GaussianNoise::from_diag_sigma(Vector3::new(1e-1, 2e-1, 3e-1).as_view());
+        let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
         let factor = Factor::new_full(&[X(0), X(1)], residual, noise, robust);
