@@ -1,7 +1,7 @@
 use faer_ext::IntoNalgebra;
 
 use crate::{
-    containers::{Graph, GraphOrder, Order, Values},
+    containers::{Graph, GraphOrder, Values, ValuesOrder},
     linalg::DiffResult,
     linear::{CholeskySolver, LinearSolver, LinearValues},
 };
@@ -38,7 +38,10 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
     fn init(&mut self, _values: &Values) {
         // TODO: Some way to manual specify how to computer ValuesOrder
         // Precompute the sparsity pattern
-        self.graph_order = Some(self.graph.sparsity_pattern(Order::from_values(_values)));
+        self.graph_order = Some(
+            self.graph
+                .sparsity_pattern(ValuesOrder::from_values(_values)),
+        );
     }
 
     fn step(&mut self, mut values: Values) -> OptResult {

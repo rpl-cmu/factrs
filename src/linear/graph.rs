@@ -1,5 +1,5 @@
 use crate::{
-    containers::{GraphOrder, Idx, Order},
+    containers::{GraphOrder, Idx, ValuesOrder},
     dtype,
     linalg::DiffResult,
     linear::LinearFactor,
@@ -32,7 +32,7 @@ impl LinearGraph {
     }
 
     // TODO: This is identical for nonlinear case, is there a way we can reduce code reuse?
-    pub fn sparsity_pattern(&self, order: Order) -> GraphOrder {
+    pub fn sparsity_pattern(&self, order: ValuesOrder) -> GraphOrder {
         let total_rows = self.factors.iter().map(|f| f.dim_out()).sum();
         let total_columns = order.dim();
 
@@ -145,7 +145,7 @@ mod test {
         map.insert(X(0), Idx { idx: 0, dim: 2 });
         map.insert(X(1), Idx { idx: 2, dim: 2 });
         map.insert(X(2), Idx { idx: 4, dim: 3 });
-        let order = Order::new(map);
+        let order = ValuesOrder::new(map);
 
         // Compute the residual and jacobian
         let graph_order = graph.sparsity_pattern(order);

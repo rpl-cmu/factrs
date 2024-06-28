@@ -1,8 +1,8 @@
-use faer::sparse::{SymbolicSparseColMat, ValuesOrder};
+use faer::sparse::SymbolicSparseColMat;
 
 use crate::{dtype, factors::Factor, linear::LinearGraph};
 
-use super::{Idx, Order, Values};
+use super::{Idx, Values, ValuesOrder};
 
 #[derive(Default)]
 pub struct Graph {
@@ -27,7 +27,7 @@ impl Graph {
         LinearGraph::from_vec(factors)
     }
 
-    pub fn sparsity_pattern(&self, order: Order) -> GraphOrder {
+    pub fn sparsity_pattern(&self, order: ValuesOrder) -> GraphOrder {
         let total_rows = self.factors.iter().map(|f| f.dim_out()).sum();
         let total_columns = order.dim();
 
@@ -61,9 +61,9 @@ impl Graph {
 
 pub struct GraphOrder {
     // Contains the order of the variables
-    pub order: Order,
+    pub order: ValuesOrder,
     // Contains the sparsity pattern of the jacobian
     pub sparsity_pattern: SymbolicSparseColMat<usize>,
     // Contains the order of values to put into the sparsity pattern
-    pub sparsity_order: ValuesOrder<usize>,
+    pub sparsity_order: faer::sparse::ValuesOrder<usize>,
 }

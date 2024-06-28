@@ -1,21 +1,21 @@
 use crate::{
-    containers::{Idx, Key, Order, Symbol, Values},
+    containers::{Idx, Key, Symbol, Values, ValuesOrder},
     linalg::{VectorViewX, VectorX},
 };
 use std::collections::hash_map::Iter as HashMapIter;
 
 pub struct LinearValues {
     values: VectorX,
-    order: Order,
+    order: ValuesOrder,
 }
 
 impl LinearValues {
-    pub fn zero_from_order(order: Order) -> Self {
+    pub fn zero_from_order(order: ValuesOrder) -> Self {
         let values = VectorX::zeros(order.dim());
         Self { values, order }
     }
 
-    pub fn from_order_and_values(order: Order, values: VectorX) -> Self {
+    pub fn from_order_and_values(order: ValuesOrder, values: VectorX) -> Self {
         assert!(
             values.len() == order.dim(),
             "Values and order must have the same dimension when creating LinearValues"
@@ -24,7 +24,7 @@ impl LinearValues {
     }
 
     pub fn zero_from_values(values: &Values) -> Self {
-        let order = Order::from_values(values);
+        let order = ValuesOrder::from_values(values);
         let values = VectorX::zeros(order.dim());
         Self { values, order }
     }
@@ -82,7 +82,7 @@ mod test {
 
     use super::*;
 
-    fn make_order_vector() -> (Order, VectorX) {
+    fn make_order_vector() -> (ValuesOrder, VectorX) {
         // Create some form of values
         let mut v = Values::new();
         v.insert(X(0), Vector2::default());
@@ -90,7 +90,7 @@ mod test {
         v.insert(X(2), Vector3::default());
 
         // Create an order
-        let order = Order::from_values(&v);
+        let order = ValuesOrder::from_values(&v);
         let vector = VectorX::from_fn(order.dim(), |i, _| i as dtype);
         (order, vector)
     }

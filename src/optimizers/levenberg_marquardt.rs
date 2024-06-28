@@ -4,7 +4,7 @@ use faer::{scale, sparse::SparseColMat};
 use faer_ext::IntoNalgebra;
 
 use crate::{
-    containers::{Graph, GraphOrder, Order, Values},
+    containers::{Graph, GraphOrder, Values, ValuesOrder},
     dtype,
     linalg::DiffResult,
     linear::{CholeskySolver, LinearSolver, LinearValues},
@@ -63,14 +63,17 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
     fn init(&mut self, _values: &Values) {
         // TODO: Some way to manual specify how to computer ValuesOrder
         // Precompute the sparsity pattern
-        self.graph_order = Some(self.graph.sparsity_pattern(Order::from_values(_values)));
+        self.graph_order = Some(
+            self.graph
+                .sparsity_pattern(ValuesOrder::from_values(_values)),
+        );
     }
 
     // TODO: Some form of logging of the lambda value
     // TODO: More sophisticated stopping criteria based on magnitude of the gradient
     fn step(&mut self, mut values: Values) -> OptResult {
         // Make an ordering
-        let order = Order::from_values(&values);
+        let order = ValuesOrder::from_values(&values);
 
         // Solve the linear system
         let linear_graph = self.graph.linearize(&values);
