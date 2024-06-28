@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub struct Factor {
-    keys: Vec<Symbol>,
+    pub keys: Vec<Symbol>,
     residual: Box<dyn ResidualSafe>,
     noise: Box<dyn NoiseModelSafe>,
     robust: Box<dyn RobustCostSafe>,
@@ -72,6 +72,10 @@ impl Factor {
         let r = self.noise.whiten_vec(r.as_view());
         let norm2 = r.norm_squared();
         self.robust.loss(norm2)
+    }
+
+    pub fn dim_out(&self) -> usize {
+        self.residual.dim_out()
     }
 
     pub fn linearize(&self, values: &Values) -> LinearFactor {

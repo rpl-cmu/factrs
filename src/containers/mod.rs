@@ -13,4 +13,4 @@ mod order;
 pub use order::{Idx, Order};
 
 mod graph;
-pub use graph::Graph;
+pub use graph::{Graph, GraphOrder};

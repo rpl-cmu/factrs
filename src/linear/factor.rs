@@ -23,7 +23,7 @@ impl LinearFactor {
         Self { keys, a, b }
     }
 
-    pub fn dim(&self) -> usize {
+    pub fn dim_out(&self) -> usize {
         self.b.len()
     }
 

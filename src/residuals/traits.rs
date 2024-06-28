@@ -1,6 +1,8 @@
-use crate::containers::{Symbol, Values};
-use crate::linalg::{Diff, DiffResult, Dim, DualVec, MatrixX, VectorX};
-use crate::variables::Variable;
+use crate::{
+    containers::{Symbol, Values},
+    linalg::{Diff, DiffResult, Dim, DualVec, MatrixX, VectorX},
+    variables::Variable,
+};
 use paste::paste;
 use std::fmt;
 
@@ -21,12 +23,18 @@ pub trait Residual: fmt::Debug {
 }
 
 pub trait ResidualSafe {
+    fn dim_out(&self) -> usize;
+
     fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
 
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
 impl<T: Residual> ResidualSafe for T {
+    fn dim_out(&self) -> usize {
+        T::DimOut::try_to_usize().unwrap()
+    }
+
     fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
         self.residual(values, keys)
     }

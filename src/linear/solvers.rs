@@ -3,7 +3,7 @@ use std::ops::Mul;
 use crate::dtype;
 use faer::{
     prelude::SpSolver,
-    sparse::{linalg::solvers, SparseColMat, SparseColMatRef},
+    sparse::{linalg::solvers, SparseColMatRef},
     Mat, MatRef,
 };
 
@@ -113,7 +113,7 @@ impl LinearSolver for LUSolver {
 
 #[cfg(test)]
 mod test {
-    use faer::mat;
+    use faer::{mat, sparse::SparseColMat};
     use matrixcompare::assert_matrix_eq;
 
     use super::*;

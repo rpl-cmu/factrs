@@ -4,7 +4,7 @@ use faer::{scale, sparse::SparseColMat};
 use faer_ext::IntoNalgebra;
 
 use crate::{
-    containers::{Graph, Order, Values},
+    containers::{Graph, GraphOrder, Order, Values},
     dtype,
     linalg::DiffResult,
     linear::{CholeskySolver, LinearSolver, LinearValues},
@@ -36,6 +36,8 @@ pub struct LevenMarquardt<S: LinearSolver = CholeskySolver> {
     pub params_base: OptimizerParams,
     pub params_leven: LevenParams,
     lambda: dtype,
+    // For caching computation between steps
+    graph_order: Option<GraphOrder>,
 }
 
 impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
@@ -46,6 +48,7 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
             params_base: OptimizerParams::default(),
             params_leven: LevenParams::default(),
             lambda: 1e-5,
+            graph_order: None,
         }
     }
 
@@ -57,15 +60,22 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
         &self.params_base
     }
 
+    fn init(&mut self, _values: &Values) {
+        // TODO: Some way to manual specify how to computer ValuesOrder
+        // Precompute the sparsity pattern
+        self.graph_order = Some(self.graph.sparsity_pattern(Order::from_values(_values)));
+    }
+
     // TODO: Some form of logging of the lambda value
     // TODO: More sophisticated stopping criteria based on magnitude of the gradient
     fn step(&mut self, mut values: Values) -> OptResult {
         // Make an ordering
         let order = Order::from_values(&values);
 
-        // Get the linear system
+        // Solve the linear system
         let linear_graph = self.graph.linearize(&values);
-        let DiffResult { value: r, diff: j } = linear_graph.residual_jacobian(&order);
+        let DiffResult { value: r, diff: j } =
+            linear_graph.residual_jacobian(self.graph_order.as_ref().unwrap());
 
         // Form A
         let jtj = j
@@ -110,7 +120,10 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
                 .into_nalgebra()
                 .column(0)
                 .clone_owned();
-            dx = LinearValues::from_order_and_values(order.clone(), delta);
+            dx = LinearValues::from_order_and_values(
+                self.graph_order.as_ref().unwrap().order.clone(),
+                delta,
+            );
 
             // Update our cost
             let curr_error = linear_graph.error(&dx);
