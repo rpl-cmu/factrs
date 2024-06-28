@@ -1,8 +1,5 @@
-use crate::containers::Order;
-use crate::dtype;
-use crate::linalg::DiffResult;
-use crate::linear::LinearFactor;
-use faer::sparse::SparseColMat;
+use crate::{containers::Order, dtype, linalg::DiffResult, linear::LinearFactor};
+use faer::sparse::{SparseColMat, SparseRowMat};
 use faer_ext::IntoFaer;
 
 use super::LinearValues;
@@ -67,8 +64,10 @@ impl LinearGraph {
 
         // TODO: This is quite slow to sort things - it'd be faster if we sorted indices by rows, not columns as they shoudl be closer to sorted
         // However, the default implementation of SparseRowMat just used SparseColMat and then tranposes
-        let jac = SparseColMat::try_new_from_triplets(total_rows, total_columns, &jac)
+        let jac = SparseRowMat::try_new_from_triplets(total_rows, total_columns, &jac)
             .expect("Failed to form sparse jacobian");
+
+        let jac = jac.to_col_major().expect("Failed to convert to col major");
 
         DiffResult {
             value: r,
@@ -76,7 +75,6 @@ impl LinearGraph {
         }
     }
 }
-
 
 #[cfg(test)]
 mod test {

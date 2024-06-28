@@ -43,7 +43,7 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
         // Solve Ax = b
         let delta = self
             .solver
-            .solve_lst_sq(&j, &r)
+            .solve_lst_sq(j.as_ref(), r.as_ref())
             .as_ref()
             .into_nalgebra()
             .column(0)

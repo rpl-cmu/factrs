@@ -105,7 +105,7 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
             // Solve Ax = b
             let delta = self
                 .solver
-                .solve_symmetric(&a, &b)
+                .solve_symmetric(a.as_ref(), b.as_ref())
                 .as_ref()
                 .into_nalgebra()
                 .column(0)
