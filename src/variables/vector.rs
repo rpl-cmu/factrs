@@ -1,5 +1,7 @@
-use crate::linalg::{Const, DualNum, DualVec, Vector, VectorViewX, VectorX};
-use crate::variables::Variable;
+use crate::{
+    linalg::{Const, DualNum, DualVec, Dyn, Vector, VectorViewX, VectorX},
+    variables::Variable,
+};
 
 // ------------------------- Our needs ------------------------- //
 impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
@@ -29,14 +31,22 @@ impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
     fn dual_self(&self) -> Self::Dual {
         self.map(|x| x.into())
     }
+
+    // Mostly unncessary, but avoids having to convert VectorX to static vector
+    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
+        let mut tv: Vector<N, DualVec> = Self::Dual::zeros();
+        for (i, tvi) in tv.iter_mut().enumerate() {
+            tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
+        }
+        tv
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use crate::linalg::Vector6;
-    use crate::test_variable;
+    use crate::{linalg::Vector6, test_variable};
 
     // Be lazy and only test Vector6 - others should work the same
     test_variable!(Vector6);

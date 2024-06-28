@@ -1,13 +1,14 @@
 use nalgebra::dvector;
 
-use crate::dtype;
-use crate::linalg::{
-    Const, DualNum, DualVec, Matrix2, Matrix2x3, Matrix3, MatrixView, Vector2, VectorView2,
-    VectorView3, VectorViewX, VectorX,
+use crate::{
+    dtype,
+    linalg::{
+        Const, DualNum, DualVec, Matrix2, Matrix2x3, Matrix3, MatrixView, Vector2, VectorView2,
+        VectorView3, VectorViewX, VectorX,
+    },
+    variables::{MatrixLieGroup, Variable, SO2},
 };
-use crate::variables::{MatrixLieGroup, Variable, SO2};
-use std::fmt;
-use std::ops;
+use std::{fmt, ops};
 
 use super::Vector3;
 
@@ -123,6 +124,13 @@ impl<D: DualNum> Variable<D> for SE2<D> {
             xy: self.xy.dual_self(),
         }
     }
+
+    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
+        SE2 {
+            rot: SO2::<D>::dual_setup(idx, total),
+            xy: Vector2::<D>::dual_setup(idx + 1, total),
+        }
+    }
 }
 
 impl<D: DualNum> MatrixLieGroup<D> for SE2<D> {
@@ -219,7 +227,11 @@ impl<D: DualNum> fmt::Display for SE2<D> {
 
 impl<D: DualNum> fmt::Debug for SE2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        write!(
+            f,
+            "SE2({:?}, x: {:.3}, y: {:.3})",
+            self.rot, self.xy[0], self.xy[1]
+        )
     }
 }
 

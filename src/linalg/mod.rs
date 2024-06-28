@@ -17,6 +17,9 @@ pub type DualScalar = num_dual::Dual<dtype, dtype>;
 // Misc imports
 pub use na::{dmatrix, dvector, Const, Dim, DimName, Dyn, RealField};
 
+// Dual numbers
+pub use num_dual::Derivative;
+
 // Vectors
 pub type Vector<const N: usize, D = dtype> = na::SVector<D, N>;
 pub type VectorX<D = dtype> = na::DVector<D>;

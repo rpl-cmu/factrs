@@ -1,6 +1,8 @@
-use crate::dtype;
-use crate::linalg::{
-    Const, DimName, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
+use crate::{
+    dtype,
+    linalg::{
+        Const, DimName, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
+    },
 };
 
 use downcast_rs::{impl_downcast, Downcast};
@@ -25,9 +27,6 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn dim(&self) -> usize {
         Self::DIM
     }
-    fn identity_enum(&self) -> Self {
-        Self::identity()
-    }
 
     // Moves to and from vector space
     fn oplus(&self, delta: VectorViewX<D>) -> Self {
@@ -48,18 +47,24 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
         other.inverse().compose(self)
     }
 
-    // Create tangent vector w/ duals set up properly
-    fn dual_tangent(&self, idx: usize, total: usize) -> VectorX<DualVec> {
-        let mut tv: VectorX<DualVec> = VectorX::zeros(self.dim());
+    // Setup group element correctly using the tangent space
+    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
+        let mut tv: VectorX<DualVec> = VectorX::zeros(Self::DIM);
         for (i, tvi) in tv.iter_mut().enumerate() {
             tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
         }
-        tv
+        Self::Dual::exp(tv.as_view())
     }
+
     // Applies the tangent vector in dual space
     fn dual(&self, idx: usize, total: usize) -> Self::Dual {
-        self.dual_self()
-            .oplus(self.dual_tangent(idx, total).as_view())
+        // Setups tangent vector -> exp, then we compose here
+        let setup = Self::dual_setup(idx, total);
+        if cfg!(feature = "left") {
+            setup.compose(&self.dual_self())
+        } else {
+            self.dual_self().compose(&setup)
+        }
     }
 }
 

@@ -1,11 +1,12 @@
-use crate::dtype;
-use crate::linalg::{
-    dvector, Const, DualNum, DualVec, Matrix1, Matrix2, MatrixView, VectorView1, VectorView2,
-    VectorViewX, VectorX,
+use crate::{
+    dtype,
+    linalg::{
+        dvector, Const, Derivative, DualNum, DualVec, Matrix1, Matrix2, MatrixView, VectorView1,
+        VectorView2, VectorViewX, VectorX,
+    },
+    variables::{MatrixLieGroup, Variable},
 };
-use crate::variables::{MatrixLieGroup, Variable};
-use std::fmt;
-use std::ops;
+use std::{fmt, ops};
 
 use super::{Vector1, Vector2};
 
@@ -64,6 +65,18 @@ impl<D: DualNum> Variable<D> for SO2<D> {
             a: self.a.clone().into(),
             b: self.b.clone().into(),
         }
+    }
+
+    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
+        let mut a = DualVec::from_re(1.0);
+        a.eps = Derivative::new(Some(VectorX::zeros(total)));
+
+        let mut b = DualVec::from_re(0.0);
+        let mut eps = VectorX::zeros(total);
+        eps[idx] = 1.0;
+        b.eps = Derivative::new(Some(eps));
+
+        SO2 { a, b }
     }
 }
 
@@ -136,7 +149,7 @@ impl<D: DualNum> fmt::Display for SO2<D> {
 
 impl<D: DualNum> fmt::Debug for SO2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        write!(f, "SO2(a: {:.3}, b: {:.3})", self.a, self.b)
     }
 }
 
