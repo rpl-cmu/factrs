@@ -1,12 +1,12 @@
 use crate::{
-    linalg::{Const, DualNum, DualVec, Dyn, Vector, VectorViewX, VectorX},
+    linalg::{Const, DualVectorX, Dyn, Numeric, Vector, VectorViewX, VectorX},
     variables::Variable,
 };
 
 // ------------------------- Our needs ------------------------- //
-impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
+impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {
     type Dim = Const<N>;
-    type Alias<DD: DualNum> = Vector<N, DD>;
+    type Alias<DD: Numeric> = Vector<N, DD>;
 
     fn identity() -> Self {
         Vector::zeros()
@@ -28,16 +28,16 @@ impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
         VectorX::from_iterator(Self::DIM, self.iter().cloned())
     }
 
-    fn dual_self(&self) -> Self::Alias<DualVec> {
-        self.map(|x| x.into())
+    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
+        self.map(|x| x.into().into())
     }
 
     // Mostly unncessary, but avoids having to convert VectorX to static vector
-    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
-        let mut tv: Vector<N, DualVec> = Self::Alias::<DualVec>::zeros();
-        for (i, tvi) in tv.iter_mut().enumerate() {
-            tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
-        }
+    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
+        let mut tv = Self::Alias::<DD>::zeros();
+        // for (i, tvi) in tv.iter_mut().enumerate() {
+        //     tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
+        // }
         tv
     }
 }

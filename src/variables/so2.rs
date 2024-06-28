@@ -1,8 +1,8 @@
 use crate::{
     dtype,
     linalg::{
-        dvector, Const, Derivative, DualNum, DualVec, Matrix1, Matrix2, MatrixView, VectorView1,
-        VectorView2, VectorViewX, VectorX,
+        dvector, Const, DTypes, Derivative, DualVectorX, Matrix1, Matrix2, MatrixView, Numeric,
+        VectorView1, VectorView2, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
 };
@@ -11,12 +11,12 @@ use std::{fmt, ops};
 use super::{Vector1, Vector2};
 
 #[derive(Clone)]
-pub struct SO2<D: DualNum = dtype> {
+pub struct SO2<D: Numeric = dtype> {
     a: D,
     b: D,
 }
 
-impl<D: DualNum> SO2<D> {
+impl<D: Numeric> SO2<D> {
     #[allow(clippy::needless_borrow)]
     pub fn from_theta(theta: D) -> Self {
         SO2 {
@@ -26,9 +26,9 @@ impl<D: DualNum> SO2<D> {
     }
 }
 
-impl<D: DualNum> Variable<D> for SO2<D> {
+impl<D: Numeric> Variable<D> for SO2<D> {
     type Dim = Const<1>;
-    type Alias<DD: DualNum> = SO2<DD>;
+    type Alias<DD: Numeric> = SO2<DD>;
 
     fn identity() -> Self {
         SO2 {
@@ -60,27 +60,27 @@ impl<D: DualNum> Variable<D> for SO2<D> {
         dvector![self.b.clone().atan2(self.a.clone())]
     }
 
-    fn dual_self(&self) -> Self::Alias<DualVec> {
-        Self::Alias::<DualVec> {
-            a: self.a.clone().into(),
-            b: self.b.clone().into(),
+    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
+        Self::Alias::<DD> {
+            a: self.a.clone().into().into(),
+            b: self.b.clone().into().into(),
         }
     }
 
-    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
-        let mut a = DualVec::from_re(1.0);
-        a.eps = Derivative::new(Some(VectorX::zeros(total)));
+    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
+        let mut a: DD = <f64 as std::convert::Into<DTypes>>::into(1.0).into();
+        // a.eps = Derivative::new(Some(VectorX::zeros(total)));
 
-        let mut b = DualVec::from_re(0.0);
-        let mut eps = VectorX::zeros(total);
-        eps[idx] = 1.0;
-        b.eps = Derivative::new(Some(eps));
+        let mut b: DD = <f64 as std::convert::Into<DTypes>>::into(0.0).into();
+        // let mut eps = VectorX::zeros(total);
+        // eps[idx] = 1.0;
+        // b.eps = Derivative::new(Some(eps));
 
         SO2 { a, b }
     }
 }
 
-impl<D: DualNum> MatrixLieGroup<D> for SO2<D> {
+impl<D: Numeric> MatrixLieGroup<D> for SO2<D> {
     type TangentDim = Const<1>;
     type MatrixDim = Const<2>;
     type VectorDim = Const<2>;
@@ -125,7 +125,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SO2<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for SO2<D> {
+impl<D: Numeric> ops::Mul for SO2<D> {
     type Output = SO2<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -133,7 +133,7 @@ impl<D: DualNum> ops::Mul for SO2<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for &SO2<D> {
+impl<D: Numeric> ops::Mul for &SO2<D> {
     type Output = SO2<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -141,13 +141,13 @@ impl<D: DualNum> ops::Mul for &SO2<D> {
     }
 }
 
-impl<D: DualNum> fmt::Display for SO2<D> {
+impl<D: Numeric> fmt::Display for SO2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "SO2({:.3})", self.log()[0])
     }
 }
 
-impl<D: DualNum> fmt::Debug for SO2<D> {
+impl<D: Numeric> fmt::Debug for SO2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "SO2(a: {:.3}, b: {:.3})", self.a, self.b)
     }

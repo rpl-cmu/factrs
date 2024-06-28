@@ -1,6 +1,6 @@
 use crate::{
     dtype,
-    linalg::{Diff, DiffResult, DualScalar, DualVec, MatrixX, VectorX},
+    linalg::{Diff, DiffResult, DualScalar, DualVectorX, MatrixX, VectorX},
     variables::Variable,
 };
 
@@ -165,7 +165,7 @@ macro_rules! numerical_maker_dual {
     (grad, $num:expr, $( ($name:ident, $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<gradient_$num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> DualVec>
+            fn [<gradient_$num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVectorX>,)*) -> DualVectorX>
                 (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
                 let f_single = |$($name: $var,)*| f($( $name.dual_self(), )*).re;
                 Self::[<gradient_$num>](f_single, $($name,)*)
@@ -176,7 +176,7 @@ macro_rules! numerical_maker_dual {
     (jac, $num:expr, $( ($name:ident, $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_$num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> VectorX<DualVec>>
+            fn [<jacobian_$num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVectorX>,)*) -> VectorX<DualVectorX>>
                 (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>{
                 let f_single = |$($name: $var,)*| f($( $name.dual_self(), )*).map(|d| d.re);
                 Self::[<jacobian_$num>](f_single, $($name,)*)

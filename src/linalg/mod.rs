@@ -1,17 +1,8 @@
 use crate::dtype;
 use nalgebra::{self as na, allocator::Allocator};
 
-// Setup dual num
-pub trait DualNum:
-    RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>
-{
-}
-impl<G: RealField + num_dual::DualNum<dtype> + Into<num_dual::DualVec<dtype, dtype, Dyn>>> DualNum
-    for G
-{
-}
-pub type DualVec = num_dual::DualVec<dtype, dtype, Dyn>;
-pub type DualScalar = num_dual::Dual<dtype, dtype>;
+mod dual;
+pub use dual::{DTypes, DualScalar, DualVector, DualVectorX, Numeric};
 
 // Re-export all nalgebra types to put default dtype on everything
 // Misc imports
@@ -20,6 +11,7 @@ pub use na::{dmatrix, dvector, Const, Dim, DimName, Dyn, RealField};
 // Dual numbers
 pub use num_dual::Derivative;
 
+// ------------------------- Vector/Matrix Aliases ------------------------- //
 // Vectors
 pub type Vector<const N: usize, D = dtype> = na::SVector<D, N>;
 pub type VectorX<D = dtype> = na::DVector<D>;
@@ -163,14 +155,14 @@ pub struct DiffResult<V, G> {
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> DualVec>
+            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVectorX>,)*) -> DualVectorX>
                     (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>;
         }
     };
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> VectorX<DualVec>>
+            fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVectorX>,)*) -> VectorX<DualVectorX>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };

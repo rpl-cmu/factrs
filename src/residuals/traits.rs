@@ -1,12 +1,12 @@
 use crate::{
     containers::{Symbol, Values},
-    linalg::{Diff, DiffResult, Dim, DualVec, MatrixX, VectorX},
+    linalg::{Diff, DiffResult, Dim, DualVectorX, MatrixX, VectorX},
     variables::Variable,
 };
 use paste::paste;
 use std::fmt;
 
-type DualVar<V> = <V as Variable>::Alias<DualVec>;
+type DualVar<V> = <V as Variable>::Alias<DualVectorX>;
 
 // ------------------------- Base Residual Trait & Helpers ------------------------- //
 pub trait Residual: fmt::Debug {
@@ -56,7 +56,7 @@ macro_rules! residual_maker {
                 type DimOut: Dim;
                 type Differ: Diff;
 
-                fn [<residual $num>](&self, $($name: DualVar<Self::$var>,)*) -> VectorX<DualVec>;
+                fn [<residual $num>](&self, $($name: DualVar<Self::$var>,)*) -> VectorX<DualVectorX>;
 
                 fn [<residual $num _single>](&self, values: &Values, keys: &[Symbol]) -> VectorX
                 where

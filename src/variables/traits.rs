@@ -1,17 +1,17 @@
 use crate::{
     dtype,
     linalg::{
-        Const, DimName, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
+        Const, DimName, DualVectorX, Dyn, MatrixDim, MatrixViewDim, Numeric, VectorViewX, VectorX,
     },
 };
 
 use downcast_rs::{impl_downcast, Downcast};
 use std::fmt::{Debug, Display};
 
-pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
+pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     type Dim: DimName;
     const DIM: usize = Self::Dim::USIZE;
-    type Alias<DD: DualNum>: Variable<DD>;
+    type Alias<DD: Numeric>: Variable<DD>;
 
     // Group operations
     fn identity() -> Self;
@@ -21,7 +21,7 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
     // Conversion to dual space
-    fn dual_self(&self) -> Self::Alias<DualVec>;
+    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD>;
 
     // Helpers for enum
     fn dim(&self) -> usize {
@@ -48,16 +48,16 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 
     // Setup group element correctly using the tangent space
-    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
-        let mut tv: VectorX<DualVec> = VectorX::zeros(Self::DIM);
-        for (i, tvi) in tv.iter_mut().enumerate() {
-            tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
-        }
-        Self::Alias::<DualVec>::exp(tv.as_view())
+    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
+        let mut tv: VectorX<DD> = VectorX::zeros(Self::DIM);
+        // for (i, tvi) in tv.iter_mut().enumerate() {
+        //     tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
+        // }
+        Self::Alias::<DD>::exp(tv.as_view())
     }
 
     // Applies the tangent vector in dual space
-    fn dual(&self, idx: usize, total: usize) -> Self::Alias<DualVec> {
+    fn dual<DD: Numeric>(&self, idx: usize, total: usize) -> Self::Alias<DD> {
         // Setups tangent vector -> exp, then we compose here
         let setup = Self::dual_setup(idx, total);
         if cfg!(feature = "left") {
@@ -100,7 +100,7 @@ impl Clone for Box<dyn VariableSafe> {
 
 use nalgebra as na;
 
-pub trait MatrixLieGroup<D: DualNum = dtype>: Variable<D>
+pub trait MatrixLieGroup<D: Numeric = dtype>: Variable<D>
 where
     na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
     na::DefaultAllocator: na::allocator::Allocator<D, Self::MatrixDim, Self::MatrixDim>,

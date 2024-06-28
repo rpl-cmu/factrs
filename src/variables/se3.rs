@@ -1,7 +1,7 @@
 use crate::{
     dtype,
     linalg::{
-        Const, DualNum, DualVec, Matrix3, Matrix3x6, Matrix4, Matrix6, MatrixView, Vector3,
+        Const, DualVectorX, Matrix3, Matrix3x6, Matrix4, Matrix6, MatrixView, Numeric, Vector3,
         VectorView3, VectorView6, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable, SO3},
@@ -11,16 +11,16 @@ use std::{fmt, ops};
 use super::Vector6;
 
 #[derive(Clone, Debug)]
-pub struct SE3<D: DualNum = dtype> {
+pub struct SE3<D: Numeric = dtype> {
     rot: SO3<D>,
     xyz: Vector3<D>,
 }
 
-impl<D: DualNum> SE3<D> {}
+impl<D: Numeric> SE3<D> {}
 
-impl<D: DualNum> Variable<D> for SE3<D> {
+impl<D: Numeric> Variable<D> for SE3<D> {
     type Dim = Const<6>;
-    type Alias<DD: DualNum> = SE3<DD>;
+    type Alias<DD: Numeric> = SE3<DD>;
 
     fn identity() -> Self {
         SE3 {
@@ -110,7 +110,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         xi
     }
 
-    fn dual_self(&self) -> Self::Alias<DualVec> {
+    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
         SE3 {
             rot: self.rot.dual_self(),
             xyz: self.xyz.dual_self(),
@@ -118,7 +118,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
     }
 }
 
-impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
+impl<D: Numeric> MatrixLieGroup<D> for SE3<D> {
     type TangentDim = Const<6>;
     type MatrixDim = Const<4>;
     type VectorDim = Const<3>;
@@ -194,7 +194,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for SE3<D> {
+impl<D: Numeric> ops::Mul for SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -202,7 +202,7 @@ impl<D: DualNum> ops::Mul for SE3<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for &SE3<D> {
+impl<D: Numeric> ops::Mul for &SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -210,7 +210,7 @@ impl<D: DualNum> ops::Mul for &SE3<D> {
     }
 }
 
-impl<D: DualNum> fmt::Display for SE3<D> {
+impl<D: Numeric> fmt::Display for SE3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {:?}", self.rot, self.xyz)
     }

@@ -2,13 +2,13 @@ use super::{Residual, Residual1};
 use crate::{
     containers::Values,
     impl_residual,
-    linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX},
+    linalg::{DiffResult, DualVectorX, ForwardProp, MatrixX, VectorX},
     variables::Variable,
 };
 
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct PriorResidual<P: Variable> {
-    prior: P::Alias<DualVec>,
+    prior: P::Alias<DualVectorX>,
 }
 
 impl<P: Variable> PriorResidual<P> {
@@ -24,7 +24,7 @@ impl<P: Variable + 'static> Residual1 for PriorResidual<P> {
     type V1 = P;
     type Differ = ForwardProp;
 
-    fn residual1(&self, v: <Self::V1 as Variable>::Alias<DualVec>) -> VectorX<DualVec> {
+    fn residual1(&self, v: <Self::V1 as Variable>::Alias<DualVectorX>) -> VectorX<DualVectorX> {
         self.prior.ominus(&v)
     }
 }

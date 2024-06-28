@@ -6,7 +6,7 @@ use super::Symbol;
 use crate::variables::VariableSafe;
 
 // Since we won't be passing dual numbers through any of this,
-// we can just use dtype rather than using generics with DualNum
+// we can just use dtype rather than using generics with Numeric
 
 #[derive(Clone)]
 pub struct Values {

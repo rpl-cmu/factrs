@@ -133,7 +133,7 @@ macro_rules! test_lie {
             let v = VectorX::from_fn(vec_len, |i, _| (i + 1) as $crate::dtype);
 
             // Function that simply rotates a vector
-            fn rotate<D: $crate::linalg::DualNum>(r: $var<D>) -> $crate::linalg::VectorX<D> {
+            fn rotate<D: $crate::linalg::Numeric>(r: $var<D>) -> $crate::linalg::VectorX<D> {
                 let vec_len =
                     <$var as $crate::variables::MatrixLieGroup>::VectorDim::try_to_usize().unwrap();
                 let v = VectorX::from_fn(vec_len, |i, _| D::from((i + 1) as $crate::dtype));

@@ -1,7 +1,7 @@
 use crate::{
     dtype,
     linalg::{
-        dvector, Const, DualNum, DualVec, Matrix3, MatrixView, Vector3, Vector4, VectorView3,
+        dvector, Const, DualVectorX, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorView3,
         VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
@@ -9,11 +9,11 @@ use crate::{
 use std::{fmt, ops};
 
 #[derive(Clone)]
-pub struct SO3<D: DualNum = dtype> {
+pub struct SO3<D: Numeric = dtype> {
     pub xyzw: Vector4<D>,
 }
 
-impl<D: DualNum> SO3<D> {
+impl<D: Numeric> SO3<D> {
     pub fn from_vec(xyzw: Vector4<D>) -> Self {
         SO3 { xyzw }
     }
@@ -25,9 +25,9 @@ impl<D: DualNum> SO3<D> {
     }
 }
 
-impl<D: DualNum> Variable<D> for SO3<D> {
+impl<D: Numeric> Variable<D> for SO3<D> {
     type Dim = Const<3>;
-    type Alias<DD: DualNum> = SO3<DD>;
+    type Alias<DD: Numeric> = SO3<DD>;
 
     fn identity() -> Self {
         SO3 { xyzw: Vector4::w() }
@@ -109,14 +109,14 @@ impl<D: DualNum> Variable<D> for SO3<D> {
         }
     }
 
-    fn dual_self(&self) -> Self::Alias<DualVec> {
+    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
         SO3 {
             xyzw: self.xyzw.dual_self(),
         }
     }
 }
 
-impl<D: DualNum> MatrixLieGroup<D> for SO3<D> {
+impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<3>;
@@ -228,7 +228,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SO3<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for SO3<D> {
+impl<D: Numeric> ops::Mul for SO3<D> {
     type Output = SO3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -236,7 +236,7 @@ impl<D: DualNum> ops::Mul for SO3<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for &SO3<D> {
+impl<D: Numeric> ops::Mul for &SO3<D> {
     type Output = SO3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -244,7 +244,7 @@ impl<D: DualNum> ops::Mul for &SO3<D> {
     }
 }
 
-impl<D: DualNum> fmt::Display for SO3<D> {
+impl<D: Numeric> fmt::Display for SO3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -254,7 +254,7 @@ impl<D: DualNum> fmt::Display for SO3<D> {
     }
 }
 
-impl<D: DualNum> fmt::Debug for SO3<D> {
+impl<D: Numeric> fmt::Debug for SO3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }

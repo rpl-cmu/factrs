@@ -3,7 +3,7 @@ use nalgebra::dvector;
 use crate::{
     dtype,
     linalg::{
-        Const, DualNum, DualVec, Matrix2, Matrix2x3, Matrix3, MatrixView, Vector2, VectorView2,
+        Const, DualVectorX, Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric, Vector2, VectorView2,
         VectorView3, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable, SO2},
@@ -13,12 +13,12 @@ use std::{fmt, ops};
 use super::Vector3;
 
 #[derive(Clone)]
-pub struct SE2<D: DualNum = dtype> {
+pub struct SE2<D: Numeric = dtype> {
     rot: SO2<D>,
     xy: Vector2<D>,
 }
 
-impl<D: DualNum> SE2<D> {
+impl<D: Numeric> SE2<D> {
     pub fn new(theta: D, x: D, y: D) -> Self {
         SE2 {
             rot: SO2::from_theta(theta),
@@ -39,9 +39,9 @@ impl<D: DualNum> SE2<D> {
     }
 }
 
-impl<D: DualNum> Variable<D> for SE2<D> {
+impl<D: Numeric> Variable<D> for SE2<D> {
     type Dim = Const<3>;
-    type Alias<DD: DualNum> = SE2<DD>;
+    type Alias<DD: Numeric> = SE2<DD>;
 
     fn identity() -> Self {
         SE2 {
@@ -118,14 +118,14 @@ impl<D: DualNum> Variable<D> for SE2<D> {
         dvector![theta, xy[0].clone(), xy[1].clone()]
     }
 
-    fn dual_self(&self) -> Self::Alias<DualVec> {
+    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
         SE2 {
             rot: self.rot.dual_self(),
             xy: self.xy.dual_self(),
         }
     }
 
-    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
+    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
         SE2 {
             rot: SO2::<D>::dual_setup(idx, total),
             xy: Vector2::<D>::dual_setup(idx + 1, total),
@@ -133,7 +133,7 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     }
 }
 
-impl<D: DualNum> MatrixLieGroup<D> for SE2<D> {
+impl<D: Numeric> MatrixLieGroup<D> for SE2<D> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<2>;
@@ -197,7 +197,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SE2<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for SE2<D> {
+impl<D: Numeric> ops::Mul for SE2<D> {
     type Output = SE2<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -205,7 +205,7 @@ impl<D: DualNum> ops::Mul for SE2<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for &SE2<D> {
+impl<D: Numeric> ops::Mul for &SE2<D> {
     type Output = SE2<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -213,7 +213,7 @@ impl<D: DualNum> ops::Mul for &SE2<D> {
     }
 }
 
-impl<D: DualNum> fmt::Display for SE2<D> {
+impl<D: Numeric> fmt::Display for SE2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -225,7 +225,7 @@ impl<D: DualNum> fmt::Display for SE2<D> {
     }
 }
 
-impl<D: DualNum> fmt::Debug for SE2<D> {
+impl<D: Numeric> fmt::Debug for SE2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
