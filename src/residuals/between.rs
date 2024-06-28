@@ -1,13 +1,15 @@
 use super::{Residual, Residual2};
-use crate::containers::Values;
-use crate::impl_residual;
-use crate::linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX};
-use crate::variables::Variable;
+use crate::{
+    containers::Values,
+    impl_residual,
+    linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX},
+    variables::Variable,
+};
 
 // Between Variable
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct BetweenResidual<P: Variable> {
-    delta: P::Dual,
+    delta: P::Alias<DualVec>,
 }
 
 impl<P: Variable> BetweenResidual<P> {
@@ -24,7 +26,7 @@ impl<P: Variable + 'static> Residual2 for BetweenResidual<P> {
     type V1 = P;
     type V2 = P;
 
-    fn residual2(&self, v1: P::Dual, v2: P::Dual) -> VectorX<DualVec> {
+    fn residual2(&self, v1: P::Alias<DualVec>, v2: P::Alias<DualVec>) -> VectorX<DualVec> {
         v1.compose(&self.delta).ominus(&v2)
     }
 }

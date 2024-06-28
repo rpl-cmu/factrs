@@ -11,7 +11,7 @@ use std::fmt::{Debug, Display};
 pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     type Dim: DimName;
     const DIM: usize = Self::Dim::USIZE;
-    type Dual: Variable<DualVec>;
+    type Alias<DD: DualNum>: Variable<DD>;
 
     // Group operations
     fn identity() -> Self;
@@ -21,7 +21,7 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
     // Conversion to dual space
-    fn dual_self(&self) -> Self::Dual;
+    fn dual_self(&self) -> Self::Alias<DualVec>;
 
     // Helpers for enum
     fn dim(&self) -> usize {
@@ -48,16 +48,16 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     }
 
     // Setup group element correctly using the tangent space
-    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
+    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
         let mut tv: VectorX<DualVec> = VectorX::zeros(Self::DIM);
         for (i, tvi) in tv.iter_mut().enumerate() {
             tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
         }
-        Self::Dual::exp(tv.as_view())
+        Self::Alias::<DualVec>::exp(tv.as_view())
     }
 
     // Applies the tangent vector in dual space
-    fn dual(&self, idx: usize, total: usize) -> Self::Dual {
+    fn dual(&self, idx: usize, total: usize) -> Self::Alias<DualVec> {
         // Setups tangent vector -> exp, then we compose here
         let setup = Self::dual_setup(idx, total);
         if cfg!(feature = "left") {

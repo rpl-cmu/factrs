@@ -1,11 +1,12 @@
-use crate::dtype;
-use crate::linalg::{
-    dvector, Const, DualNum, DualVec, Matrix3, MatrixView, Vector3, Vector4, VectorView3,
-    VectorViewX, VectorX,
+use crate::{
+    dtype,
+    linalg::{
+        dvector, Const, DualNum, DualVec, Matrix3, MatrixView, Vector3, Vector4, VectorView3,
+        VectorViewX, VectorX,
+    },
+    variables::{MatrixLieGroup, Variable},
 };
-use crate::variables::{MatrixLieGroup, Variable};
-use std::fmt;
-use std::ops;
+use std::{fmt, ops};
 
 #[derive(Clone)]
 pub struct SO3<D: DualNum = dtype> {
@@ -26,7 +27,7 @@ impl<D: DualNum> SO3<D> {
 
 impl<D: DualNum> Variable<D> for SO3<D> {
     type Dim = Const<3>;
-    type Dual = SO3<DualVec>;
+    type Alias<DD: DualNum> = SO3<DD>;
 
     fn identity() -> Self {
         SO3 { xyzw: Vector4::w() }
@@ -108,7 +109,7 @@ impl<D: DualNum> Variable<D> for SO3<D> {
         }
     }
 
-    fn dual_self(&self) -> Self::Dual {
+    fn dual_self(&self) -> Self::Alias<DualVec> {
         SO3 {
             xyzw: self.xyzw.dual_self(),
         }

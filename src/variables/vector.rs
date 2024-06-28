@@ -6,7 +6,7 @@ use crate::{
 // ------------------------- Our needs ------------------------- //
 impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
     type Dim = Const<N>;
-    type Dual = Vector<N, DualVec>;
+    type Alias<DD: DualNum> = Vector<N, DD>;
 
     fn identity() -> Self {
         Vector::zeros()
@@ -28,13 +28,13 @@ impl<const N: usize, D: DualNum> Variable<D> for Vector<N, D> {
         VectorX::from_iterator(Self::DIM, self.iter().cloned())
     }
 
-    fn dual_self(&self) -> Self::Dual {
+    fn dual_self(&self) -> Self::Alias<DualVec> {
         self.map(|x| x.into())
     }
 
     // Mostly unncessary, but avoids having to convert VectorX to static vector
-    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
-        let mut tv: Vector<N, DualVec> = Self::Dual::zeros();
+    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
+        let mut tv: Vector<N, DualVec> = Self::Alias::<DualVec>::zeros();
         for (i, tvi) in tv.iter_mut().enumerate() {
             tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
         }

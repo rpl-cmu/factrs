@@ -163,14 +163,14 @@ pub struct DiffResult<V, G> {
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> DualVec>
+            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> DualVec>
                     (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>;
         }
     };
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> VectorX<DualVec>>
+            fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> VectorX<DualVec>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };

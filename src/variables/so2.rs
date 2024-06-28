@@ -28,7 +28,7 @@ impl<D: DualNum> SO2<D> {
 
 impl<D: DualNum> Variable<D> for SO2<D> {
     type Dim = Const<1>;
-    type Dual = SO2<DualVec>;
+    type Alias<DD: DualNum> = SO2<DD>;
 
     fn identity() -> Self {
         SO2 {
@@ -60,14 +60,14 @@ impl<D: DualNum> Variable<D> for SO2<D> {
         dvector![self.b.clone().atan2(self.a.clone())]
     }
 
-    fn dual_self(&self) -> Self::Dual {
-        Self::Dual {
+    fn dual_self(&self) -> Self::Alias<DualVec> {
+        Self::Alias::<DualVec> {
             a: self.a.clone().into(),
             b: self.b.clone().into(),
         }
     }
 
-    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
+    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
         let mut a = DualVec::from_re(1.0);
         a.eps = Derivative::new(Some(VectorX::zeros(total)));
 

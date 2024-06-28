@@ -41,7 +41,7 @@ impl<D: DualNum> SE2<D> {
 
 impl<D: DualNum> Variable<D> for SE2<D> {
     type Dim = Const<3>;
-    type Dual = SE2<DualVec>;
+    type Alias<DD: DualNum> = SE2<DD>;
 
     fn identity() -> Self {
         SE2 {
@@ -118,14 +118,14 @@ impl<D: DualNum> Variable<D> for SE2<D> {
         dvector![theta, xy[0].clone(), xy[1].clone()]
     }
 
-    fn dual_self(&self) -> Self::Dual {
+    fn dual_self(&self) -> Self::Alias<DualVec> {
         SE2 {
             rot: self.rot.dual_self(),
             xy: self.xy.dual_self(),
         }
     }
 
-    fn dual_setup(idx: usize, total: usize) -> Self::Dual {
+    fn dual_setup(idx: usize, total: usize) -> Self::Alias<DualVec> {
         SE2 {
             rot: SO2::<D>::dual_setup(idx, total),
             xy: Vector2::<D>::dual_setup(idx + 1, total),

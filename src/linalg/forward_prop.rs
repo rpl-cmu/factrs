@@ -1,6 +1,8 @@
-use crate::dtype;
-use crate::linalg::{Const, DiffResult, DualScalar, DualVec, Dyn, MatrixX, VectorX};
-use crate::variables::Variable;
+use crate::{
+    dtype,
+    linalg::{Const, DiffResult, DualScalar, DualVec, Dyn, MatrixX, VectorX},
+    variables::Variable,
+};
 use paste::paste;
 
 use super::Diff;
@@ -11,7 +13,7 @@ macro_rules! forward_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> DualVec>
+            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> DualVec>
                     (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
                 // Prepare variables
                 let mut dim = 0;
@@ -38,7 +40,7 @@ macro_rules! forward_maker {
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Dual,)*) -> VectorX<DualVec>>
+            fn [<jacobian_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVec>,)*) -> VectorX<DualVec>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>{
                 // Prepare variables
                 let mut dim = 0;

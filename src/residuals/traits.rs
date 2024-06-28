@@ -6,7 +6,7 @@ use crate::{
 use paste::paste;
 use std::fmt;
 
-type DualVar<V> = <V as Variable>::Dual;
+type DualVar<V> = <V as Variable>::Alias<DualVec>;
 
 // ------------------------- Base Residual Trait & Helpers ------------------------- //
 pub trait Residual: fmt::Debug {

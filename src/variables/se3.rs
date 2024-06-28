@@ -1,11 +1,12 @@
-use crate::dtype;
-use crate::linalg::{
-    Const, DualNum, DualVec, Matrix3, Matrix3x6, Matrix4, Matrix6, MatrixView, Vector3,
-    VectorView3, VectorView6, VectorViewX, VectorX,
+use crate::{
+    dtype,
+    linalg::{
+        Const, DualNum, DualVec, Matrix3, Matrix3x6, Matrix4, Matrix6, MatrixView, Vector3,
+        VectorView3, VectorView6, VectorViewX, VectorX,
+    },
+    variables::{MatrixLieGroup, Variable, SO3},
 };
-use crate::variables::{MatrixLieGroup, Variable, SO3};
-use std::fmt;
-use std::ops;
+use std::{fmt, ops};
 
 use super::Vector6;
 
@@ -19,7 +20,7 @@ impl<D: DualNum> SE3<D> {}
 
 impl<D: DualNum> Variable<D> for SE3<D> {
     type Dim = Const<6>;
-    type Dual = SE3<DualVec>;
+    type Alias<DD: DualNum> = SE3<DD>;
 
     fn identity() -> Self {
         SE3 {
@@ -109,7 +110,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         xi
     }
 
-    fn dual_self(&self) -> Self::Dual {
+    fn dual_self(&self) -> Self::Alias<DualVec> {
         SE3 {
             rot: self.rot.dual_self(),
             xyz: self.xyz.dual_self(),

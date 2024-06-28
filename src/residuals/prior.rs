@@ -1,12 +1,14 @@
 use super::{Residual, Residual1};
-use crate::containers::Values;
-use crate::impl_residual;
-use crate::linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX};
-use crate::variables::Variable;
+use crate::{
+    containers::Values,
+    impl_residual,
+    linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX},
+    variables::Variable,
+};
 
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct PriorResidual<P: Variable> {
-    prior: P::Dual,
+    prior: P::Alias<DualVec>,
 }
 
 impl<P: Variable> PriorResidual<P> {
@@ -22,7 +24,7 @@ impl<P: Variable + 'static> Residual1 for PriorResidual<P> {
     type V1 = P;
     type Differ = ForwardProp;
 
-    fn residual1(&self, v: <Self::V1 as Variable>::Dual) -> VectorX<DualVec> {
+    fn residual1(&self, v: <Self::V1 as Variable>::Alias<DualVec>) -> VectorX<DualVec> {
         self.prior.ominus(&v)
     }
 }
@@ -35,8 +37,7 @@ mod test {
     use super::*;
     use crate::{
         containers::X,
-        linalg::dvector,
-        linalg::NumericalDiff,
+        linalg::{dvector, NumericalDiff},
         variables::{Vector3, SE3, SO3},
     };
     use matrixcompare::assert_matrix_eq;
