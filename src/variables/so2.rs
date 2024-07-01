@@ -1,8 +1,12 @@
+use nalgebra::{allocator::Allocator, DefaultAllocator, DimName};
+use num_dual::DualVec;
+
 use crate::{
     dtype,
     linalg::{
-        dvector, Const, DTypes, Derivative, DualVectorX, Matrix1, Matrix2, MatrixView, Numeric,
-        VectorView1, VectorView2, VectorViewX, VectorX,
+        dvector, Const, Derivative, DualAllocator, DualVector, DualVectorGeneric, DualVectorX,
+        Matrix1, Matrix2, MatrixView, Numeric, Vector, VectorDim, VectorView1, VectorView2,
+        VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
 };
@@ -60,21 +64,25 @@ impl<D: Numeric> Variable<D> for SO2<D> {
         dvector![self.b.clone().atan2(self.a.clone())]
     }
 
-    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         Self::Alias::<DD> {
-            a: self.a.clone().into().into(),
-            b: self.b.clone().into().into(),
+            a: other.a.clone().into(),
+            b: other.b.clone().into(),
         }
     }
 
-    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
-        let mut a: DD = <f64 as std::convert::Into<DTypes>>::into(1.0).into();
-        // a.eps = Derivative::new(Some(VectorX::zeros(total)));
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    where
+        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+    {
+        let mut a = DualVectorGeneric::<N>::from_re(1.0);
+        a.eps = Derivative::new(Some(VectorDim::<N>::zeros()));
 
-        let mut b: DD = <f64 as std::convert::Into<DTypes>>::into(0.0).into();
-        // let mut eps = VectorX::zeros(total);
-        // eps[idx] = 1.0;
-        // b.eps = Derivative::new(Some(eps));
+        let mut b = DualVectorGeneric::<N>::from_re(0.0);
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx] = 1.0;
+        b.eps = Derivative::new(Some(eps));
 
         SO2 { a, b }
     }

@@ -109,9 +109,9 @@ impl<D: Numeric> Variable<D> for SO3<D> {
         }
     }
 
-    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SO3 {
-            xyzw: self.xyzw.dual_self(),
+            xyzw: Vector4::<dtype>::dual_convert(&other.xyzw),
         }
     }
 }

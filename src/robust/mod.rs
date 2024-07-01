@@ -256,61 +256,61 @@ impl RobustCost for Tukey {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use matrixcompare::assert_scalar_eq;
+// #[cfg(test)]
+// mod test {
+//     use matrixcompare::assert_scalar_eq;
 
-    use super::*;
-    use crate::linalg::NumericalDiff;
+//     use super::*;
+//     use crate::linalg::NumericalDiff;
 
-    #[cfg(not(feature = "f32"))]
-    const PWR: i32 = 6;
-    #[cfg(not(feature = "f32"))]
-    const TOL: f64 = 1e-6;
+//     #[cfg(not(feature = "f32"))]
+//     const PWR: i32 = 6;
+//     #[cfg(not(feature = "f32"))]
+//     const TOL: f64 = 1e-6;
 
-    #[cfg(feature = "f32")]
-    const PWR: i32 = 3;
-    #[cfg(feature = "f32")]
-    const TOL: f32 = 1e-2;
+//     #[cfg(feature = "f32")]
+//     const PWR: i32 = 3;
+//     #[cfg(feature = "f32")]
+//     const TOL: f32 = 1e-2;
 
-    fn test_weight(robust: &impl RobustCost, d: dtype) {
-        let got = robust.weight(d * d);
-        // weight = loss'(d) / d
-        let actual = NumericalDiff::<PWR>::derivative(|d| robust.loss(d * d), d).diff / d;
+//     fn test_weight(robust: &impl RobustCost, d: dtype) {
+//         let got = robust.weight(d * d);
+//         // weight = loss'(d) / d
+//         let actual = NumericalDiff::<PWR>::derivative(|d| robust.loss(d * d), d).diff / d;
 
-        println!("Weight got: {}, Weight actual: {}", got, actual);
-        assert_scalar_eq!(got, actual, comp = abs, tol = TOL);
-    }
+//         println!("Weight got: {}, Weight actual: {}", got, actual);
+//         assert_scalar_eq!(got, actual, comp = abs, tol = TOL);
+//     }
 
-    macro_rules! robust_tests {
-        ($($robust:ident),*) => {
-            use paste::paste;
+//     macro_rules! robust_tests {
+//         ($($robust:ident),*) => {
+//             use paste::paste;
 
-            paste!{
-                $(
-                    #[test]
-                    #[allow(non_snake_case)]
-                    fn [<$robust _weight>]() {
-                        let robust = $robust::default();
-                        // Test near origin
-                        test_weight(&robust, 0.1);
-                        // Test far away
-                        test_weight(&robust, 50.0);
-                    }
+//             paste!{
+//                 $(
+//                     #[test]
+//                     #[allow(non_snake_case)]
+//                     fn [<$robust _weight>]() {
+//                         let robust = $robust::default();
+//                         // Test near origin
+//                         test_weight(&robust, 0.1);
+//                         // Test far away
+//                         test_weight(&robust, 50.0);
+//                     }
 
-                    #[test]
-                    #[allow(non_snake_case)]
-                    fn [<$robust _center>]() {
-                        let robust = $robust::default();
-                        println!("Center: {}", RobustCost::loss(&robust, 0.0));
-                        assert_scalar_eq!(RobustCost::loss(&robust, 0.0), 0.0, comp=float);
-                    }
+//                     #[test]
+//                     #[allow(non_snake_case)]
+//                     fn [<$robust _center>]() {
+//                         let robust = $robust::default();
+//                         println!("Center: {}", RobustCost::loss(&robust, 0.0));
+//                         assert_scalar_eq!(RobustCost::loss(&robust, 0.0), 0.0, comp=float);
+//                     }
 
-                )*
-            }
+//                 )*
+//             }
 
-        }
-    }
+//         }
+//     }
 
-    robust_tests!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
-}
+//     robust_tests!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
+// }

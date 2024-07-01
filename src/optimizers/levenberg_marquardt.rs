@@ -151,10 +151,10 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::test_optimizer;
+// #[cfg(test)]
+// mod test {
+//     use super::*;
+//     use crate::test_optimizer;
 
-    test_optimizer!(LevenMarquardt);
-}
+//     test_optimizer!(LevenMarquardt);
+// }

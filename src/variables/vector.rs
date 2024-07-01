@@ -1,5 +1,11 @@
+use nalgebra::{allocator::Allocator, zero, DefaultAllocator, DimName, OVector};
+
 use crate::{
-    linalg::{Const, DualVectorX, Dyn, Numeric, Vector, VectorViewX, VectorX},
+    dtype,
+    linalg::{
+        Const, DualAllocator, DualVector, DualVectorGeneric, DualVectorX, Dyn, Numeric, Vector,
+        VectorViewX, VectorX,
+    },
     variables::Variable,
 };
 
@@ -28,16 +34,21 @@ impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {
         VectorX::from_iterator(Self::DIM, self.iter().cloned())
     }
 
-    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
-        self.map(|x| x.into().into())
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
+        other.map(|x| x.into())
     }
 
     // Mostly unncessary, but avoids having to convert VectorX to static vector
-    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
-        let mut tv = Self::Alias::<DD>::zeros();
-        // for (i, tvi) in tv.iter_mut().enumerate() {
-        //     tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
-        // }
+    fn dual_setup<NN: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<NN>>
+    where
+        <DefaultAllocator as Allocator<dtype, NN>>::Buffer: Sync + Send,
+        DefaultAllocator: DualAllocator<NN>,
+    {
+        let n = OVector::<_, NN>::zeros().shape_generic().0;
+        let mut tv = Self::Alias::<DualVectorGeneric<NN>>::zeros();
+        for (i, tvi) in tv.iter_mut().enumerate() {
+            tvi.eps = num_dual::Derivative::derivative_generic(n, Const::<1>, idx + i);
+        }
         tv
     }
 }

@@ -110,10 +110,10 @@ impl<D: Numeric> Variable<D> for SE3<D> {
         xi
     }
 
-    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SE3 {
-            rot: self.rot.dual_self(),
-            xyz: self.xyz.dual_self(),
+            rot: SO3::<D>::dual_convert(&other.rot),
+            xyz: Vector3::<D>::dual_convert(&other.xyz),
         }
     }
 }

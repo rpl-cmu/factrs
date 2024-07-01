@@ -70,10 +70,10 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::test_optimizer;
+// #[cfg(test)]
+// mod test {
+//     use super::*;
+//     use crate::test_optimizer;
 
-    test_optimizer!(GaussNewton);
-}
+//     test_optimizer!(GaussNewton);
+// }

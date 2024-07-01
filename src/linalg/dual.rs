@@ -1,35 +1,32 @@
-use super::{Dyn, RealField};
+use nalgebra::{allocator::Allocator, Const};
+use num_dual::Dual;
+
+use super::{Dim, Dyn, RealField};
 use crate::dtype;
 
-// ------------------------- Enum for all Dtypes ------------------------- //
-#[derive(derive_more::From)]
-pub enum DTypes {
-    Float(dtype),
-    DualVectorX(DualVectorX),
-}
-
-impl From<DTypes> for f64 {
-    fn from(d: DTypes) -> Self {
-        match d {
-            DTypes::Float(f) => f,
-            DTypes::DualVectorX(d) => d.re,
-        }
-    }
-}
-
-impl From<DTypes> for DualVectorX {
-    fn from(d: DTypes) -> Self {
-        match d {
-            DTypes::Float(f) => DualVectorX::from_re(f),
-            DTypes::DualVectorX(d) => d,
-        }
-    }
-}
-
 // Setup dual num
-pub trait Numeric: RealField + num_dual::DualNum<dtype> + From<DTypes> + Into<DTypes> {}
-impl<G: RealField + num_dual::DualNum<dtype> + From<DTypes> + Into<DTypes>> Numeric for G {}
+pub trait Numeric: RealField + num_dual::DualNum<dtype> + From<dtype> {}
+impl<G: RealField + num_dual::DualNum<dtype> + From<dtype>> Numeric for G {}
 
 pub type DualVectorX = num_dual::DualVec<dtype, dtype, Dyn>;
-pub type DualVector<N> = num_dual::DualVec<dtype, dtype, N>;
+pub type DualVector<const N: usize> = num_dual::DualVec<dtype, dtype, Const<N>>;
+pub type DualVectorGeneric<N> = num_dual::DualVec<dtype, dtype, N>;
 pub type DualScalar = num_dual::Dual<dtype, dtype>;
+
+pub trait DualAllocator<N: Dim>:
+    Allocator<dtype, N>
+    + Allocator<dtype, Const<1>, N>
+    + Allocator<dtype, N, Const<1>>
+    + Allocator<dtype, N, N>
+{
+}
+
+impl<
+        N: Dim,
+        T: Allocator<dtype, N>
+            + Allocator<dtype, Const<1>, N>
+            + Allocator<dtype, N, Const<1>>
+            + Allocator<dtype, N, N>,
+    > DualAllocator<N> for T
+{
+}

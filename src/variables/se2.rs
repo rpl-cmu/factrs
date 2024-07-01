@@ -1,10 +1,10 @@
-use nalgebra::dvector;
+use nalgebra::{allocator::Allocator, dvector, DefaultAllocator, DimName};
 
 use crate::{
     dtype,
     linalg::{
-        Const, DualVectorX, Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric, Vector2, VectorView2,
-        VectorView3, VectorViewX, VectorX,
+        Const, DualAllocator, DualVector, DualVectorGeneric, DualVectorX, Matrix2, Matrix2x3,
+        Matrix3, MatrixView, Numeric, Vector2, VectorView2, VectorView3, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable, SO2},
 };
@@ -118,17 +118,21 @@ impl<D: Numeric> Variable<D> for SE2<D> {
         dvector![theta, xy[0].clone(), xy[1].clone()]
     }
 
-    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD> {
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SE2 {
-            rot: self.rot.dual_self(),
-            xy: self.xy.dual_self(),
+            rot: SO2::<D>::dual_convert(&other.rot),
+            xy: Vector2::<D>::dual_convert(&other.xy),
         }
     }
 
-    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    where
+        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+    {
         SE2 {
-            rot: SO2::<D>::dual_setup(idx, total),
-            xy: Vector2::<D>::dual_setup(idx + 1, total),
+            rot: SO2::<dtype>::dual_setup(idx),
+            xy: Vector2::<dtype>::dual_setup(idx + 1),
         }
     }
 }

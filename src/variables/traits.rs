@@ -1,9 +1,12 @@
 use crate::{
     dtype,
     linalg::{
-        Const, DimName, DualVectorX, Dyn, MatrixDim, MatrixViewDim, Numeric, VectorViewX, VectorX,
+        Const, Dim, DimName, DualAllocator, DualVector, DualVectorGeneric, Dyn, MatrixDim,
+        MatrixViewDim, Numeric, VectorViewX, VectorX,
     },
 };
+
+use nalgebra::{allocator::Allocator, base::default_allocator::DefaultAllocator, OVector};
 
 use downcast_rs::{impl_downcast, Downcast};
 use std::fmt::{Debug, Display};
@@ -21,7 +24,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
     // Conversion to dual space
-    fn dual_self<DD: Numeric>(&self) -> Self::Alias<DD>;
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD>;
 
     // Helpers for enum
     fn dim(&self) -> usize {
@@ -48,22 +51,31 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     }
 
     // Setup group element correctly using the tangent space
-    fn dual_setup<DD: Numeric>(idx: usize, total: usize) -> Self::Alias<DD> {
-        let mut tv: VectorX<DD> = VectorX::zeros(Self::DIM);
-        // for (i, tvi) in tv.iter_mut().enumerate() {
-        //     tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
-        // }
-        Self::Alias::<DD>::exp(tv.as_view())
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    where
+        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+    {
+        let mut tv: VectorX<DualVectorGeneric<N>> = VectorX::zeros(Self::DIM);
+        let n = OVector::<_, N>::zeros().shape_generic().0;
+        for (i, tvi) in tv.iter_mut().enumerate() {
+            tvi.eps = num_dual::Derivative::derivative_generic(n, Const::<1>, idx + i)
+        }
+        Self::Alias::<DualVectorGeneric<N>>::exp(tv.as_view())
     }
 
     // Applies the tangent vector in dual space
-    fn dual<DD: Numeric>(&self, idx: usize, total: usize) -> Self::Alias<DD> {
+    fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    where
+        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+    {
         // Setups tangent vector -> exp, then we compose here
-        let setup = Self::dual_setup(idx, total);
+        let setup = Self::dual_setup(idx);
         if cfg!(feature = "left") {
-            setup.compose(&self.dual_self())
+            setup.compose(&Self::dual_convert(other))
         } else {
-            self.dual_self().compose(&setup)
+            Self::dual_convert(other).compose(&setup)
         }
     }
 }
