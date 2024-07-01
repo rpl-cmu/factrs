@@ -5,7 +5,7 @@ use samrs::{
     utils::load_g20,
     variables::*,
 };
-use std::time::Instant;
+use std::{env, time::Instant};
 
 // Optimization ideas
 // - try_new_from_tripletts - see if there's anyway around a lot of the checks, we should really be fine
@@ -53,10 +53,17 @@ fn visualize(init: &Values, sol: &Values) {
 }
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        println!("Usage: {} <g2o file>", args[0]);
+        return;
+    }
+    let filename = &args[1];
+
     pretty_env_logger::init();
 
     // Load the graph from the g2o file
-    let (graph, init) = load_g20("./examples/M3500.g2o");
+    let (graph, init) = load_g20(filename);
     let to_solve = init.clone();
     println!("File loaded");
 

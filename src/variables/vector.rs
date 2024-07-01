@@ -1,11 +1,8 @@
-use nalgebra::{allocator::Allocator, zero, DefaultAllocator, DimName, OVector};
+use nalgebra::{allocator::Allocator, DefaultAllocator, DimName, OVector};
 
 use crate::{
     dtype,
-    linalg::{
-        Const, DualAllocator, DualVector, DualVectorGeneric, DualVectorX, Dyn, Numeric, Vector,
-        VectorViewX, VectorX,
-    },
+    linalg::{Const, DualAllocator, DualVectorGeneric, Numeric, Vector, VectorViewX, VectorX},
     variables::Variable,
 };
 

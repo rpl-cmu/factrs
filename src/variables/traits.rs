@@ -1,8 +1,8 @@
 use crate::{
     dtype,
     linalg::{
-        Const, Dim, DimName, DualAllocator, DualVector, DualVectorGeneric, Dyn, MatrixDim,
-        MatrixViewDim, Numeric, VectorViewX, VectorX,
+        Const, DimName, DualAllocator, DualVectorGeneric, MatrixDim, MatrixViewDim, Numeric,
+        VectorViewX, VectorX,
     },
 };
 
