@@ -9,7 +9,8 @@ use crate::{
     containers::{Symbol, Values},
     dtype, impl_residual,
     linalg::{
-        DiffResult, DualAllocator, DualVector, DualVectorX, ForwardProp, MatrixX, Numeric, VectorX,
+        DiffResult, DualAllocator, DualVector, DualVectorGeneric, DualVectorX, ForwardProp,
+        MatrixX, Numeric, VectorX,
     },
     variables::Variable,
 };
@@ -29,6 +30,7 @@ impl<P: Variable<Alias<dtype> = P> + 'static> Residual1 for PriorResidual<P>
 where
     <DefaultAllocator as Allocator<dtype, P::Dim>>::Buffer: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
+    DualVectorGeneric<P::Dim>: Copy,
 {
     type Differ = ForwardProp;
     type V1 = P;
@@ -45,6 +47,7 @@ impl<P: Variable<Alias<dtype> = P> + 'static> Residual for PriorResidual<P>
 where
     <DefaultAllocator as Allocator<dtype, P::Dim>>::Buffer: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
+    DualVectorGeneric<P::Dim>: Copy,
 {
     type DimIn = <Self as Residual1>::DimIn;
     type DimOut = <Self as Residual1>::DimOut;

@@ -115,6 +115,7 @@ impl Diff for ForwardProp {
     where
         <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
+        DualVectorGeneric<N>: Copy,
     {
         // Prep Variable
         let v1: V1::Alias<DualVectorGeneric<N>> = V1::dual(v1, 0);
@@ -154,6 +155,7 @@ impl Diff for ForwardProp {
     where
         <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
+        DualVectorGeneric<N>: Copy,
     {
         // Prepare variables
         let v1 = V1::dual(v1, 0);

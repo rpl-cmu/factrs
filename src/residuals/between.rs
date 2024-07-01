@@ -6,7 +6,10 @@ use super::{Residual, Residual2};
 use crate::{
     containers::{Symbol, Values},
     dtype, impl_residual,
-    linalg::{DiffResult, DualAllocator, DualVectorX, ForwardProp, MatrixX, Numeric, VectorX},
+    linalg::{
+        DiffResult, DualAllocator, DualVectorGeneric, DualVectorX, ForwardProp, MatrixX, Numeric,
+        VectorX,
+    },
     variables::Variable,
 };
 
@@ -26,6 +29,7 @@ impl<P> Residual2 for BetweenResidual<P>
 where
     <DefaultAllocator as Allocator<dtype, DimNameSum<P::Dim, P::Dim>>>::Buffer: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
+    DualVectorGeneric<DimNameSum<P::Dim, P::Dim>>: Copy,
     P: Variable<Alias<dtype> = P> + 'static,
     P::Dim: DimNameAdd<P::Dim>,
 {
@@ -45,6 +49,7 @@ impl<P> Residual for BetweenResidual<P>
 where
     <DefaultAllocator as Allocator<dtype, DimNameSum<P::Dim, P::Dim>>>::Buffer: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
+    DualVectorGeneric<DimNameSum<P::Dim, P::Dim>>: Copy,
     P: Variable<Alias<dtype> = P> + 'static,
     P::Dim: DimNameAdd<P::Dim>,
 {

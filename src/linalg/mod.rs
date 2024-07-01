@@ -218,7 +218,8 @@ pub trait Diff {
     ) -> DiffResult<VectorX, MatrixX>
     where
         <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
-        DefaultAllocator: DualAllocator<N>;
+        DefaultAllocator: DualAllocator<N>,
+        DualVectorGeneric<N>: Copy;
 
     fn jacobian_2<
         N: DimName,
@@ -235,7 +236,8 @@ pub trait Diff {
     ) -> DiffResult<VectorX, MatrixX>
     where
         <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
-        DefaultAllocator: DualAllocator<N>;
+        DefaultAllocator: DualAllocator<N>,
+        DualVectorGeneric<N>: Copy;
 
     // fn_maker!(jac, 3, (v1: V1), (v2: V2), (v3: V3));
     // fn_maker!(jac, 4, (v1: V1), (v2: V2), (v3: V3), (v4: V4));

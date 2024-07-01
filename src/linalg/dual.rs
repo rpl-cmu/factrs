@@ -5,8 +5,8 @@ use super::{Dim, Dyn, RealField};
 use crate::dtype;
 
 // Setup dual num
-pub trait Numeric: RealField + num_dual::DualNum<dtype> + From<dtype> {}
-impl<G: RealField + num_dual::DualNum<dtype> + From<dtype>> Numeric for G {}
+pub trait Numeric: RealField + num_dual::DualNum<dtype> + From<dtype> + Copy {}
+impl<G: RealField + num_dual::DualNum<dtype> + From<dtype> + Copy> Numeric for G {}
 
 pub type DualVectorX = num_dual::DualVec<dtype, dtype, Dyn>;
 pub type DualVector<const N: usize> = num_dual::DualVec<dtype, dtype, Const<N>>;

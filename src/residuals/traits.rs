@@ -142,6 +142,7 @@ pub trait Residual1: Residual {
         Self::V1: 'static,
         <DefaultAllocator as Allocator<dtype, <Self as Residual1>::DimIn>>::Buffer: Sync + Send,
         DefaultAllocator: DualAllocator<<Self as Residual1>::DimIn>,
+        DualVectorGeneric<<Self as Residual1>::DimIn>: Copy,
     {
         let v1: &Self::V1 = values.get_cast(&keys[0]).unwrap_or_else(|| {
             panic!(
@@ -188,6 +189,7 @@ pub trait Residual2: Residual {
         Self::V2: 'static,
         <DefaultAllocator as Allocator<dtype, <Self as Residual2>::DimIn>>::Buffer: Sync + Send,
         DefaultAllocator: DualAllocator<<Self as Residual2>::DimIn>,
+        DualVectorGeneric<<Self as Residual2>::DimIn>: Copy,
     {
         let v1: &Self::V1 = values.get_cast(&keys[0]).unwrap_or_else(|| {
             panic!(

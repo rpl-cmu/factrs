@@ -55,6 +55,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     where
         <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
+        DualVectorGeneric<N>: Copy,
     {
         let mut tv: VectorX<DualVectorGeneric<N>> = VectorX::zeros(Self::DIM);
         let n = OVector::<_, N>::zeros().shape_generic().0;
@@ -69,6 +70,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     where
         <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
+        DualVectorGeneric<N>: Copy,
     {
         // Setups tangent vector -> exp, then we compose here
         let setup = Self::dual_setup(idx);

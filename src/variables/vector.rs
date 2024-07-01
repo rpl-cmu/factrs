@@ -43,6 +43,7 @@ impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {
     where
         <DefaultAllocator as Allocator<dtype, NN>>::Buffer: Sync + Send,
         DefaultAllocator: DualAllocator<NN>,
+        DualVectorGeneric<NN>: Copy,
     {
         let n = OVector::<_, NN>::zeros().shape_generic().0;
         let mut tv = Self::Alias::<DualVectorGeneric<NN>>::zeros();
