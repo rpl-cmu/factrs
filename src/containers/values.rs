@@ -1,9 +1,9 @@
-use crate::linear::LinearValues;
-use ahash::AHashMap;
 use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator};
 
+use ahash::AHashMap;
+
 use super::Symbol;
-use crate::variables::VariableSafe;
+use crate::{linear::LinearValues, variables::VariableSafe};
 
 // Since we won't be passing dual numbers through any of this,
 // we can just use dtype rather than using generics with Numeric

@@ -1,15 +1,29 @@
-use crate::{
-    dtype,
-    linalg::{
-        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Matrix3,
-        Matrix3x6, Matrix4, Matrix6, MatrixView, Numeric, Vector3, VectorView3, VectorView6,
-        VectorViewX, VectorX,
-    },
-    variables::{MatrixLieGroup, Variable, SO3},
-};
 use std::{fmt, ops};
 
 use super::Vector6;
+use crate::{
+    dtype,
+    linalg::{
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DimName,
+        DualAllocator,
+        DualVector,
+        Matrix3,
+        Matrix3x6,
+        Matrix4,
+        Matrix6,
+        MatrixView,
+        Numeric,
+        Vector3,
+        VectorView3,
+        VectorView6,
+        VectorViewX,
+        VectorX,
+    },
+    variables::{MatrixLieGroup, Variable, SO3},
+};
 
 #[derive(Clone, Debug)]
 pub struct SE3<D: Numeric = dtype> {
@@ -240,7 +254,6 @@ impl<D: Numeric> fmt::Display for SE3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{test_lie, test_variable};
 
     test_variable!(SE3);

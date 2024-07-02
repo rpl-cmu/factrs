@@ -1,10 +1,11 @@
+use std::fmt;
+
 use crate::{
     containers::{Symbol, Values},
     dtype,
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
     variables::Variable,
 };
-use std::fmt;
 
 type Alias<V, D> = <V as Variable>::Alias<D>;
 
@@ -55,7 +56,8 @@ impl<T: Residual> ResidualSafe for T {
     }
 }
 
-// ------------------------- Use Macro to create residuals with set sizes ------------------------- //
+// ------------------------- Use Macro to create residuals with set sizes -------------------------
+// //
 use paste::paste;
 
 macro_rules! residual_maker {

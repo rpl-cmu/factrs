@@ -3,14 +3,13 @@ use std::ops::Mul;
 use faer::{scale, sparse::SparseColMat};
 use faer_ext::IntoNalgebra;
 
+use super::{OptError, OptResult, Optimizer, OptimizerParams};
 use crate::{
     containers::{Graph, GraphOrder, Values, ValuesOrder},
     dtype,
     linalg::DiffResult,
     linear::{CholeskySolver, LinearSolver, LinearValues},
 };
-
-use super::{OptError, OptResult, Optimizer, OptimizerParams};
 
 pub struct LevenParams {
     pub lambda_min: dtype,

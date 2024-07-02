@@ -117,6 +117,9 @@ impl Factor {
 #[cfg(test)]
 mod tests {
 
+    use matrixcompare::assert_matrix_eq;
+
+    use super::*;
     use crate::{
         containers::X,
         linalg::{Diff, NumericalDiff, Vector3},
@@ -125,9 +128,6 @@ mod tests {
         robust::GemanMcClure,
         variables::Variable,
     };
-    use matrixcompare::assert_matrix_eq;
-
-    use super::*;
 
     #[cfg(not(feature = "f32"))]
     const PWR: i32 = 6;

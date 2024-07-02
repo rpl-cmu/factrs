@@ -1,13 +1,13 @@
+use faer::sparse::{SparseColMat, SymbolicSparseColMat};
+use faer_ext::IntoFaer;
+
+use super::LinearValues;
 use crate::{
     containers::{GraphOrder, Idx, ValuesOrder},
     dtype,
     linalg::DiffResult,
     linear::LinearFactor,
 };
-use faer::sparse::{SparseColMat, SymbolicSparseColMat};
-use faer_ext::IntoFaer;
-
-use super::LinearValues;
 
 #[derive(Default)]
 pub struct LinearGraph {
@@ -113,12 +113,11 @@ mod test {
     use faer_ext::IntoNalgebra;
     use matrixcompare::assert_matrix_eq;
 
+    use super::*;
     use crate::{
         containers::{Idx, X},
         linalg::{MatrixBlock, MatrixX, VectorX},
     };
-
-    use super::*;
 
     #[test]
     fn residual_jacobian() {

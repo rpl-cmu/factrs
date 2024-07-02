@@ -1,12 +1,11 @@
 use faer_ext::IntoNalgebra;
 
+use super::{OptResult, Optimizer, OptimizerParams};
 use crate::{
     containers::{Graph, GraphOrder, Values, ValuesOrder},
     linalg::DiffResult,
     linear::{CholeskySolver, LinearSolver, LinearValues},
 };
-
-use super::{OptResult, Optimizer, OptimizerParams};
 
 #[derive(Default)]
 pub struct GaussNewton<S: LinearSolver = CholeskySolver> {

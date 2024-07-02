@@ -1,8 +1,17 @@
 use crate::{
     dtype,
     linalg::{
-        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Numeric,
-        Vector, VectorDim, VectorViewX, VectorX,
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DimName,
+        DualAllocator,
+        DualVector,
+        Numeric,
+        Vector,
+        VectorDim,
+        VectorViewX,
+        VectorX,
     },
     variables::Variable,
 };
@@ -55,7 +64,6 @@ impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{linalg::Vector6, test_variable};
 
     // Be lazy and only test Vector6 - others should work the same

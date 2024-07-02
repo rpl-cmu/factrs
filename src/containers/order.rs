@@ -1,6 +1,6 @@
-use ahash::HashMap;
-
 use std::collections::hash_map::Iter as HashMapIter;
+
+use ahash::HashMap;
 
 use super::{Symbol, Values};
 

@@ -1,11 +1,20 @@
+use std::fmt;
+
 use super::NoiseModel;
 use crate::{
     dtype,
     linalg::{
-        Const, Matrix, MatrixView, MatrixViewX, MatrixX, Vector, VectorView, VectorViewX, VectorX,
+        Const,
+        Matrix,
+        MatrixView,
+        MatrixViewX,
+        MatrixX,
+        Vector,
+        VectorView,
+        VectorViewX,
+        VectorX,
     },
 };
-use std::fmt;
 
 #[derive(Clone, Debug)]
 pub struct GaussianNoise<const N: usize> {

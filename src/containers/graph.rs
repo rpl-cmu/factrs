@@ -1,8 +1,7 @@
 use faer::sparse::SymbolicSparseColMat;
 
-use crate::{dtype, factors::Factor, linear::LinearGraph};
-
 use super::{Idx, Values, ValuesOrder};
+use crate::{dtype, factors::Factor, linear::LinearGraph};
 
 #[derive(Default)]
 pub struct Graph {

@@ -1,8 +1,9 @@
+use std::collections::hash_map::Iter as HashMapIter;
+
 use crate::{
     containers::{Idx, Key, Symbol, Values, ValuesOrder},
     linalg::{VectorViewX, VectorX},
 };
-use std::collections::hash_map::Iter as HashMapIter;
 
 pub struct LinearValues {
     values: VectorX,
@@ -74,13 +75,12 @@ impl<'a, K: Key> Iterator for Iter<'a, K> {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::{
         containers::X,
         dtype,
         linalg::{Vector2, Vector3, Vector6},
     };
-
-    use super::*;
 
     fn make_order_vector() -> (ValuesOrder, VectorX) {
         // Create some form of values

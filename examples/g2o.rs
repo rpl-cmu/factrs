@@ -1,3 +1,5 @@
+use std::{env, time::Instant};
+
 use plotters::prelude::*;
 use samrs::{
     containers::*,
@@ -5,11 +7,6 @@ use samrs::{
     utils::load_g20,
     variables::*,
 };
-use std::{env, time::Instant};
-
-// Optimization ideas
-// - try_new_from_tripletts - see if there's anyway around a lot of the checks, we should really be fine
-// - making duals with exp is SLOW. We should be able to do this faster
 
 fn visualize(init: &Values, sol: &Values) {
     let root_drawing_area = BitMapBackend::new("m3500_rs.png", (1024, 1024)).into_drawing_area();

@@ -5,8 +5,16 @@ use crate::{
     containers::{Symbol, Values},
     dtype,
     linalg::{
-        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, DualVector,
-        ForwardProp, MatrixX, Numeric, VectorX,
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DiffResult,
+        DualAllocator,
+        DualVector,
+        ForwardProp,
+        MatrixX,
+        Numeric,
+        VectorX,
     },
     variables::Variable,
 };

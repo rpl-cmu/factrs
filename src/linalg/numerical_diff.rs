@@ -1,10 +1,10 @@
+use paste::paste;
+
 use crate::{
     dtype,
     linalg::{Diff, DiffResult, MatrixX, VectorX},
     variables::Variable,
 };
-
-use paste::paste;
 
 pub struct NumericalDiff<const PWR: i32 = 6>;
 

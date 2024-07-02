@@ -1,11 +1,13 @@
 use std::ops::Mul;
 
-use crate::dtype;
 use faer::{
     prelude::SpSolver,
     sparse::{linalg::solvers, SparseColMatRef},
-    Mat, MatRef,
+    Mat,
+    MatRef,
 };
+
+use crate::dtype;
 
 pub trait LinearSolver: Default {
     fn solve_symmetric(&mut self, a: SparseColMatRef<usize, dtype>, b: MatRef<dtype>)

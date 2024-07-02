@@ -1,6 +1,5 @@
 // Similar to gtsam: https://github.com/borglab/gtsam/blob/develop/gtsam/inference/Symbol.cpp
-use std::fmt;
-use std::mem::size_of;
+use std::{fmt, mem::size_of};
 
 // Char is stored in last CHR_BITS
 // Value is stored in the first IDX_BITS

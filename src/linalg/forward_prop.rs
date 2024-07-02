@@ -1,12 +1,14 @@
-use crate::{
-    linalg::{Const, DefaultAllocator, DiffResult, DimName, Dyn, MatrixX, VectorDim, VectorX},
-    variables::Variable,
-};
 use paste::paste;
 
 use super::{
     dual::{DualAllocator, DualVector},
-    AllocatorBuffer, Diff, MatrixDim,
+    AllocatorBuffer,
+    Diff,
+    MatrixDim,
+};
+use crate::{
+    linalg::{Const, DefaultAllocator, DiffResult, DimName, Dyn, MatrixX, VectorDim, VectorX},
+    variables::Variable,
 };
 
 pub struct ForwardProp<N: DimName> {

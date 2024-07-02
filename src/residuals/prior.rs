@@ -3,8 +3,16 @@ use crate::{
     containers::{Symbol, Values},
     dtype,
     linalg::{
-        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, DualVector,
-        ForwardProp, MatrixX, Numeric, VectorX,
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DiffResult,
+        DualAllocator,
+        DualVector,
+        ForwardProp,
+        MatrixX,
+        Numeric,
+        VectorX,
     },
     variables::Variable,
 };
@@ -56,13 +64,14 @@ where
 #[cfg(test)]
 mod test {
 
+    use matrixcompare::assert_matrix_eq;
+
     use super::*;
     use crate::{
         containers::X,
         linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
         variables::{Vector3, SE3, SO3},
     };
-    use matrixcompare::assert_matrix_eq;
 
     #[cfg(not(feature = "f32"))]
     const PWR: i32 = 6;

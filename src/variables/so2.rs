@@ -1,15 +1,29 @@
-use crate::{
-    dtype,
-    linalg::{
-        dvector, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
-        DualVector, Matrix1, Matrix2, MatrixView, Numeric, VectorDim, VectorView1, VectorView2,
-        VectorViewX, VectorX,
-    },
-    variables::{MatrixLieGroup, Variable},
-};
 use std::{fmt, ops};
 
 use super::{Vector1, Vector2};
+use crate::{
+    dtype,
+    linalg::{
+        dvector,
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        Derivative,
+        DimName,
+        DualAllocator,
+        DualVector,
+        Matrix1,
+        Matrix2,
+        MatrixView,
+        Numeric,
+        VectorDim,
+        VectorView1,
+        VectorView2,
+        VectorViewX,
+        VectorX,
+    },
+    variables::{MatrixLieGroup, Variable},
+};
 
 #[derive(Clone)]
 pub struct SO2<D: Numeric = dtype> {
@@ -154,7 +168,6 @@ impl<D: Numeric> fmt::Debug for SO2<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{test_lie, test_variable};
 
     test_variable!(SO2);

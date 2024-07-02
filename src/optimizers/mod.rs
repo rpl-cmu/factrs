@@ -15,6 +15,7 @@ pub mod test {
     use faer::assert_matrix_eq;
     use nalgebra::{allocator::Allocator, DefaultAllocator, DimNameAdd, DimNameSum};
 
+    use super::*;
     use crate::{
         containers::{Graph, Values, X},
         dtype,
@@ -23,8 +24,6 @@ pub mod test {
         residuals::{BetweenResidual, PriorResidual},
         variables::Variable,
     };
-
-    use super::*;
 
     pub fn optimize_prior<O, T, const DIM: usize>()
     where
