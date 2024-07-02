@@ -1,16 +1,10 @@
-use nalgebra::{
-    allocator::Allocator,
-    constraint::{DimEq, ShapeConstraint},
-    Const, DefaultAllocator,
-};
-
 use super::{Residual, Residual1};
 use crate::{
     containers::{Symbol, Values},
-    dtype, impl_residual,
+    dtype,
     linalg::{
-        DiffResult, DualAllocator, DualVector, DualVectorGeneric, DualVectorX, ForwardProp,
-        MatrixX, Numeric, VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, DualVector,
+        ForwardProp, MatrixX, Numeric, VectorX,
     },
     variables::Variable,
 };
@@ -28,11 +22,11 @@ impl<P: Variable<Alias<dtype> = P>> PriorResidual<P> {
 
 impl<P: Variable<Alias<dtype> = P> + 'static> Residual1 for PriorResidual<P>
 where
-    <DefaultAllocator as Allocator<dtype, P::Dim>>::Buffer: Sync + Send,
+    AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
-    DualVectorGeneric<P::Dim>: Copy,
+    DualVector<P::Dim>: Copy,
 {
-    type Differ = ForwardProp;
+    type Differ = ForwardProp<P::Dim>;
     type V1 = P;
     type DimIn = P::Dim;
     type DimOut = P::Dim;
@@ -42,12 +36,11 @@ where
     }
 }
 
-use paste::paste;
 impl<P: Variable<Alias<dtype> = P> + 'static> Residual for PriorResidual<P>
 where
-    <DefaultAllocator as Allocator<dtype, P::Dim>>::Buffer: Sync + Send,
+    AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
-    DualVectorGeneric<P::Dim>: Copy,
+    DualVector<P::Dim>: Copy,
 {
     type DimIn = <Self as Residual1>::DimIn;
     type DimOut = <Self as Residual1>::DimOut;
@@ -60,68 +53,68 @@ where
     }
 }
 
-// #[cfg(test)]
-// mod test {
+#[cfg(test)]
+mod test {
 
-//     use super::*;
-//     use crate::{
-//         containers::X,
-//         linalg::{dvector, DualAllocator, NumericalDiff},
-//         variables::{Vector3, SE3, SO3},
-//     };
-//     use matrixcompare::assert_matrix_eq;
-//     use nalgebra::{allocator::Allocator, DefaultAllocator};
+    use super::*;
+    use crate::{
+        containers::X,
+        linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
+        variables::{Vector3, SE3, SO3},
+    };
+    use matrixcompare::assert_matrix_eq;
 
-//     #[cfg(not(feature = "f32"))]
-//     const PWR: i32 = 6;
-//     #[cfg(not(feature = "f32"))]
-//     const TOL: f64 = 1e-6;
+    #[cfg(not(feature = "f32"))]
+    const PWR: i32 = 6;
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
 
-//     #[cfg(feature = "f32")]
-//     const PWR: i32 = 3;
-//     #[cfg(feature = "f32")]
-//     const TOL: f32 = 1e-3;
+    #[cfg(feature = "f32")]
+    const PWR: i32 = 3;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
 
-//     fn test_prior_jacobian<P>(prior: P)
-//     where
-//         P: Variable<Alias<dtype> = P> + 'static,
-//         <DefaultAllocator as Allocator<dtype, P::Dim>>::Buffer: Sync + Send,
-//         DefaultAllocator: DualAllocator<P::Dim>,
-//     {
-//         let prior_residual = PriorResidual::new(prior);
+    fn test_prior_jacobian<P>(prior: P)
+    where
+        P: Variable<Alias<dtype> = P> + 'static,
+        AllocatorBuffer<P::Dim>: Sync + Send,
+        DefaultAllocator: DualAllocator<P::Dim>,
+        DualVector<P::Dim>: Copy,
+    {
+        let prior_residual = PriorResidual::new(prior);
 
-//         let x1 = P::identity();
-//         let mut values = Values::new();
-//         values.insert(X(0), x1.clone());
-//         let jac = prior_residual.residual1_jacobian(&values, &[X(0)]).diff;
+        let x1 = P::identity();
+        let mut values = Values::new();
+        values.insert(X(0), x1.clone());
+        let jac = prior_residual.residual1_jacobian(&values, &[X(0)]).diff;
 
-//         let f = |v: P| {
-//             let mut vals = Values::new();
-//             vals.insert(X(0), v.clone());
-//             Residual1::residual1_values(&prior_residual, &vals, &[X(0)])
-//         };
-//         let jac_n = NumericalDiff::<PWR>::jacobian_1(f, &x1).diff;
+        let f = |v: P| {
+            let mut vals = Values::new();
+            vals.insert(X(0), v.clone());
+            Residual1::residual1_values(&prior_residual, &vals, &[X(0)])
+        };
+        let jac_n = NumericalDiff::<PWR>::jacobian_1(f, &x1).diff;
 
-//         eprintln!("jac: {:.3}", jac);
-//         eprintln!("jac_n: {:.3}", jac_n);
+        eprintln!("jac: {:.3}", jac);
+        eprintln!("jac_n: {:.3}", jac_n);
 
-//         assert_matrix_eq!(jac, jac_n, comp = abs, tol = TOL);
-//     }
+        assert_matrix_eq!(jac, jac_n, comp = abs, tol = TOL);
+    }
 
-//     #[test]
-//     fn prior_linear() {
-//         test_prior_jacobian(Vector3::new(1.0, 2.0, 3.0));
-//     }
+    #[test]
+    fn prior_linear() {
+        test_prior_jacobian(Vector3::new(1.0, 2.0, 3.0));
+    }
 
-//     #[test]
-//     fn prior_so3() {
-//         let prior = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
-//         test_prior_jacobian(prior);
-//     }
+    #[test]
+    fn prior_so3() {
+        let prior = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
+        test_prior_jacobian(prior);
+    }
 
-//     #[test]
-//     fn prior_se3() {
-//         let prior = SE3::exp(dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0].as_view());
-//         test_prior_jacobian(prior);
-//     }
-// }
+    #[test]
+    fn prior_se3() {
+        let prior = SE3::exp(dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0].as_view());
+        test_prior_jacobian(prior);
+    }
+}

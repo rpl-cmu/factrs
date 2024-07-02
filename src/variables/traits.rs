@@ -1,12 +1,10 @@
 use crate::{
     dtype,
     linalg::{
-        Const, DimName, DualAllocator, DualVectorGeneric, MatrixDim, MatrixViewDim, Numeric,
-        VectorViewX, VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, MatrixDim,
+        MatrixViewDim, Numeric, VectorDim, VectorViewX, VectorX,
     },
 };
-
-use nalgebra::{allocator::Allocator, base::default_allocator::DefaultAllocator, OVector};
 
 use downcast_rs::{impl_downcast, Downcast};
 use std::fmt::{Debug, Display};
@@ -51,26 +49,26 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     }
 
     // Setup group element correctly using the tangent space
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
-        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
-        DualVectorGeneric<N>: Copy,
+        DualVector<N>: Copy,
     {
-        let mut tv: VectorX<DualVectorGeneric<N>> = VectorX::zeros(Self::DIM);
-        let n = OVector::<_, N>::zeros().shape_generic().0;
+        let mut tv: VectorX<DualVector<N>> = VectorX::zeros(Self::DIM);
+        let n = VectorDim::<N>::zeros().shape_generic().0;
         for (i, tvi) in tv.iter_mut().enumerate() {
             tvi.eps = num_dual::Derivative::derivative_generic(n, Const::<1>, idx + i)
         }
-        Self::Alias::<DualVectorGeneric<N>>::exp(tv.as_view())
+        Self::Alias::<DualVector<N>>::exp(tv.as_view())
     }
 
     // Applies the tangent vector in dual space
-    fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVector<N>>
     where
-        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
-        DualVectorGeneric<N>: Copy,
+        DualVector<N>: Copy,
     {
         // Setups tangent vector -> exp, then we compose here
         let setup = Self::dual_setup(idx);

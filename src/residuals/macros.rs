@@ -14,9 +14,6 @@ macro_rules! impl_residual {
                 }
 
                 fn residual_jacobian(&self, values: &Values, keys: &[$crate::containers::Symbol]) -> DiffResult<VectorX, MatrixX>
-                where
-                    <nalgebra::DefaultAllocator as nalgebra::allocator::Allocator<dtype, Self::DimIn>>::Buffer: Sync + Send,
-                    nalgebra::DefaultAllocator: $crate::linalg::DualAllocator<Self::DimIn>,
                 {
                     self.[<residual $num _jacobian>](values, keys)
                 }

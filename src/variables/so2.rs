@@ -1,10 +1,9 @@
-use nalgebra::{allocator::Allocator, DefaultAllocator, DimName};
-
 use crate::{
     dtype,
     linalg::{
-        dvector, Const, Derivative, DualAllocator, DualVectorGeneric, Matrix1, Matrix2, MatrixView,
-        Numeric, VectorDim, VectorView1, VectorView2, VectorViewX, VectorX,
+        dvector, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
+        DualVector, Matrix1, Matrix2, MatrixView, Numeric, VectorDim, VectorView1, VectorView2,
+        VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
 };
@@ -69,16 +68,16 @@ impl<D: Numeric> Variable<D> for SO2<D> {
         }
     }
 
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
-        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
-        DualVectorGeneric<N>: Copy,
+        DualVector<N>: Copy,
     {
-        let mut a = DualVectorGeneric::<N>::from_re(1.0);
+        let mut a = DualVector::<N>::from_re(1.0);
         a.eps = Derivative::new(Some(VectorDim::<N>::zeros()));
 
-        let mut b = DualVectorGeneric::<N>::from_re(0.0);
+        let mut b = DualVector::<N>::from_re(0.0);
         let mut eps = VectorDim::<N>::zeros();
         eps[idx] = 1.0;
         b.eps = Derivative::new(Some(eps));

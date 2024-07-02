@@ -141,20 +141,20 @@ macro_rules! test_lie {
                 VectorX::from_fn(vec_len, |i, _| rotated[i].clone())
             }
 
-            // let t = $var::exp(tangent::<$var>(1.0).as_view());
-            // let $crate::linalg::DiffResult {
-            //     value: _x,
-            //     diff: dx,
-            // } = $crate::linalg::ForwardProp::jacobian_1(rotate, &t);
+            let t = $var::exp(tangent::<$var>(1.0).as_view());
+            let $crate::linalg::DiffResult {
+                value: _x,
+                diff: dx,
+            } = $crate::linalg::ForwardProp::<<$var as Variable>::Dim>::jacobian_1(rotate, &t);
 
-            // let size =
-            //     <$var as $crate::variables::MatrixLieGroup>::VectorDim::try_to_usize().unwrap();
-            // let dx_exp = t.to_matrix().view((0, 0), (size, size)) * $var::hat_swap(v.as_view());
+            let size =
+                <$var as $crate::variables::MatrixLieGroup>::VectorDim::try_to_usize().unwrap();
+            let dx_exp = t.to_matrix().view((0, 0), (size, size)) * $var::hat_swap(v.as_view());
 
-            // println!("Expected: {}", dx_exp);
-            // println!("Actual: {}", dx);
+            println!("Expected: {}", dx_exp);
+            println!("Actual: {}", dx);
 
-            // matrixcompare::assert_matrix_eq!(dx, dx_exp, comp = abs, tol = 1e-6);
+            matrixcompare::assert_matrix_eq!(dx, dx_exp, comp = abs, tol = 1e-6);
         }
     };
 }

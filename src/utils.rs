@@ -129,15 +129,15 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                     m15, m25, m35, m45, m55, m56,
                     m16, m26, m36, m46, m56, m66,
                 );
-                #[rustfmt::skip]
-                let inf = Matrix6::new(
-                    m44, m45, m46, m14, m15, m16,
-                    m45, m55, m56, m24, m25, m26,
-                    m46, m56, m66, m34, m35, m36,
-                    m14, m24, m34, m11, m12, m13,
-                    m15, m25, m35, m12, m22, m23,
-                    m16, m26, m36, m13, m23, m33,
-                );
+                // #[rustfmt::skip]
+                // let inf = Matrix6::new(
+                //     m44, m45, m46, m14, m15, m16,
+                //     m45, m55, m56, m24, m25, m26,
+                //     m46, m56, m66, m34, m35, m36,
+                //     m14, m24, m34, m11, m12, m13,
+                //     m15, m25, m35, m12, m22, m23,
+                //     m16, m26, m36, m13, m23, m33,
+                // );
 
                 let rot = SO3::from_xyzw(qx, qy, qz, qw);
                 let xyz = Vector3::new(x, y, z);

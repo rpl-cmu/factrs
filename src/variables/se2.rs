@@ -1,10 +1,9 @@
-use nalgebra::{allocator::Allocator, dvector, DefaultAllocator, DimName};
-
 use crate::{
     dtype,
     linalg::{
-        Const, DualAllocator, DualVectorGeneric, Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric,
-        Vector2, VectorView2, VectorView3, VectorViewX, VectorX,
+        dvector, AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector,
+        Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric, Vector2, VectorView2, VectorView3,
+        VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable, SO2},
 };
@@ -125,11 +124,11 @@ impl<D: Numeric> Variable<D> for SE2<D> {
         }
     }
 
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<N>>
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
-        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
+        AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
-        DualVectorGeneric<N>: Copy,
+        DualVector<N>: Copy,
     {
         SE2 {
             rot: SO2::<dtype>::dual_setup(idx),

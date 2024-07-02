@@ -1,25 +1,17 @@
 use crate::dtype;
-use nalgebra::{
-    self as na,
-    allocator::Allocator,
-    constraint::{DimEq, ShapeConstraint},
-    DefaultAllocator, DimAdd, DimSum, OVector,
-};
+use nalgebra::{self as na, allocator::Allocator, OVector};
 
 mod dual;
-pub use dual::{DualAllocator, DualScalar, DualVector, DualVectorGeneric, DualVectorX, Numeric};
+pub use dual::{AllocatorBuffer, DualAllocator, DualScalar, DualVector, Numeric};
 
 // Re-export all nalgebra types to put default dtype on everything
 // Misc imports
-pub use na::{dmatrix, dvector, Const, Dim, DimName, Dyn, RealField};
+pub use na::{dmatrix, dvector, Const, DefaultAllocator, Dim, DimName, Dyn, RealField};
 
 // Dual numbers
 pub use num_dual::Derivative;
 
 // ------------------------- Vector/Matrix Aliases ------------------------- //
-pub type MatrixXxN<const N: usize, D = dtype> =
-    na::Matrix<D, Dyn, Const<N>, na::VecStorage<D, Dyn, Const<N>>>;
-
 // Vectors
 pub type Vector<const N: usize, D = dtype> = na::SVector<D, N>;
 pub type VectorX<D = dtype> = na::DVector<D>;
@@ -29,15 +21,6 @@ pub type Vector3<D = dtype> = na::SVector<D, 3>;
 pub type Vector4<D = dtype> = na::SVector<D, 4>;
 pub type Vector5<D = dtype> = na::SVector<D, 5>;
 pub type Vector6<D = dtype> = na::SVector<D, 6>;
-
-pub type VectorView<'a, const N: usize, D = dtype> = na::VectorView<'a, D, Const<N>>;
-pub type VectorViewX<'a, D = dtype> = na::VectorView<'a, D, Dyn>;
-pub type VectorView1<'a, D = dtype> = na::VectorView<'a, D, Const<1>>;
-pub type VectorView2<'a, D = dtype> = na::VectorView<'a, D, Const<2>>;
-pub type VectorView3<'a, D = dtype> = na::VectorView<'a, D, Const<3>>;
-pub type VectorView4<'a, D = dtype> = na::VectorView<'a, D, Const<4>>;
-pub type VectorView5<'a, D = dtype> = na::VectorView<'a, D, Const<5>>;
-pub type VectorView6<'a, D = dtype> = na::VectorView<'a, D, Const<6>>;
 
 // Matrices
 // square
@@ -98,6 +81,8 @@ pub type MatrixXx3<D = dtype> = na::MatrixXx3<D>;
 pub type MatrixXx4<D = dtype> = na::MatrixXx4<D>;
 pub type MatrixXx5<D = dtype> = na::MatrixXx5<D>;
 pub type MatrixXx6<D = dtype> = na::MatrixXx6<D>;
+pub type MatrixXxN<const N: usize, D = dtype> =
+    na::Matrix<D, Dyn, Const<N>, na::VecStorage<D, Dyn, Const<N>>>;
 
 // Views - aka references of matrices
 pub type MatrixViewX<'a, D = dtype> = na::MatrixView<'a, D, Dyn, Dyn>;
@@ -110,6 +95,15 @@ pub type Matrix<const R: usize, const C: usize = 1, D = dtype> = na::Matrix<
 >;
 pub type MatrixView<'a, const R: usize, const C: usize = 1, D = dtype> =
     na::MatrixView<'a, D, Const<R>, Const<C>>;
+
+pub type VectorView<'a, const N: usize, D = dtype> = na::VectorView<'a, D, Const<N>>;
+pub type VectorViewX<'a, D = dtype> = na::VectorView<'a, D, Dyn>;
+pub type VectorView1<'a, D = dtype> = na::VectorView<'a, D, Const<1>>;
+pub type VectorView2<'a, D = dtype> = na::VectorView<'a, D, Const<2>>;
+pub type VectorView3<'a, D = dtype> = na::VectorView<'a, D, Const<3>>;
+pub type VectorView4<'a, D = dtype> = na::VectorView<'a, D, Const<4>>;
+pub type VectorView5<'a, D = dtype> = na::VectorView<'a, D, Const<5>>;
+pub type VectorView6<'a, D = dtype> = na::VectorView<'a, D, Const<6>>;
 
 // Generic, taking in sizes with Const
 pub type VectorDim<N> = OVector<dtype, N>;
@@ -161,92 +155,70 @@ pub struct DiffResult<V, G> {
     pub diff: G,
 }
 
-macro_rules! constraints {
-    ($var:path) => {  };
-    ($var:path, $($others:path),*) => {
-        $var: DimAdd<adder!($($others),*)>,
-        constraints!($($others),*)
-    };
-}
-
-macro_rules! adder {
-    ($var:path) => {
-        $var
-    };
-    ($var:path, $($others:path),*) => {
-        DimSum<$var, adder!($($others),*)>
-    };
-}
-
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<gradient_ $num>]<$( $var: Variable, )* F: Fn($($var::Alias<DualVectorX>,)*) -> DualVectorX>
-                    (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>;
+            fn [<gradient_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::D>,)*) -> Self::D>
+                    (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
+                    let f_wrapped = |$($name: $var::Alias<Self::D>,)*| dvector![f($($name.clone(),)*)];
+                    let DiffResult { value, diff } = Self::[<jacobian_ $num>](f_wrapped, $($name,)*);
+                    let diff = VectorX::from_iterator(diff.len(), diff.iter().cloned());
+                    DiffResult { value: value[0], diff }
+                }
         }
     };
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<jacobian_ $num>]<const N: usize, $( $var: Variable, )* F: Fn($($var::Alias<DualVector<N>>,)*) -> VectorX<DualVector<N>>>
-                    (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>
-                where
-                ShapeConstraint: DimEq<Const<N>, adder!($($var::Dim),*)>,
-                constraints!($($var::Dim),*);
+            fn [<jacobian_ $num>]<$( $var: Variable<Alias<$crate::dtype>=$var>, )* F: Fn($($var::Alias<Self::D>,)*) -> VectorX<Self::D>>
+                    (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };
 }
 
 pub trait Diff {
-    fn derivative<F: Fn(DualScalar) -> DualScalar>(f: F, x: dtype) -> DiffResult<dtype, dtype>;
+    type D: Numeric;
 
-    // TODO: Default implementation of gradient that calls jacobian with a small wrapper?
-    // fn_maker!(grad, 1, (v1: V1));
-    // fn_maker!(grad, 2, (v1: V1), (v2: V2));
-    // fn_maker!(grad, 3, (v1: V1), (v2: V2), (v3: V3));
-    // fn_maker!(grad, 4, (v1: V1), (v2: V2), (v3: V3), (v4: V4));
-    // fn_maker!(grad, 5, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5));
-    // fn_maker!(grad, 6, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5), (v6: V6));
+    fn_maker!(grad, 1, (v1: V1));
+    fn_maker!(grad, 2, (v1: V1), (v2: V2));
+    fn_maker!(grad, 3, (v1: V1), (v2: V2), (v3: V3));
+    fn_maker!(grad, 4, (v1: V1), (v2: V2), (v3: V3), (v4: V4));
+    fn_maker!(grad, 5, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5));
+    fn_maker!(grad, 6, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5), (v6: V6));
 
-    fn jacobian_1<
-        N: DimName,
-        V1: Variable<Alias<f64> = V1>,
-        F: Fn(V1::Alias<DualVectorGeneric<N>>) -> VectorX<DualVectorGeneric<N>>,
-    >(
-        f: F,
-        v1: &V1,
-    ) -> DiffResult<VectorX, MatrixX>
-    where
-        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
-        DefaultAllocator: DualAllocator<N>,
-        DualVectorGeneric<N>: Copy;
-
-    fn jacobian_2<
-        N: DimName,
-        V1: Variable<Alias<f64> = V1>,
-        V2: Variable<Alias<f64> = V2>,
-        F: Fn(
-            V1::Alias<DualVectorGeneric<N>>,
-            V2::Alias<DualVectorGeneric<N>>,
-        ) -> VectorX<DualVectorGeneric<N>>,
-    >(
-        f: F,
-        v1: &V1,
-        v2: &V2,
-    ) -> DiffResult<VectorX, MatrixX>
-    where
-        <DefaultAllocator as Allocator<dtype, N>>::Buffer: Sync + Send,
-        DefaultAllocator: DualAllocator<N>,
-        DualVectorGeneric<N>: Copy;
-
-    // fn_maker!(jac, 3, (v1: V1), (v2: V2), (v3: V3));
-    // fn_maker!(jac, 4, (v1: V1), (v2: V2), (v3: V3), (v4: V4));
-    // fn_maker!(jac, 5, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5));
-    // fn_maker!(jac, 6, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5), (v6: V6));
+    fn_maker!(jac, 1, (v1: V1));
+    fn_maker!(jac, 2, (v1: V1), (v2: V2));
+    fn_maker!(jac, 3, (v1: V1), (v2: V2), (v3: V3));
+    fn_maker!(jac, 4, (v1: V1), (v2: V2), (v3: V3), (v4: V4));
+    fn_maker!(jac, 5, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5));
+    fn_maker!(jac, 6, (v1: V1), (v2: V2), (v3: V3), (v4: V4), (v5: V5), (v6: V6));
 }
 
-// mod numerical_diff;
-// pub use numerical_diff::NumericalDiff;
+pub fn numerical_derivative<F: Fn(dtype) -> dtype>(
+    f: F,
+    x: dtype,
+    eps: dtype,
+) -> DiffResult<dtype, dtype> {
+    let r = f(x);
+    let d = (f(x + eps) - f(x - eps)) / (2.0 * eps);
+
+    DiffResult { value: r, diff: d }
+}
+
+pub fn forward_prop_derivative<F: Fn(DualScalar) -> DualScalar>(
+    f: F,
+    x: dtype,
+) -> DiffResult<dtype, dtype> {
+    let xd = x.into();
+    let r = f(xd);
+    DiffResult {
+        value: r.re,
+        diff: r.eps,
+    }
+}
+
+mod numerical_diff;
+pub use numerical_diff::NumericalDiff;
 
 mod forward_prop;
 pub use forward_prop::ForwardProp;

@@ -1,14 +1,12 @@
-use nalgebra::{
-    allocator::Allocator, Const, DefaultAllocator, DimAdd, DimNameAdd, DimNameSum, DimSum,
-};
+use nalgebra::{DimNameAdd, DimNameSum};
 
 use super::{Residual, Residual2};
 use crate::{
     containers::{Symbol, Values},
-    dtype, impl_residual,
+    dtype,
     linalg::{
-        DiffResult, DualAllocator, DualVectorGeneric, DualVectorX, ForwardProp, MatrixX, Numeric,
-        VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, DualVector,
+        ForwardProp, MatrixX, Numeric, VectorX,
     },
     variables::Variable,
 };
@@ -25,15 +23,14 @@ impl<P: Variable> BetweenResidual<P> {
     }
 }
 
-impl<P> Residual2 for BetweenResidual<P>
+impl<P: Variable<Alias<dtype> = P> + 'static> Residual2 for BetweenResidual<P>
 where
-    <DefaultAllocator as Allocator<dtype, DimNameSum<P::Dim, P::Dim>>>::Buffer: Sync + Send,
+    AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
-    DualVectorGeneric<DimNameSum<P::Dim, P::Dim>>: Copy,
-    P: Variable<Alias<dtype> = P> + 'static,
+    DualVector<DimNameSum<P::Dim, P::Dim>>: Copy,
     P::Dim: DimNameAdd<P::Dim>,
 {
-    type Differ = ForwardProp;
+    type Differ = ForwardProp<DimNameSum<P::Dim, P::Dim>>;
     type V1 = P;
     type V2 = P;
     type DimOut = P::Dim;
@@ -47,9 +44,9 @@ where
 
 impl<P> Residual for BetweenResidual<P>
 where
-    <DefaultAllocator as Allocator<dtype, DimNameSum<P::Dim, P::Dim>>>::Buffer: Sync + Send,
+    AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
-    DualVectorGeneric<DimNameSum<P::Dim, P::Dim>>: Copy,
+    DualVector<DimNameSum<P::Dim, P::Dim>>: Copy,
     P: Variable<Alias<dtype> = P> + 'static,
     P::Dim: DimNameAdd<P::Dim>,
 {

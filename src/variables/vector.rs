@@ -1,8 +1,9 @@
-use nalgebra::{allocator::Allocator, DefaultAllocator, DimName, OVector};
-
 use crate::{
     dtype,
-    linalg::{Const, DualAllocator, DualVectorGeneric, Numeric, Vector, VectorViewX, VectorX},
+    linalg::{
+        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Numeric,
+        Vector, VectorDim, VectorViewX, VectorX,
+    },
     variables::Variable,
 };
 
@@ -36,14 +37,14 @@ impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {
     }
 
     // Mostly unncessary, but avoids having to convert VectorX to static vector
-    fn dual_setup<NN: DimName>(idx: usize) -> Self::Alias<DualVectorGeneric<NN>>
+    fn dual_setup<NN: DimName>(idx: usize) -> Self::Alias<DualVector<NN>>
     where
-        <DefaultAllocator as Allocator<dtype, NN>>::Buffer: Sync + Send,
+        AllocatorBuffer<NN>: Sync + Send,
         DefaultAllocator: DualAllocator<NN>,
-        DualVectorGeneric<NN>: Copy,
+        DualVector<NN>: Copy,
     {
-        let n = OVector::<_, NN>::zeros().shape_generic().0;
-        let mut tv = Self::Alias::<DualVectorGeneric<NN>>::zeros();
+        let n = VectorDim::<NN>::zeros().shape_generic().0;
+        let mut tv = Self::Alias::<DualVector<NN>>::zeros();
         for (i, tvi) in tv.iter_mut().enumerate() {
             tvi.eps = num_dual::Derivative::derivative_generic(n, Const::<1>, idx + i);
         }

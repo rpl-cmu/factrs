@@ -1,9 +1,7 @@
-use nalgebra::{allocator::Allocator, DefaultAllocator};
-
 use crate::{
     containers::{Symbol, Values},
     dtype,
-    linalg::{Const, DiffResult, DualAllocator, MatrixBlock},
+    linalg::{AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, MatrixBlock},
     linear::LinearFactor,
     noise::{GaussianNoise, NoiseModel, NoiseModelSafe},
     residuals::{Residual, ResidualSafe},
@@ -24,7 +22,7 @@ impl Factor {
     ) -> Self
     where
         R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
-        <DefaultAllocator as Allocator<dtype, R::DimIn>>::Buffer: Sync + Send,
+        AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
     {
         Self {
@@ -43,7 +41,7 @@ impl Factor {
     where
         R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
         N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
-        <DefaultAllocator as Allocator<dtype, R::DimIn>>::Buffer: Sync + Send,
+        AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
     {
         Self {
@@ -62,7 +60,7 @@ impl Factor {
     ) -> Self
     where
         R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
-        <DefaultAllocator as Allocator<dtype, R::DimIn>>::Buffer: Sync + Send,
+        AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
         N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
         C: 'static + RobustCost,
@@ -116,91 +114,91 @@ impl Factor {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
+#[cfg(test)]
+mod tests {
 
-//     use crate::{
-//         containers::X,
-//         linalg::{NumericalDiff, Vector3},
-//         noise::GaussianNoise,
-//         residuals::{BetweenResidual, PriorResidual},
-//         robust::GemanMcClure,
-//         variables::Variable,
-//     };
-//     use matrixcompare::assert_matrix_eq;
+    use crate::{
+        containers::X,
+        linalg::{Diff, NumericalDiff, Vector3},
+        noise::GaussianNoise,
+        residuals::{BetweenResidual, PriorResidual},
+        robust::GemanMcClure,
+        variables::Variable,
+    };
+    use matrixcompare::assert_matrix_eq;
 
-//     use super::*;
+    use super::*;
 
-//     #[cfg(not(feature = "f32"))]
-//     const PWR: i32 = 6;
-//     #[cfg(not(feature = "f32"))]
-//     const TOL: f64 = 1e-6;
+    #[cfg(not(feature = "f32"))]
+    const PWR: i32 = 6;
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
 
-//     #[cfg(feature = "f32")]
-//     const PWR: i32 = 3;
-//     #[cfg(feature = "f32")]
-//     const TOL: f32 = 1e-3;
+    #[cfg(feature = "f32")]
+    const PWR: i32 = 3;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
 
-//     #[test]
-//     fn linearize_a() {
-//         let prior = Vector3::new(1.0, 2.0, 3.0);
-//         let x = <Vector3 as Variable>::identity();
+    #[test]
+    fn linearize_a() {
+        let prior = Vector3::new(1.0, 2.0, 3.0);
+        let x = <Vector3 as Variable>::identity();
 
-//         let residual = PriorResidual::new(&prior);
-//         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
-//         let robust = GemanMcClure::default();
+        let residual = PriorResidual::new(prior);
+        let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
+        let robust = GemanMcClure::default();
 
-//         let factor = Factor::new_full(&[X(0)], residual, noise, robust);
+        let factor = Factor::new_full(&[X(0)], residual, noise, robust);
 
-//         let f = |x: Vector3| {
-//             let mut values = Values::new();
-//             values.insert(X(0), x);
-//             factor.error(&values)
-//         };
+        let f = |x: Vector3| {
+            let mut values = Values::new();
+            values.insert(X(0), x);
+            factor.error(&values)
+        };
 
-//         let mut values = Values::new();
-//         values.insert(X(0), x);
+        let mut values = Values::new();
+        values.insert(X(0), x);
 
-//         let linear = factor.linearize(&values);
-//         let grad_got = -linear.a.mat().transpose() * linear.b;
-//         println!("Received {:}", grad_got);
+        let linear = factor.linearize(&values);
+        let grad_got = -linear.a.mat().transpose() * linear.b;
+        println!("Received {:}", grad_got);
 
-//         let grad_num = NumericalDiff::<PWR>::gradient_1(f, &x).diff;
-//         println!("Expected {:}", grad_num);
+        let grad_num = NumericalDiff::<PWR>::gradient_1(f, &x).diff;
+        println!("Expected {:}", grad_num);
 
-//         assert_matrix_eq!(grad_got, grad_num, comp = abs, tol = TOL);
-//     }
+        assert_matrix_eq!(grad_got, grad_num, comp = abs, tol = TOL);
+    }
 
-//     #[test]
-//     fn linearize_block() {
-//         let bet = Vector3::new(1.0, 2.0, 3.0);
-//         let x = <Vector3 as Variable>::identity();
+    #[test]
+    fn linearize_block() {
+        let bet = Vector3::new(1.0, 2.0, 3.0);
+        let x = <Vector3 as Variable>::identity();
 
-//         let residual = BetweenResidual::new(&bet);
-//         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
-//         let robust = GemanMcClure::default();
+        let residual = BetweenResidual::new(bet);
+        let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
+        let robust = GemanMcClure::default();
 
-//         let factor = Factor::new_full(&[X(0), X(1)], residual, noise, robust);
+        let factor = Factor::new_full(&[X(0), X(1)], residual, noise, robust);
 
-//         let mut values = Values::new();
-//         values.insert(X(0), x);
-//         values.insert(X(1), x);
+        let mut values = Values::new();
+        values.insert(X(0), x);
+        values.insert(X(1), x);
 
-//         let linear = factor.linearize(&values);
+        let linear = factor.linearize(&values);
 
-//         println!("Full Mat {:}", linear.a.mat());
-//         println!("First Block {:}", linear.a.get_block(0));
-//         println!("Second Block {:}", linear.a.get_block(1));
+        println!("Full Mat {:}", linear.a.mat());
+        println!("First Block {:}", linear.a.get_block(0));
+        println!("Second Block {:}", linear.a.get_block(1));
 
-//         assert_matrix_eq!(
-//             linear.a.get_block(0),
-//             linear.a.mat().columns(0, 3),
-//             comp = float
-//         );
-//         assert_matrix_eq!(
-//             linear.a.get_block(1),
-//             linear.a.mat().columns(3, 3),
-//             comp = float
-//         );
-//     }
-// }
+        assert_matrix_eq!(
+            linear.a.get_block(0),
+            linear.a.mat().columns(0, 3),
+            comp = float
+        );
+        assert_matrix_eq!(
+            linear.a.get_block(1),
+            linear.a.mat().columns(3, 3),
+            comp = float
+        );
+    }
+}
