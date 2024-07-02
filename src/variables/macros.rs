@@ -160,11 +160,11 @@ macro_rules! test_lie {
 }
 
 #[macro_export]
-macro_rules! impl_variablesafe {
-($($var:ident),*) => {
+macro_rules! impl_safe_variable {
+($($var:ident $(< $num:literal >)? ),* $(,)?) => {
         $(
             #[cfg_attr(feature = "serde", typetag::serde)]
-            impl $crate::variables::VariableSafe for $var {
+            impl $crate::variables::VariableSafe for $var$(< $num >)? {
                 fn clone_box(&self) -> Box<dyn $crate::variables::VariableSafe> {
                     Box::new((*self).clone())
                 }

@@ -11,6 +11,7 @@ pub trait NoiseModel: Sized {
     fn whiten_mat(&self, m: MatrixViewX) -> MatrixX;
 }
 
+#[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
 pub trait NoiseModelSafe {
     fn dim(&self) -> usize;
 
@@ -19,18 +20,26 @@ pub trait NoiseModelSafe {
     fn whiten_mat(&self, m: MatrixViewX) -> MatrixX;
 }
 
-impl<T: NoiseModel> NoiseModelSafe for T {
-    fn dim(&self) -> usize {
-        self.dim()
-    }
+#[macro_export]
+macro_rules! impl_safe_noise {
+    ($($var:ident $(< $num:literal >)? ),* $(,)?) => {
+        $(
+            #[cfg_attr(feature = "serde", typetag::serde)]
+            impl $crate::noise::NoiseModelSafe for $var$(< $num >)? {
+                fn dim(&self) -> usize {
+                    $crate::noise::NoiseModel::dim(self)
+                }
 
-    fn whiten_vec(&self, v: VectorViewX) -> VectorX {
-        self.whiten_vec(v)
-    }
+                fn whiten_vec(&self, v: VectorViewX) -> VectorX {
+                    $crate::noise::NoiseModel::whiten_vec(self, v)
+                }
 
-    fn whiten_mat(&self, m: MatrixViewX) -> MatrixX {
-        self.whiten_mat(m)
-    }
+                fn whiten_mat(&self, m: MatrixViewX) -> MatrixX {
+                    $crate::noise::NoiseModel::whiten_mat(self, m)
+                }
+            }
+        )*
+    };
 }
 
 mod gaussian;

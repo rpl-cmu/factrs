@@ -1,7 +1,6 @@
-use super::{Vector1, Vector2, Vector3, Vector4, Vector5, Vector6};
 use crate::{
     dtype,
-    impl_variablesafe,
+    impl_safe_variable,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -18,7 +17,14 @@ use crate::{
     variables::Variable,
 };
 
-impl_variablesafe!(Vector1, Vector2, Vector3, Vector4, Vector5, Vector6);
+impl_safe_variable!(
+    Vector<1>,
+    Vector<2>,
+    Vector<3>,
+    Vector<4>,
+    Vector<5>,
+    Vector<6>,
+);
 
 // ------------------------- Our needs ------------------------- //
 impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {

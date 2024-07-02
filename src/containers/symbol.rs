@@ -14,6 +14,10 @@ const IDX_MASK: u64 = !CHR_MASK;
 pub struct Symbol(u64);
 
 impl Symbol {
+    pub fn new_raw(key: u64) -> Self {
+        Symbol(key)
+    }
+
     pub fn chr(&self) -> char {
         ((self.0 & CHR_MASK) >> IDX_BITS) as u8 as char
     }

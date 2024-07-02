@@ -16,7 +16,23 @@ use crate::{
     },
 };
 
+impl_safe_noise!(
+    GaussianNoise<1>,
+    GaussianNoise<2>,
+    GaussianNoise<3>,
+    GaussianNoise<4>,
+    GaussianNoise<5>,
+    GaussianNoise<6>,
+    GaussianNoise<7>,
+    GaussianNoise<8>,
+    GaussianNoise<9>,
+    GaussianNoise<10>,
+    GaussianNoise<11>,
+    GaussianNoise<12>,
+);
+
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GaussianNoise<const N: usize> {
     sqrt_inf: Matrix<N, N>,
 }

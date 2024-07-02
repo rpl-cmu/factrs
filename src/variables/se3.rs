@@ -3,7 +3,7 @@ use std::{fmt, ops};
 use super::Vector6;
 use crate::{
     dtype,
-    impl_variablesafe,
+    impl_safe_variable,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -26,7 +26,7 @@ use crate::{
     variables::{MatrixLieGroup, Variable, SO3},
 };
 
-impl_variablesafe!(SE3);
+impl_safe_variable!(SE3);
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

@@ -5,7 +5,7 @@ use crate::{
     linear::LinearFactor,
     noise::{GaussianNoise, NoiseModel, NoiseModelSafe},
     residuals::{Residual, ResidualSafe},
-    robust::{RobustCost, RobustCostSafe, L2},
+    robust::{RobustCostSafe, L2},
 };
 
 pub struct Factor {
@@ -21,9 +21,10 @@ impl Factor {
         residual: R,
     ) -> Self
     where
-        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>> + ResidualSafe,
         AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
+        GaussianNoise<DIM_OUT>: NoiseModelSafe,
     {
         Self {
             keys: keys.to_vec(),
@@ -39,8 +40,8 @@ impl Factor {
         noise: N,
     ) -> Self
     where
-        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
-        N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>> + ResidualSafe,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModelSafe,
         AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
     {
@@ -59,11 +60,11 @@ impl Factor {
         robust: C,
     ) -> Self
     where
-        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>> + ResidualSafe,
         AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
-        N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
-        C: 'static + RobustCost,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModelSafe,
+        C: 'static + RobustCostSafe,
     {
         Self {
             keys: keys.to_vec(),

@@ -91,7 +91,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
-#[cfg_attr(feature = "serde", typetag::serde)]
+#[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
 pub trait VariableSafe: Debug + Display + Downcast {
     fn clone_box(&self) -> Box<dyn VariableSafe>;
 
