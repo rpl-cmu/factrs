@@ -28,7 +28,7 @@ pub trait Residual: Debug + Display {
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
-#[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait ResidualSafe: Debug + Display {
     fn dim_in(&self) -> usize;
 

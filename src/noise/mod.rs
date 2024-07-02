@@ -13,7 +13,7 @@ pub trait NoiseModel: Debug + Display {
     fn whiten_mat(&self, m: MatrixViewX) -> MatrixX;
 }
 
-#[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait NoiseModelSafe: Debug + Display {
     fn dim(&self) -> usize;
 

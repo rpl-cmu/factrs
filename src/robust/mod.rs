@@ -9,7 +9,7 @@ pub trait RobustCost: Default + Debug {
     fn weight(&self, d2: dtype) -> dtype;
 }
 
-#[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait RobustCostSafe: Debug {
     fn loss(&self, d2: dtype) -> dtype;
 

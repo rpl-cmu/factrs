@@ -1,6 +1,6 @@
 // ------------------------- Import all variable types ------------------------- //
 mod traits;
-pub use traits::{MatrixLieGroup, Variable, VariableSafe};
+pub use traits::{MatrixLieGroup, Variable, VariableSafe, VariableSerialize};
 
 mod so2;
 pub use so2::SO2;
