@@ -1,2 +1,7 @@
 /target
 .vscode
+*.g2o
+*.svg
+*.png
+*.sh
+perf*

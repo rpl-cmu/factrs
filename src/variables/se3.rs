@@ -1,25 +1,49 @@
-use crate::dtype;
-use crate::linalg::{
-    Const, DualNum, DualVec, Matrix3, Matrix3x6, Matrix4, Matrix6, MatrixView, Vector3,
-    VectorView3, VectorView6, VectorViewX, VectorX,
-};
-use crate::variables::{MatrixLieGroup, Variable, SO3};
-use std::fmt;
-use std::ops;
+use std::{fmt, ops};
 
 use super::Vector6;
+use crate::{
+    dtype,
+    linalg::{
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DimName,
+        DualAllocator,
+        DualVector,
+        Matrix3,
+        Matrix3x6,
+        Matrix4,
+        Matrix6,
+        MatrixView,
+        Numeric,
+        Vector3,
+        VectorView3,
+        VectorView6,
+        VectorViewX,
+        VectorX,
+    },
+    variables::{MatrixLieGroup, Variable, SO3},
+};
 
 #[derive(Clone, Debug)]
-pub struct SE3<D: DualNum = dtype> {
+pub struct SE3<D: Numeric = dtype> {
     rot: SO3<D>,
     xyz: Vector3<D>,
 }
 
-impl<D: DualNum> SE3<D> {}
+impl<D: Numeric> SE3<D> {
+    pub fn from_rot_trans(rot: SO3<D>, xyz: Vector3<D>) -> Self {
+        SE3 { rot, xyz }
+    }
 
-impl<D: DualNum> Variable<D> for SE3<D> {
+    pub fn rot(&self) -> &SO3<D> {
+        &self.rot
+    }
+}
+
+impl<D: Numeric> Variable<D> for SE3<D> {
     type Dim = Const<6>;
-    type Dual = SE3<DualVec>;
+    type Alias<DD: Numeric> = SE3<DD>;
 
     fn identity() -> Self {
         SE3 {
@@ -31,7 +55,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
     fn compose(&self, other: &Self) -> Self {
         SE3 {
             rot: &self.rot * &other.rot,
-            xyz: self.rot.apply(other.xyz.as_view()) + self.xyz.clone(),
+            xyz: self.rot.apply(other.xyz.as_view()) + self.xyz,
         }
     }
 
@@ -48,7 +72,7 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         let xi_rot = xi.fixed_view::<3, 1>(0, 0).clone_owned();
         let rot = SO3::<D>::exp(xi.rows(0, 3));
 
-        let xyz = Vector3::new(xi[3].clone(), xi[4].clone(), xi[5].clone());
+        let xyz = Vector3::new(xi[3], xi[4], xi[5]);
 
         let xyz = if cfg!(feature = "fake_exp") {
             xyz
@@ -56,18 +80,18 @@ impl<D: DualNum> Variable<D> for SE3<D> {
             let w2 = xi_rot.norm_squared();
             let B;
             let C;
-            if w2.clone() < D::from(1e-5) {
+            if w2 < D::from(1e-5) {
                 B = D::from(0.5);
                 C = D::from(1.0 / 6.0);
             } else {
-                let w = w2.clone().sqrt();
-                let A = w.clone().sin() / w.clone();
-                B = (D::from(1.0) - w.clone().cos()) / w2.clone();
-                C = (D::from(1.0) - A) / w2.clone();
+                let w = w2.sqrt();
+                let A = w.sin() / w;
+                B = (D::from(1.0) - w.cos()) / w2;
+                C = (D::from(1.0) - A) / w2;
             };
             let I = Matrix3::identity();
             let wx = SO3::hat(xi_rot.as_view());
-            let V = I + &wx * B + &wx * &wx * C;
+            let V = I + wx * B + wx * wx * C;
             V * xyz
         };
 
@@ -80,27 +104,27 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         let xi_theta = self.rot.log();
 
         let xyz = if cfg!(feature = "fake_exp") {
-            self.xyz.clone()
+            self.xyz
         } else {
             let w2 = xi_theta.norm_squared();
             let B;
             let C;
-            if w2.clone() < D::from(1e-5) {
+            if w2 < D::from(1e-5) {
                 B = D::from(0.5);
                 C = D::from(1.0 / 6.0);
             } else {
-                let w = w2.clone().sqrt();
-                let A = w.clone().sin() / w.clone();
-                B = (D::from(1.0) - w.clone().cos()) / w2.clone();
-                C = (D::from(1.0) - A) / w2.clone();
+                let w = w2.sqrt();
+                let A = w.sin() / w;
+                B = (D::from(1.0) - w.cos()) / w2;
+                C = (D::from(1.0) - A) / w2;
             };
 
             let I = Matrix3::identity();
             let wx = SO3::hat(xi_theta.as_view());
-            let V = I + &wx * B + &wx * &wx * C;
+            let V = I + wx * B + wx * wx * C;
 
             let Vinv = V.try_inverse().expect("V is not invertible");
-            &Vinv * &self.xyz
+            Vinv * self.xyz
         };
 
         xi.as_mut_slice()[0..3].clone_from_slice(xi_theta.as_slice());
@@ -109,15 +133,27 @@ impl<D: DualNum> Variable<D> for SE3<D> {
         xi
     }
 
-    fn dual_self(&self) -> Self::Dual {
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SE3 {
-            rot: self.rot.dual_self(),
-            xyz: self.xyz.dual_self(),
+            rot: SO3::<D>::dual_convert(&other.rot),
+            xyz: Vector3::<D>::dual_convert(&other.xyz),
+        }
+    }
+
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy,
+    {
+        SE3 {
+            rot: SO3::<dtype>::dual_setup(idx),
+            xyz: Vector3::<dtype>::dual_setup(idx + 3),
         }
     }
 }
 
-impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
+impl<D: Numeric> MatrixLieGroup<D> for SE3<D> {
     type TangentDim = Const<6>;
     type MatrixDim = Const<4>;
     type VectorDim = Const<3>;
@@ -126,7 +162,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
         let mut mat = Matrix6::zeros();
 
         let r_mat = self.rot.to_matrix();
-        let t_r_mat = &SO3::hat(self.xyz.as_view()) * &r_mat;
+        let t_r_mat = SO3::hat(self.xyz.as_view()) * r_mat;
 
         mat.fixed_view_mut::<3, 3>(0, 0).copy_from(&r_mat);
         mat.fixed_view_mut::<3, 3>(3, 3).copy_from(&r_mat);
@@ -137,28 +173,28 @@ impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
 
     fn hat(xi: VectorView6<D>) -> Matrix4<D> {
         let mut mat = Matrix4::zeros();
-        mat[(0, 1)] = -xi[2].clone();
-        mat[(0, 2)] = xi[1].clone();
-        mat[(1, 0)] = xi[2].clone();
-        mat[(1, 2)] = -xi[0].clone();
-        mat[(2, 0)] = -xi[1].clone();
-        mat[(2, 1)] = xi[0].clone();
+        mat[(0, 1)] = -xi[2];
+        mat[(0, 2)] = xi[1];
+        mat[(1, 0)] = xi[2];
+        mat[(1, 2)] = -xi[0];
+        mat[(2, 0)] = -xi[1];
+        mat[(2, 1)] = xi[0];
 
-        mat[(0, 3)] = xi[3].clone();
-        mat[(1, 3)] = xi[4].clone();
-        mat[(2, 3)] = xi[5].clone();
+        mat[(0, 3)] = xi[3];
+        mat[(1, 3)] = xi[4];
+        mat[(2, 3)] = xi[5];
 
         mat
     }
 
     fn vee(xi: MatrixView<4, 4, D>) -> Vector6<D> {
         Vector6::new(
-            xi[(2, 1)].clone(),
-            xi[(0, 2)].clone(),
-            xi[(1, 0)].clone(),
-            xi[(0, 3)].clone(),
-            xi[(1, 3)].clone(),
-            xi[(2, 3)].clone(),
+            xi[(2, 1)],
+            xi[(0, 2)],
+            xi[(1, 0)],
+            xi[(0, 3)],
+            xi[(1, 3)],
+            xi[(2, 3)],
         )
     }
 
@@ -172,7 +208,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
     }
 
     fn apply(&self, v: VectorView3<D>) -> Vector3<D> {
-        self.rot.apply(v) + self.xyz.clone()
+        self.rot.apply(v) + self.xyz
     }
 
     fn to_matrix(&self) -> Matrix4<D> {
@@ -193,7 +229,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SE3<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for SE3<D> {
+impl<D: Numeric> ops::Mul for SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -201,7 +237,7 @@ impl<D: DualNum> ops::Mul for SE3<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for &SE3<D> {
+impl<D: Numeric> ops::Mul for &SE3<D> {
     type Output = SE3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -209,7 +245,7 @@ impl<D: DualNum> ops::Mul for &SE3<D> {
     }
 }
 
-impl<D: DualNum> fmt::Display for SE3<D> {
+impl<D: Numeric> fmt::Display for SE3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {:?}", self.rot, self.xyz)
     }
@@ -218,7 +254,6 @@ impl<D: DualNum> fmt::Display for SE3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{test_lie, test_variable};
 
     test_variable!(SE3);

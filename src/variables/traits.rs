@@ -1,15 +1,29 @@
-use crate::dtype;
-use crate::linalg::{
-    Const, DimName, DualNum, DualVec, Dyn, MatrixDim, MatrixViewDim, VectorViewX, VectorX,
-};
-
-use downcast_rs::{impl_downcast, Downcast};
 use std::fmt::{Debug, Display};
 
-pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
+use downcast_rs::{impl_downcast, Downcast};
+
+use crate::{
+    dtype,
+    linalg::{
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DimName,
+        DualAllocator,
+        DualVector,
+        MatrixDim,
+        MatrixViewDim,
+        Numeric,
+        VectorDim,
+        VectorViewX,
+        VectorX,
+    },
+};
+
+pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     type Dim: DimName;
     const DIM: usize = Self::Dim::USIZE;
-    type Dual: Variable<DualVec>;
+    type Alias<DD: Numeric>: Variable<DD>;
 
     // Group operations
     fn identity() -> Self;
@@ -19,14 +33,11 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
     fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
 
     // Conversion to dual space
-    fn dual_self(&self) -> Self::Dual;
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD>;
 
     // Helpers for enum
     fn dim(&self) -> usize {
         Self::DIM
-    }
-    fn identity_enum(&self) -> Self {
-        Self::identity()
     }
 
     // Moves to and from vector space
@@ -48,18 +59,35 @@ pub trait Variable<D: DualNum = dtype>: Clone + Sized + Display + Debug {
         other.inverse().compose(self)
     }
 
-    // Create tangent vector w/ duals set up properly
-    fn dual_tangent(&self, idx: usize, total: usize) -> VectorX<DualVec> {
-        let mut tv: VectorX<DualVec> = VectorX::zeros(self.dim());
+    // Setup group element correctly using the tangent space
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy,
+    {
+        let mut tv: VectorX<DualVector<N>> = VectorX::zeros(Self::DIM);
+        let n = VectorDim::<N>::zeros().shape_generic().0;
         for (i, tvi) in tv.iter_mut().enumerate() {
-            tvi.eps = num_dual::Derivative::derivative_generic(Dyn(total), Const::<1>, idx + i);
+            tvi.eps = num_dual::Derivative::derivative_generic(n, Const::<1>, idx + i)
         }
-        tv
+        Self::Alias::<DualVector<N>>::exp(tv.as_view())
     }
+
     // Applies the tangent vector in dual space
-    fn dual(&self, idx: usize, total: usize) -> Self::Dual {
-        self.dual_self()
-            .oplus(self.dual_tangent(idx, total).as_view())
+    fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy,
+    {
+        // Setups tangent vector -> exp, then we compose here
+        let setup = Self::dual_setup(idx);
+        if cfg!(feature = "left") {
+            setup.compose(&Self::dual_convert(other))
+        } else {
+            Self::dual_convert(other).compose(&setup)
+        }
     }
 }
 
@@ -95,7 +123,7 @@ impl Clone for Box<dyn VariableSafe> {
 
 use nalgebra as na;
 
-pub trait MatrixLieGroup<D: DualNum = dtype>: Variable<D>
+pub trait MatrixLieGroup<D: Numeric = dtype>: Variable<D>
 where
     na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
     na::DefaultAllocator: na::allocator::Allocator<D, Self::MatrixDim, Self::MatrixDim>,

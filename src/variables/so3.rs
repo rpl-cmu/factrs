@@ -1,18 +1,35 @@
-use crate::dtype;
-use crate::linalg::{
-    dvector, Const, DualNum, DualVec, Matrix3, MatrixView, Vector3, Vector4, VectorView3,
-    VectorViewX, VectorX,
+use std::{fmt, ops};
+
+use crate::{
+    dtype,
+    linalg::{
+        dvector,
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        Derivative,
+        DimName,
+        DualAllocator,
+        DualVector,
+        Matrix3,
+        MatrixView,
+        Numeric,
+        Vector3,
+        Vector4,
+        VectorDim,
+        VectorView3,
+        VectorViewX,
+        VectorX,
+    },
+    variables::{MatrixLieGroup, Variable},
 };
-use crate::variables::{MatrixLieGroup, Variable};
-use std::fmt;
-use std::ops;
 
 #[derive(Clone)]
-pub struct SO3<D: DualNum = dtype> {
+pub struct SO3<D: Numeric = dtype> {
     pub xyzw: Vector4<D>,
 }
 
-impl<D: DualNum> SO3<D> {
+impl<D: Numeric> SO3<D> {
     pub fn from_vec(xyzw: Vector4<D>) -> Self {
         SO3 { xyzw }
     }
@@ -24,9 +41,9 @@ impl<D: DualNum> SO3<D> {
     }
 }
 
-impl<D: DualNum> Variable<D> for SO3<D> {
+impl<D: Numeric> Variable<D> for SO3<D> {
     type Dim = Const<3>;
-    type Dual = SO3<DualVec>;
+    type Alias<DD: Numeric> = SO3<DD>;
 
     fn identity() -> Self {
         SO3 { xyzw: Vector4::w() }
@@ -34,39 +51,27 @@ impl<D: DualNum> Variable<D> for SO3<D> {
 
     fn inverse(&self) -> Self {
         SO3 {
-            xyzw: Vector4::new(
-                -self.xyzw[0].clone(),
-                -self.xyzw[1].clone(),
-                -self.xyzw[2].clone(),
-                self.xyzw[3].clone(),
-            ),
+            xyzw: Vector4::new(-self.xyzw[0], -self.xyzw[1], -self.xyzw[2], self.xyzw[3]),
         }
     }
 
     fn compose(&self, other: &Self) -> Self {
-        let x0 = self.xyzw[0].clone();
-        let y0 = self.xyzw[1].clone();
-        let z0 = self.xyzw[2].clone();
-        let w0 = self.xyzw[3].clone();
+        let x0 = self.xyzw[0];
+        let y0 = self.xyzw[1];
+        let z0 = self.xyzw[2];
+        let w0 = self.xyzw[3];
 
-        let x1 = other.xyzw[0].clone();
-        let y1 = other.xyzw[1].clone();
-        let z1 = other.xyzw[2].clone();
-        let w1 = other.xyzw[3].clone();
+        let x1 = other.xyzw[0];
+        let y1 = other.xyzw[1];
+        let z1 = other.xyzw[2];
+        let w1 = other.xyzw[3];
 
         // Compute the product of the two quaternions, term by term
         let mut xyzw = Vector4::zeros();
-        xyzw[0] = w0.clone() * x1.clone() + x0.clone() * w1.clone() + y0.clone() * z1.clone()
-            - z0.clone() * y1.clone();
-        xyzw[1] = w0.clone() * y1.clone() - x0.clone() * z1.clone()
-            + y0.clone() * w1.clone()
-            + z0.clone() * x1.clone();
-        xyzw[2] = w0.clone() * z1.clone() + x0.clone() * y1.clone() - y0.clone() * x1.clone()
-            + z0.clone() * w1.clone();
-        xyzw[3] = w0.clone() * w1.clone()
-            - x0.clone() * x1.clone()
-            - y0.clone() * y1.clone()
-            - z0.clone() * z1.clone();
+        xyzw[0] = w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1;
+        xyzw[1] = w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1;
+        xyzw[2] = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1;
+        xyzw[3] = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1;
 
         SO3 { xyzw }
     }
@@ -76,85 +81,108 @@ impl<D: DualNum> Variable<D> for SO3<D> {
         let theta = xi.norm();
 
         if theta < D::from(1e-3) {
-            xyzw[0] = xi[0].clone() * D::from(0.5);
-            xyzw[1] = xi[1].clone() * D::from(0.5);
-            xyzw[2] = xi[2].clone() * D::from(0.5);
+            xyzw[0] = xi[0] * D::from(0.5);
+            xyzw[1] = xi[1] * D::from(0.5);
+            xyzw[2] = xi[2] * D::from(0.5);
             xyzw[3] = D::from(1.0);
         } else {
-            let theta_half = theta.clone() / D::from(2.0);
-            let sin_theta = theta_half.clone().sin();
-            xyzw[0] = xi[0].clone() * sin_theta.clone() / theta.clone();
-            xyzw[1] = xi[1].clone() * sin_theta.clone() / theta.clone();
-            xyzw[2] = xi[2].clone() * sin_theta.clone() / theta.clone();
-            xyzw[3] = theta_half.clone().cos();
+            let theta_half = theta / D::from(2.0);
+            let sin_theta = theta_half.sin();
+            xyzw[0] = xi[0] * sin_theta / theta;
+            xyzw[1] = xi[1] * sin_theta / theta;
+            xyzw[2] = xi[2] * sin_theta / theta;
+            xyzw[3] = theta_half.cos();
         }
 
         SO3 { xyzw }
     }
 
     fn log(&self) -> VectorX<D> {
-        let xi = dvector![
-            self.xyzw[0].clone(),
-            self.xyzw[1].clone(),
-            self.xyzw[2].clone()
-        ];
-        let w = self.xyzw[3].clone();
+        let xi = dvector![self.xyzw[0], self.xyzw[1], self.xyzw[2]];
+        // Abs value in case we had a negative quaternion
+        let w = self.xyzw[3].abs();
 
         let norm_v = xi.norm();
         if norm_v < D::from(1e-3) {
             xi * D::from(2.0)
         } else {
-            xi * norm_v.clone().atan2(w) * D::from(2.0) / norm_v
+            xi * norm_v.atan2(w) * D::from(2.0) / norm_v
         }
     }
 
-    fn dual_self(&self) -> Self::Dual {
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SO3 {
-            xyzw: self.xyzw.dual_self(),
+            xyzw: Vector4::<dtype>::dual_convert(&other.xyzw),
         }
+    }
+
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy,
+    {
+        let mut x = DualVector::<N>::from_re(0.0);
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx] = 0.5;
+        x.eps = Derivative::new(Some(eps));
+
+        let mut y = DualVector::<N>::from_re(0.0);
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx + 1] = 0.5;
+        y.eps = Derivative::new(Some(eps));
+
+        let mut z = DualVector::<N>::from_re(0.0);
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx + 2] = 0.5;
+        z.eps = Derivative::new(Some(eps));
+
+        let w = DualVector::<N>::from_re(1.0);
+
+        SO3::from_xyzw(x, y, z, w)
     }
 }
 
-impl<D: DualNum> MatrixLieGroup<D> for SO3<D> {
+impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<3>;
 
     fn adjoint(&self) -> Matrix3<D> {
-        let q0 = self.xyzw[3].clone();
-        let q1 = self.xyzw[0].clone();
-        let q2 = self.xyzw[1].clone();
-        let q3 = self.xyzw[2].clone();
+        let q0 = self.xyzw[3];
+        let q1 = self.xyzw[0];
+        let q2 = self.xyzw[1];
+        let q3 = self.xyzw[2];
 
         // Same as to_matrix function of SO3 -> Just avoiding copying from Matrix3 to MatrixD
         let mut mat = Matrix3::zeros();
-        mat[(0, 0)] = D::from(1.0) - (q2.clone() * q2.clone() + q3.clone() * q3.clone()) * 2.0;
-        mat[(0, 1)] = (q1.clone() * q2.clone() - q0.clone() * q3.clone()) * 2.0;
-        mat[(0, 2)] = (q1.clone() * q3.clone() + q0.clone() * q2.clone()) * 2.0;
-        mat[(1, 0)] = (q1.clone() * q2.clone() + q0.clone() * q3.clone()) * 2.0;
-        mat[(1, 1)] = D::from(1.0) - (q1.clone() * q1.clone() + q3.clone() * q3.clone()) * 2.0;
-        mat[(1, 2)] = (q2.clone() * q3.clone() - q0.clone() * q1.clone()) * 2.0;
-        mat[(2, 0)] = (q1.clone() * q3.clone() - q0.clone() * q2.clone()) * 2.0;
-        mat[(2, 1)] = (q2.clone() * q3.clone() + q0.clone() * q1.clone()) * 2.0;
-        mat[(2, 2)] = D::from(1.0) - (q1.clone() * q1.clone() + q2.clone() * q2.clone()) * 2.0;
+        mat[(0, 0)] = D::from(1.0) - (q2 * q2 + q3 * q3) * 2.0;
+        mat[(0, 1)] = (q1 * q2 - q0 * q3) * 2.0;
+        mat[(0, 2)] = (q1 * q3 + q0 * q2) * 2.0;
+        mat[(1, 0)] = (q1 * q2 + q0 * q3) * 2.0;
+        mat[(1, 1)] = D::from(1.0) - (q1 * q1 + q3 * q3) * 2.0;
+        mat[(1, 2)] = (q2 * q3 - q0 * q1) * 2.0;
+        mat[(2, 0)] = (q1 * q3 - q0 * q2) * 2.0;
+        mat[(2, 1)] = (q2 * q3 + q0 * q1) * 2.0;
+        mat[(2, 2)] = D::from(1.0) - (q1 * q1 + q2 * q2) * 2.0;
 
         mat
     }
 
     fn hat(xi: VectorView3<D>) -> Matrix3<D> {
         let mut xi_hat = Matrix3::zeros();
-        xi_hat[(0, 1)] = -xi[2].clone();
-        xi_hat[(0, 2)] = xi[1].clone();
-        xi_hat[(1, 0)] = xi[2].clone();
-        xi_hat[(1, 2)] = -xi[0].clone();
-        xi_hat[(2, 0)] = -xi[1].clone();
-        xi_hat[(2, 1)] = xi[0].clone();
+        xi_hat[(0, 1)] = -xi[2];
+        xi_hat[(0, 2)] = xi[1];
+        xi_hat[(1, 0)] = xi[2];
+        xi_hat[(1, 2)] = -xi[0];
+        xi_hat[(2, 0)] = -xi[1];
+        xi_hat[(2, 1)] = xi[0];
 
         xi_hat
     }
 
     fn vee(xi: MatrixView<3, 3, D>) -> Vector3<D> {
-        Vector3::new(xi[(2, 1)].clone(), xi[(0, 2)].clone(), xi[(1, 0)].clone())
+        Vector3::new(xi[(2, 1)], xi[(0, 2)], xi[(1, 0)])
     }
 
     fn hat_swap(xi: VectorView3<D>) -> Matrix3<D> {
@@ -162,7 +190,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SO3<D> {
     }
 
     fn from_matrix(mat: MatrixView<3, 3, D>) -> Self {
-        let trace = mat[(0, 0)].clone() + mat[(1, 1)].clone() + mat[(2, 2)].clone();
+        let trace = mat[(0, 0)] + mat[(1, 1)] + mat[(2, 2)];
         let mut xyzw = Vector4::zeros();
         let zero = D::from(0.0);
         let quarter = D::from(0.25);
@@ -171,63 +199,63 @@ impl<D: DualNum> MatrixLieGroup<D> for SO3<D> {
 
         if trace > zero {
             let s = D::from(0.5) / (trace + 1.0).sqrt();
-            xyzw[3] = quarter / s.clone();
-            xyzw[0] = (mat[(2, 1)].clone() - mat[(1, 2)].clone()) * s.clone();
-            xyzw[1] = (mat[(0, 2)].clone() - mat[(2, 0)].clone()) * s.clone();
-            xyzw[2] = (mat[(1, 0)].clone() - mat[(0, 1)].clone()) * s.clone();
+            xyzw[3] = quarter / s;
+            xyzw[0] = (mat[(2, 1)] - mat[(1, 2)]) * s;
+            xyzw[1] = (mat[(0, 2)] - mat[(2, 0)]) * s;
+            xyzw[2] = (mat[(1, 0)] - mat[(0, 1)]) * s;
         } else if mat[(0, 0)] > mat[(1, 1)] && mat[(0, 0)] > mat[(2, 2)] {
-            let s = two * (one + &mat[(0, 0)] - &mat[(1, 1)] - &mat[(2, 2)]).sqrt();
-            xyzw[3] = (mat[(2, 1)].clone() - mat[(1, 2)].clone()) / s.clone();
-            xyzw[0] = s.clone() * quarter;
-            xyzw[1] = (mat[(0, 1)].clone() + mat[(1, 0)].clone()) / s.clone();
-            xyzw[2] = (mat[(0, 2)].clone() + mat[(2, 0)].clone()) / s.clone();
+            let s = two * (one + mat[(0, 0)] - mat[(1, 1)] - mat[(2, 2)]).sqrt();
+            xyzw[3] = (mat[(2, 1)] - mat[(1, 2)]) / s;
+            xyzw[0] = s * quarter;
+            xyzw[1] = (mat[(0, 1)] + mat[(1, 0)]) / s;
+            xyzw[2] = (mat[(0, 2)] + mat[(2, 0)]) / s;
         } else if mat[(1, 1)] > mat[(2, 2)] {
-            let s = two * (one + &mat[(1, 1)] - &mat[(0, 0)] - &mat[(2, 2)]).sqrt();
-            xyzw[3] = (mat[(0, 2)].clone() - mat[(2, 0)].clone()) / s.clone();
-            xyzw[0] = (mat[(0, 1)].clone() + mat[(1, 0)].clone()) / s.clone();
-            xyzw[1] = s.clone() * quarter;
-            xyzw[2] = (mat[(1, 2)].clone() + mat[(2, 1)].clone()) / s.clone();
+            let s = two * (one + mat[(1, 1)] - mat[(0, 0)] - mat[(2, 2)]).sqrt();
+            xyzw[3] = (mat[(0, 2)] - mat[(2, 0)]) / s;
+            xyzw[0] = (mat[(0, 1)] + mat[(1, 0)]) / s;
+            xyzw[1] = s * quarter;
+            xyzw[2] = (mat[(1, 2)] + mat[(2, 1)]) / s;
         } else {
-            let s = two * (one + &mat[(2, 2)] - &mat[(0, 0)] - &mat[(1, 1)]).sqrt();
-            xyzw[3] = (mat[(1, 0)].clone() - mat[(0, 1)].clone()) / s.clone();
-            xyzw[0] = (mat[(0, 2)].clone() + mat[(2, 0)].clone()) / s.clone();
-            xyzw[1] = (mat[(1, 2)].clone() + mat[(2, 1)].clone()) / s.clone();
-            xyzw[2] = s.clone() * quarter;
+            let s = two * (one + mat[(2, 2)] - mat[(0, 0)] - mat[(1, 1)]).sqrt();
+            xyzw[3] = (mat[(1, 0)] - mat[(0, 1)]) / s;
+            xyzw[0] = (mat[(0, 2)] + mat[(2, 0)]) / s;
+            xyzw[1] = (mat[(1, 2)] + mat[(2, 1)]) / s;
+            xyzw[2] = s * quarter;
         }
 
         SO3 { xyzw }
     }
 
     fn to_matrix(&self) -> Matrix3<D> {
-        let q0 = self.xyzw[3].clone();
-        let q1 = self.xyzw[0].clone();
-        let q2 = self.xyzw[1].clone();
-        let q3 = self.xyzw[2].clone();
+        let q0 = self.xyzw[3];
+        let q1 = self.xyzw[0];
+        let q2 = self.xyzw[1];
+        let q3 = self.xyzw[2];
 
         let mut mat = Matrix3::zeros();
-        mat[(0, 0)] = D::from(1.0) - (q2.clone() * q2.clone() + q3.clone() * q3.clone()) * 2.0;
-        mat[(0, 1)] = (q1.clone() * q2.clone() - q0.clone() * q3.clone()) * 2.0;
-        mat[(0, 2)] = (q1.clone() * q3.clone() + q0.clone() * q2.clone()) * 2.0;
-        mat[(1, 0)] = (q1.clone() * q2.clone() + q0.clone() * q3.clone()) * 2.0;
-        mat[(1, 1)] = D::from(1.0) - (q1.clone() * q1.clone() + q3.clone() * q3.clone()) * 2.0;
-        mat[(1, 2)] = (q2.clone() * q3.clone() - q0.clone() * q1.clone()) * 2.0;
-        mat[(2, 0)] = (q1.clone() * q3.clone() - q0.clone() * q2.clone()) * 2.0;
-        mat[(2, 1)] = (q2.clone() * q3.clone() + q0.clone() * q1.clone()) * 2.0;
-        mat[(2, 2)] = D::from(1.0) - (q1.clone() * q1.clone() + q2.clone() * q2.clone()) * 2.0;
+        mat[(0, 0)] = D::from(1.0) - (q2 * q2 + q3 * q3) * 2.0;
+        mat[(0, 1)] = (q1 * q2 - q0 * q3) * 2.0;
+        mat[(0, 2)] = (q1 * q3 + q0 * q2) * 2.0;
+        mat[(1, 0)] = (q1 * q2 + q0 * q3) * 2.0;
+        mat[(1, 1)] = D::from(1.0) - (q1 * q1 + q3 * q3) * 2.0;
+        mat[(1, 2)] = (q2 * q3 - q0 * q1) * 2.0;
+        mat[(2, 0)] = (q1 * q3 - q0 * q2) * 2.0;
+        mat[(2, 1)] = (q2 * q3 + q0 * q1) * 2.0;
+        mat[(2, 2)] = D::from(1.0) - (q1 * q1 + q2 * q2) * 2.0;
 
         mat
     }
 
     fn apply(&self, v: VectorView3<D>) -> Vector3<D> {
-        let qv = Self::from_xyzw(v[0].clone(), v[1].clone(), v[2].clone(), (0.0).into());
+        let qv = Self::from_xyzw(v[0], v[1], v[2], (0.0).into());
         let inv = self.inverse();
 
         let v_rot = (&(self * &qv) * &inv).xyzw;
-        Vector3::new(v_rot[0].clone(), v_rot[1].clone(), v_rot[2].clone())
+        Vector3::new(v_rot[0], v_rot[1], v_rot[2])
     }
 }
 
-impl<D: DualNum> ops::Mul for SO3<D> {
+impl<D: Numeric> ops::Mul for SO3<D> {
     type Output = SO3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -235,7 +263,7 @@ impl<D: DualNum> ops::Mul for SO3<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for &SO3<D> {
+impl<D: Numeric> ops::Mul for &SO3<D> {
     type Output = SO3<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -243,7 +271,7 @@ impl<D: DualNum> ops::Mul for &SO3<D> {
     }
 }
 
-impl<D: DualNum> fmt::Display for SO3<D> {
+impl<D: Numeric> fmt::Display for SO3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -253,7 +281,7 @@ impl<D: DualNum> fmt::Display for SO3<D> {
     }
 }
 
-impl<D: DualNum> fmt::Debug for SO3<D> {
+impl<D: Numeric> fmt::Debug for SO3<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
@@ -262,7 +290,6 @@ impl<D: DualNum> fmt::Debug for SO3<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{test_lie, test_variable};
 
     test_variable!(SO3);

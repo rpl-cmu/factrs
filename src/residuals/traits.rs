@@ -1,18 +1,26 @@
-use crate::containers::{Symbol, Values};
-use crate::linalg::{Diff, DiffResult, Dim, DualVec, MatrixX, VectorX};
-use crate::variables::Variable;
-use paste::paste;
 use std::fmt;
 
-type DualVar<V> = <V as Variable>::Dual;
+use crate::{
+    containers::{Symbol, Values},
+    dtype,
+    linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
+    variables::Variable,
+};
+
+type Alias<V, D> = <V as Variable>::Alias<D>;
 
 // ------------------------- Base Residual Trait & Helpers ------------------------- //
 pub trait Residual: fmt::Debug {
-    type DimOut: Dim;
-    type NumVars: Dim;
+    type DimIn: DimName;
+    type DimOut: DimName;
+    type NumVars: DimName;
+
+    fn dim_in(&self) -> usize {
+        Self::DimIn::USIZE
+    }
 
     fn dim_out(&self) -> usize {
-        Self::DimOut::try_to_usize().unwrap()
+        Self::DimOut::USIZE
     }
 
     fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
@@ -21,12 +29,24 @@ pub trait Residual: fmt::Debug {
 }
 
 pub trait ResidualSafe {
+    fn dim_in(&self) -> usize;
+
+    fn dim_out(&self) -> usize;
+
     fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
 
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
 impl<T: Residual> ResidualSafe for T {
+    fn dim_in(&self) -> usize {
+        T::DimIn::USIZE
+    }
+
+    fn dim_out(&self) -> usize {
+        T::DimOut::USIZE
+    }
+
     fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
         self.residual(values, keys)
     }
@@ -36,21 +56,25 @@ impl<T: Residual> ResidualSafe for T {
     }
 }
 
-// ------------------------- Use Macro to create residuals with set sizes ------------------------- //
+// ------------------------- Use Macro to create residuals with set sizes -------------------------
+// //
+use paste::paste;
+
 macro_rules! residual_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
             pub trait [<Residual $num>]: Residual
             {
                 $(
-                    type $var: Variable;
+                    type $var: Variable<Alias<dtype> = Self::$var>;
                 )*
-                type DimOut: Dim;
+                type DimIn: DimName;
+                type DimOut: DimName;
                 type Differ: Diff;
 
-                fn [<residual $num>](&self, $($name: DualVar<Self::$var>,)*) -> VectorX<DualVec>;
+                fn [<residual $num>]<D: Numeric>(&self, $($name: Alias<Self::$var, D>,)*) -> VectorX<D>;
 
-                fn [<residual $num _single>](&self, values: &Values, keys: &[Symbol]) -> VectorX
+                fn [<residual $num _values>](&self, values: &Values, keys: &[Symbol]) -> VectorX
                 where
                     $(
                         Self::$var: 'static,
@@ -62,8 +86,9 @@ macro_rules! residual_maker {
                             panic!("Key not found in values: {:?} with type {}", keys[$idx], std::any::type_name::<Self::$var>())
                         });
                     )*
-                    self.[<residual $num>]($($name.dual_self(),)*).map(|r| r.re)
+                    self.[<residual $num>]($($name.clone(),)*)
                 }
+
 
                 fn [<residual $num _jacobian>](&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>
                 where

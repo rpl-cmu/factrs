@@ -1,6 +1,6 @@
-use ahash::HashMap;
-
 use std::collections::hash_map::Iter as HashMapIter;
+
+use ahash::HashMap;
 
 use super::{Symbol, Values};
 
@@ -12,12 +12,12 @@ pub struct Idx {
 }
 
 #[derive(Debug, Clone)]
-pub struct Order {
+pub struct ValuesOrder {
     map: HashMap<Symbol, Idx>,
     dim: usize,
 }
 
-impl Order {
+impl ValuesOrder {
     pub fn new(map: HashMap<Symbol, Idx>) -> Self {
         let dim = map.values().map(|idx| idx.dim).sum();
         Self { map, dim }
@@ -81,7 +81,7 @@ mod test {
         v.insert(X(2), Vector3::default());
 
         // Create an order
-        let order = Order::from_values(&v);
+        let order = ValuesOrder::from_values(&v);
 
         // Verify the order
         assert_eq!(order.len(), 3);

@@ -1,7 +1,7 @@
 use crate::{
     containers::{Symbol, Values},
     dtype,
-    linalg::{Const, DiffResult, MatrixBlock},
+    linalg::{AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, MatrixBlock},
     linear::LinearFactor,
     noise::{GaussianNoise, NoiseModel, NoiseModelSafe},
     residuals::{Residual, ResidualSafe},
@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub struct Factor {
-    keys: Vec<Symbol>,
+    pub keys: Vec<Symbol>,
     residual: Box<dyn ResidualSafe>,
     noise: Box<dyn NoiseModelSafe>,
     robust: Box<dyn RobustCostSafe>,
@@ -22,6 +22,8 @@ impl Factor {
     ) -> Self
     where
         R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        AllocatorBuffer<R::DimIn>: Sync + Send,
+        DefaultAllocator: DualAllocator<R::DimIn>,
     {
         Self {
             keys: keys.to_vec(),
@@ -39,6 +41,8 @@ impl Factor {
     where
         R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
         N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
+        AllocatorBuffer<R::DimIn>: Sync + Send,
+        DefaultAllocator: DualAllocator<R::DimIn>,
     {
         Self {
             keys: keys.to_vec(),
@@ -56,6 +60,8 @@ impl Factor {
     ) -> Self
     where
         R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        AllocatorBuffer<R::DimIn>: Sync + Send,
+        DefaultAllocator: DualAllocator<R::DimIn>,
         N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
         C: 'static + RobustCost,
     {
@@ -72,6 +78,10 @@ impl Factor {
         let r = self.noise.whiten_vec(r.as_view());
         let norm2 = r.norm_squared();
         self.robust.loss(norm2)
+    }
+
+    pub fn dim_out(&self) -> usize {
+        self.residual.dim_out()
     }
 
     pub fn linearize(&self, values: &Values) -> LinearFactor {
@@ -107,17 +117,17 @@ impl Factor {
 #[cfg(test)]
 mod tests {
 
+    use matrixcompare::assert_matrix_eq;
+
+    use super::*;
     use crate::{
         containers::X,
-        linalg::{NumericalDiff, Vector3},
+        linalg::{Diff, NumericalDiff, Vector3},
         noise::GaussianNoise,
         residuals::{BetweenResidual, PriorResidual},
         robust::GemanMcClure,
         variables::Variable,
     };
-    use matrixcompare::assert_matrix_eq;
-
-    use super::*;
 
     #[cfg(not(feature = "f32"))]
     const PWR: i32 = 6;
@@ -134,7 +144,7 @@ mod tests {
         let prior = Vector3::new(1.0, 2.0, 3.0);
         let x = <Vector3 as Variable>::identity();
 
-        let residual = PriorResidual::new(&prior);
+        let residual = PriorResidual::new(prior);
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
@@ -164,7 +174,7 @@ mod tests {
         let bet = Vector3::new(1.0, 2.0, 3.0);
         let x = <Vector3 as Variable>::identity();
 
-        let residual = BetweenResidual::new(&bet);
+        let residual = BetweenResidual::new(bet);
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 

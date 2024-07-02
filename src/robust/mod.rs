@@ -261,22 +261,22 @@ mod test {
     use matrixcompare::assert_scalar_eq;
 
     use super::*;
-    use crate::linalg::NumericalDiff;
+    use crate::linalg::numerical_derivative;
 
     #[cfg(not(feature = "f32"))]
-    const PWR: i32 = 6;
+    const EPS: dtype = 1e-6;
     #[cfg(not(feature = "f32"))]
-    const TOL: f64 = 1e-6;
+    const TOL: dtype = 1e-6;
 
     #[cfg(feature = "f32")]
-    const PWR: i32 = 3;
+    const EPS: dtype = 1e-33;
     #[cfg(feature = "f32")]
-    const TOL: f32 = 1e-2;
+    const TOL: dtype = 1e-2;
 
     fn test_weight(robust: &impl RobustCost, d: dtype) {
         let got = robust.weight(d * d);
         // weight = loss'(d) / d
-        let actual = NumericalDiff::<PWR>::derivative(|d| robust.loss(d * d), d).diff / d;
+        let actual = numerical_derivative(|d| robust.loss(d * d), d, EPS).diff / d;
 
         println!("Weight got: {}, Weight actual: {}", got, actual);
         assert_scalar_eq!(got, actual, comp = abs, tol = TOL);

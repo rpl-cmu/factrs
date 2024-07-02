@@ -1,23 +1,37 @@
-use nalgebra::dvector;
-
-use crate::dtype;
-use crate::linalg::{
-    Const, DualNum, DualVec, Matrix2, Matrix2x3, Matrix3, MatrixView, Vector2, VectorView2,
-    VectorView3, VectorViewX, VectorX,
-};
-use crate::variables::{MatrixLieGroup, Variable, SO2};
-use std::fmt;
-use std::ops;
+use std::{fmt, ops};
 
 use super::Vector3;
+use crate::{
+    dtype,
+    linalg::{
+        dvector,
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DimName,
+        DualAllocator,
+        DualVector,
+        Matrix2,
+        Matrix2x3,
+        Matrix3,
+        MatrixView,
+        Numeric,
+        Vector2,
+        VectorView2,
+        VectorView3,
+        VectorViewX,
+        VectorX,
+    },
+    variables::{MatrixLieGroup, Variable, SO2},
+};
 
 #[derive(Clone)]
-pub struct SE2<D: DualNum = dtype> {
+pub struct SE2<D: Numeric = dtype> {
     rot: SO2<D>,
     xy: Vector2<D>,
 }
 
-impl<D: DualNum> SE2<D> {
+impl<D: Numeric> SE2<D> {
     pub fn new(theta: D, x: D, y: D) -> Self {
         SE2 {
             rot: SO2::from_theta(theta),
@@ -26,21 +40,21 @@ impl<D: DualNum> SE2<D> {
     }
 
     pub fn x(&self) -> D {
-        self.xy[0].clone()
+        self.xy[0]
     }
 
     pub fn y(&self) -> D {
-        self.xy[1].clone()
+        self.xy[1]
     }
 
     pub fn theta(&self) -> D {
-        self.rot.log()[0].clone()
+        self.rot.log()[0]
     }
 }
 
-impl<D: DualNum> Variable<D> for SE2<D> {
+impl<D: Numeric> Variable<D> for SE2<D> {
     type Dim = Const<3>;
-    type Dual = SE2<DualVec>;
+    type Alias<DD: Numeric> = SE2<DD>;
 
     fn identity() -> Self {
         SE2 {
@@ -52,7 +66,7 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     fn compose(&self, other: &Self) -> Self {
         SE2 {
             rot: &self.rot * &other.rot,
-            xy: self.rot.apply(other.xy.as_view()) + &self.xy,
+            xy: self.rot.apply(other.xy.as_view()) + self.xy,
         }
     }
 
@@ -67,8 +81,8 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     #[allow(non_snake_case)]
     #[allow(clippy::needless_borrow)]
     fn exp(xi: VectorViewX<D>) -> Self {
-        let theta = xi[0].clone();
-        let xy = Vector2::new(xi[1].clone(), xi[2].clone());
+        let theta = xi[0];
+        let xy = Vector2::new(xi[1], xi[2]);
 
         let rot = SO2::<D>::exp(xi.rows(0, 1));
 
@@ -81,10 +95,10 @@ impl<D: DualNum> Variable<D> for SE2<D> {
                 A = D::from(1.0);
                 B = D::from(0.0);
             } else {
-                A = (&theta).sin() / (&theta);
-                B = (D::from(1.0) - (&theta).cos()) / (&theta);
+                A = theta.sin() / theta;
+                B = (D::from(1.0) - theta.cos()) / theta;
             };
-            let V = Matrix2::new(A.clone(), -B.clone(), B, A);
+            let V = Matrix2::new(A, -B, B, A);
             V * xy
         };
 
@@ -94,7 +108,7 @@ impl<D: DualNum> Variable<D> for SE2<D> {
     #[allow(non_snake_case)]
     #[allow(clippy::needless_borrow)]
     fn log(&self) -> VectorX<D> {
-        let theta = self.rot.log()[0].clone();
+        let theta = self.rot.log()[0];
 
         let xy = if cfg!(feature = "fake_exp") {
             &self.xy
@@ -105,27 +119,39 @@ impl<D: DualNum> Variable<D> for SE2<D> {
                 A = D::from(1.0);
                 B = D::from(0.0);
             } else {
-                A = (&theta).sin() / (&theta);
-                B = (D::from(1.0) - (&theta).cos()) / (&theta);
+                A = theta.sin() / theta;
+                B = (D::from(1.0) - theta.cos()) / theta;
             };
-            let V = Matrix2::new(A.clone(), -B.clone(), B, A);
+            let V = Matrix2::new(A, -B, B, A);
 
             let Vinv = V.try_inverse().expect("V is not invertible");
-            &(&Vinv * &self.xy)
+            &(Vinv * self.xy)
         };
 
-        dvector![theta, xy[0].clone(), xy[1].clone()]
+        dvector![theta, xy[0], xy[1]]
     }
 
-    fn dual_self(&self) -> Self::Dual {
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SE2 {
-            rot: self.rot.dual_self(),
-            xy: self.xy.dual_self(),
+            rot: SO2::<D>::dual_convert(&other.rot),
+            xy: Vector2::<D>::dual_convert(&other.xy),
+        }
+    }
+
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy,
+    {
+        SE2 {
+            rot: SO2::<dtype>::dual_setup(idx),
+            xy: Vector2::<dtype>::dual_setup(idx + 1),
         }
     }
 }
 
-impl<D: DualNum> MatrixLieGroup<D> for SE2<D> {
+impl<D: Numeric> MatrixLieGroup<D> for SE2<D> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<2>;
@@ -136,29 +162,29 @@ impl<D: DualNum> MatrixLieGroup<D> for SE2<D> {
         let r_mat = self.rot.to_matrix();
 
         mat.fixed_view_mut::<2, 2>(0, 0).copy_from(&r_mat);
-        mat[(0, 2)] = self.xy[2].clone();
-        mat[(1, 2)] = -self.xy[1].clone();
+        mat[(0, 2)] = self.xy[2];
+        mat[(1, 2)] = -self.xy[1];
 
         mat
     }
 
     fn hat(xi: VectorView3<D>) -> Matrix3<D> {
         let mut mat = Matrix3::<D>::zeros();
-        mat[(0, 1)] = -xi[0].clone();
-        mat[(1, 0)] = xi[0].clone();
+        mat[(0, 1)] = -xi[0];
+        mat[(1, 0)] = xi[0];
 
-        mat[(0, 2)] = xi[1].clone();
-        mat[(1, 2)] = xi[2].clone();
+        mat[(0, 2)] = xi[1];
+        mat[(1, 2)] = xi[2];
 
         mat
     }
 
     fn vee(xi: MatrixView<3, 3, D>) -> Vector3<D> {
-        Vector3::new(xi[(1, 0)].clone(), xi[(0, 1)].clone(), xi[(0, 2)].clone())
+        Vector3::new(xi[(1, 0)], xi[(0, 1)], xi[(0, 2)])
     }
 
     fn apply(&self, v: VectorView2<D>) -> Vector2<D> {
-        &self.rot.apply(v) + &self.xy
+        self.rot.apply(v) + self.xy
     }
 
     fn hat_swap(xi: VectorView2<D>) -> Matrix2x3<D> {
@@ -189,7 +215,7 @@ impl<D: DualNum> MatrixLieGroup<D> for SE2<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for SE2<D> {
+impl<D: Numeric> ops::Mul for SE2<D> {
     type Output = SE2<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -197,7 +223,7 @@ impl<D: DualNum> ops::Mul for SE2<D> {
     }
 }
 
-impl<D: DualNum> ops::Mul for &SE2<D> {
+impl<D: Numeric> ops::Mul for &SE2<D> {
     type Output = SE2<D>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -205,7 +231,7 @@ impl<D: DualNum> ops::Mul for &SE2<D> {
     }
 }
 
-impl<D: DualNum> fmt::Display for SE2<D> {
+impl<D: Numeric> fmt::Display for SE2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -217,16 +243,19 @@ impl<D: DualNum> fmt::Display for SE2<D> {
     }
 }
 
-impl<D: DualNum> fmt::Debug for SE2<D> {
+impl<D: Numeric> fmt::Debug for SE2<D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        write!(
+            f,
+            "SE2({:?}, x: {:.3}, y: {:.3})",
+            self.rot, self.xy[0], self.xy[1]
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{test_lie, test_variable};
 
     test_variable!(SO2);

@@ -43,8 +43,13 @@ pub trait Optimizer {
         self.graph().error(values)
     }
 
+    fn init(&mut self, _values: &Values) {}
+
     // TODO: Custom logging based on optimizer
     fn optimize(&mut self, mut values: Values) -> OptResult {
+        // Setup up everything from our values
+        self.init(&values);
+
         // Check if we need to optimize at all
         let mut error_old = self.error(&values);
         if error_old <= self.params().error_tol {

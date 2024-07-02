@@ -1,45 +1,77 @@
 use super::{Residual, Residual1};
-use crate::containers::Values;
-use crate::impl_residual;
-use crate::linalg::{DiffResult, DualVec, ForwardProp, MatrixX, VectorX};
-use crate::variables::Variable;
+use crate::{
+    containers::{Symbol, Values},
+    dtype,
+    linalg::{
+        AllocatorBuffer,
+        Const,
+        DefaultAllocator,
+        DiffResult,
+        DualAllocator,
+        DualVector,
+        ForwardProp,
+        MatrixX,
+        Numeric,
+        VectorX,
+    },
+    variables::Variable,
+};
 
 #[derive(Clone, Debug, derive_more::Display)]
 pub struct PriorResidual<P: Variable> {
-    prior: P::Dual,
+    prior: P,
 }
 
-impl<P: Variable> PriorResidual<P> {
-    pub fn new(prior: &P) -> Self {
-        Self {
-            prior: prior.dual_self(),
-        }
+impl<P: Variable<Alias<dtype> = P>> PriorResidual<P> {
+    pub fn new(prior: P) -> Self {
+        Self { prior }
     }
 }
 
-impl<P: Variable + 'static> Residual1 for PriorResidual<P> {
-    type DimOut = P::Dim;
+impl<P: Variable<Alias<dtype> = P> + 'static> Residual1 for PriorResidual<P>
+where
+    AllocatorBuffer<P::Dim>: Sync + Send,
+    DefaultAllocator: DualAllocator<P::Dim>,
+    DualVector<P::Dim>: Copy,
+{
+    type Differ = ForwardProp<P::Dim>;
     type V1 = P;
-    type Differ = ForwardProp;
+    type DimIn = P::Dim;
+    type DimOut = P::Dim;
 
-    fn residual1(&self, v: <Self::V1 as Variable>::Dual) -> VectorX<DualVec> {
-        self.prior.ominus(&v)
+    fn residual1<D: Numeric>(&self, v: <Self::V1 as Variable>::Alias<D>) -> VectorX<D> {
+        Self::V1::dual_convert::<D>(&self.prior).ominus(&v)
     }
 }
 
-impl_residual!(1, PriorResidual<P : Variable>, P);
+impl<P: Variable<Alias<dtype> = P> + 'static> Residual for PriorResidual<P>
+where
+    AllocatorBuffer<P::Dim>: Sync + Send,
+    DefaultAllocator: DualAllocator<P::Dim>,
+    DualVector<P::Dim>: Copy,
+{
+    type DimIn = <Self as Residual1>::DimIn;
+    type DimOut = <Self as Residual1>::DimOut;
+    type NumVars = Const<1>;
+    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
+        self.residual1_values(values, keys)
+    }
+    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
+        self.residual1_jacobian(values, keys)
+    }
+}
 
 #[cfg(test)]
 mod test {
 
+    use matrixcompare::assert_matrix_eq;
+
     use super::*;
     use crate::{
         containers::X,
-        linalg::dvector,
-        linalg::NumericalDiff,
+        linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
         variables::{Vector3, SE3, SO3},
     };
-    use matrixcompare::assert_matrix_eq;
 
     #[cfg(not(feature = "f32"))]
     const PWR: i32 = 6;
@@ -51,8 +83,14 @@ mod test {
     #[cfg(feature = "f32")]
     const TOL: f32 = 1e-3;
 
-    fn test_prior_jacobian<P: Variable + 'static>(prior: P) {
-        let prior_residual = PriorResidual::new(&prior);
+    fn test_prior_jacobian<P>(prior: P)
+    where
+        P: Variable<Alias<dtype> = P> + 'static,
+        AllocatorBuffer<P::Dim>: Sync + Send,
+        DefaultAllocator: DualAllocator<P::Dim>,
+        DualVector<P::Dim>: Copy,
+    {
+        let prior_residual = PriorResidual::new(prior);
 
         let x1 = P::identity();
         let mut values = Values::new();
@@ -62,7 +100,7 @@ mod test {
         let f = |v: P| {
             let mut vals = Values::new();
             vals.insert(X(0), v.clone());
-            Residual1::residual1_single(&prior_residual, &vals, &[X(0)])
+            Residual1::residual1_values(&prior_residual, &vals, &[X(0)])
         };
         let jac_n = NumericalDiff::<PWR>::jacobian_1(f, &x1).diff;
 
