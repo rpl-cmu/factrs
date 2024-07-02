@@ -78,7 +78,7 @@ fn main() {
     match result {
         Ok(sol) => {
             println!("Optimization successful!");
-            visualize(&init, &sol);
+            // visualize(&init, &sol);
         }
         Err(e) => {
             println!("Optimization failed: {:?}", e);

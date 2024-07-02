@@ -81,7 +81,10 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor = Factor::new_base(&[key.clone()], PriorResidual::new(var.clone()));
+                    let noise =
+                        GaussianNoise::<6>::from_diag_covs(1e-6, 1e-6, 1e-6, 1e-4, 1e-4, 1e-4);
+                    let factor =
+                        Factor::new_noise(&[key.clone()], PriorResidual::new(var.clone()), noise);
                     graph.add_factor(factor);
                 }
 
@@ -122,22 +125,13 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let m66 = parts[30].parse::<dtype>().unwrap();
                 #[rustfmt::skip]
                 let inf = Matrix6::new(
-                    m11, m12, m13, m14, m15, m16,
-                    m12, m22, m23, m24, m25, m26,
-                    m13, m23, m33, m34, m35, m36,
-                    m14, m24, m34, m44, m45, m46,
-                    m15, m25, m35, m45, m55, m56,
-                    m16, m26, m36, m46, m56, m66,
+                    m44, m45, m46, m14, m15, m16,
+                    m45, m55, m56, m24, m25, m26,
+                    m46, m56, m66, m34, m35, m36,
+                    m14, m24, m34, m11, m12, m13,
+                    m15, m25, m35, m12, m22, m23,
+                    m16, m26, m36, m13, m23, m33,
                 );
-                // #[rustfmt::skip]
-                // let inf = Matrix6::new(
-                //     m44, m45, m46, m14, m15, m16,
-                //     m45, m55, m56, m24, m25, m26,
-                //     m46, m56, m66, m34, m35, m36,
-                //     m14, m24, m34, m11, m12, m13,
-                //     m15, m25, m35, m12, m22, m23,
-                //     m16, m26, m36, m13, m23, m33,
-                // );
 
                 let rot = SO3::from_xyzw(qx, qy, qz, qw);
                 let xyz = Vector3::new(x, y, z);

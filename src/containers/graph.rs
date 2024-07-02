@@ -18,6 +18,14 @@ impl Graph {
         self.factors.push(factor);
     }
 
+    pub fn len(&self) -> usize {
+        self.factors.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.factors.is_empty()
+    }
+
     pub fn error(&self, values: &Values) -> dtype {
         self.factors.iter().map(|f| f.error(values)).sum()
     }

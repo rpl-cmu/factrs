@@ -20,6 +20,10 @@ impl<D: Numeric> SE3<D> {
     pub fn from_rot_trans(rot: SO3<D>, xyz: Vector3<D>) -> Self {
         SE3 { rot, xyz }
     }
+
+    pub fn rot(&self) -> &SO3<D> {
+        &self.rot
+    }
 }
 
 impl<D: Numeric> Variable<D> for SE3<D> {
