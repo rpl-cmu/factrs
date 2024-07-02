@@ -2,6 +2,7 @@ use super::{Residual, Residual1};
 use crate::{
     containers::{Symbol, Values},
     dtype,
+    impl_safe_residual,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -12,12 +13,32 @@ use crate::{
         ForwardProp,
         MatrixX,
         Numeric,
+        Vector1,
+        Vector2,
+        Vector3,
+        Vector4,
+        Vector5,
+        Vector6,
         VectorX,
     },
-    variables::{Variable, VariableSafe},
+    variables::{Variable, VariableSafe, SE2, SE3, SO2, SO3},
 };
 
+impl_safe_residual!(
+    PriorResidual<Vector1>,
+    PriorResidual<Vector2>,
+    PriorResidual<Vector3>,
+    PriorResidual<Vector4>,
+    PriorResidual<Vector5>,
+    PriorResidual<Vector6>,
+    PriorResidual<SE2>,
+    PriorResidual<SE3>,
+    PriorResidual<SO2>,
+    PriorResidual<SO3>,
+);
+
 #[derive(Clone, Debug, derive_more::Display)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct PriorResidual<P: Variable> {
     prior: P,
 }

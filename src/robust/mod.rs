@@ -1,14 +1,16 @@
+use std::fmt::{Debug, Display};
+
 use crate::dtype;
 
 // TODO: Consider changing names to \rho and w
-pub trait RobustCost: Default {
+pub trait RobustCost: Default + Debug {
     fn loss(&self, d2: dtype) -> dtype;
 
     fn weight(&self, d2: dtype) -> dtype;
 }
 
 #[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
-pub trait RobustCostSafe {
+pub trait RobustCostSafe: Debug {
     fn loss(&self, d2: dtype) -> dtype;
 
     fn weight(&self, d2: dtype) -> dtype;
@@ -35,6 +37,7 @@ macro_rules! impl_safe_robust {
 impl_safe_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
 
 // ------------------------- L2 Norm ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct L2;
 
@@ -55,6 +58,7 @@ impl RobustCost for L2 {
 }
 
 // ------------------------- L1 Norm ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct L1;
 
@@ -79,6 +83,7 @@ impl RobustCost for L1 {
 }
 
 // ------------------------- Huber ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Huber {
     k: dtype,
@@ -117,6 +122,7 @@ impl RobustCost for Huber {
 }
 
 // ------------------------- Fair ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Fair {
     c: dtype,
@@ -146,6 +152,7 @@ impl RobustCost for Fair {
 }
 
 // ------------------------- Cauchy ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cauchy {
     c2: dtype,
@@ -176,6 +183,7 @@ impl RobustCost for Cauchy {
 }
 
 // ------------------------- Geman-McClure ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GemanMcClure {
     c2: dtype,
@@ -208,6 +216,7 @@ impl RobustCost for GemanMcClure {
 }
 
 // ------------------------- Welsch ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Welsch {
     c2: dtype,
@@ -238,6 +247,7 @@ impl RobustCost for Welsch {
 }
 
 // ------------------------- Tukey ------------------------- //
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tukey {
     c2: dtype,

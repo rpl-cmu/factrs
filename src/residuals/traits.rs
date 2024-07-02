@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{Debug, Display};
 
 use crate::{
     containers::{Symbol, Values},
@@ -10,7 +10,7 @@ use crate::{
 type Alias<V, D> = <V as Variable>::Alias<D>;
 
 // ------------------------- Base Residual Trait & Helpers ------------------------- //
-pub trait Residual: fmt::Debug {
+pub trait Residual: Debug + Display {
     type DimIn: DimName;
     type DimOut: DimName;
     type NumVars: DimName;
@@ -28,7 +28,8 @@ pub trait Residual: fmt::Debug {
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
-pub trait ResidualSafe {
+#[cfg_attr(feature = "serde", typetag::serde(tag = "type"))]
+pub trait ResidualSafe: Debug + Display {
     fn dim_in(&self) -> usize;
 
     fn dim_out(&self) -> usize;
@@ -36,24 +37,6 @@ pub trait ResidualSafe {
     fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
 
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
-}
-
-impl<T: Residual> ResidualSafe for T {
-    fn dim_in(&self) -> usize {
-        T::DimIn::USIZE
-    }
-
-    fn dim_out(&self) -> usize {
-        T::DimOut::USIZE
-    }
-
-    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
-        self.residual(values, keys)
-    }
-
-    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
-        self.residual_jacobian(values, keys)
-    }
 }
 
 // ------------------------- Use Macro to create residuals with set sizes -------------------------

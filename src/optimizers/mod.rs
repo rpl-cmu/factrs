@@ -22,7 +22,7 @@ pub mod test {
         factors::Factor,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{GaussianNoise, NoiseModelSafe},
-        residuals::{BetweenResidual, PriorResidual},
+        residuals::{BetweenResidual, PriorResidual, ResidualSafe},
         variables::{Variable, VariableSafe},
     };
 
@@ -30,6 +30,7 @@ pub mod test {
     where
         T: 'static + Variable<Dim = nalgebra::Const<DIM>, Alias<dtype> = T> + VariableSafe,
         GaussianNoise<DIM>: NoiseModelSafe,
+        PriorResidual<T>: ResidualSafe,
         O: Optimizer,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);

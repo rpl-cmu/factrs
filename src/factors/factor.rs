@@ -8,6 +8,8 @@ use crate::{
     robust::{RobustCostSafe, L2},
 };
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
     pub keys: Vec<Symbol>,
     residual: Box<dyn ResidualSafe>,

@@ -4,6 +4,7 @@ use super::{Residual, Residual2};
 use crate::{
     containers::{Symbol, Values},
     dtype,
+    impl_safe_residual,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -14,13 +15,33 @@ use crate::{
         ForwardProp,
         MatrixX,
         Numeric,
+        Vector1,
+        Vector2,
+        Vector3,
+        Vector4,
+        Vector5,
+        Vector6,
         VectorX,
     },
-    variables::{Variable, VariableSafe},
+    variables::{Variable, VariableSafe, SE2, SE3, SO2, SO3},
 };
+
+impl_safe_residual!(
+    BetweenResidual<Vector1>,
+    BetweenResidual<Vector2>,
+    BetweenResidual<Vector3>,
+    BetweenResidual<Vector4>,
+    BetweenResidual<Vector5>,
+    BetweenResidual<Vector6>,
+    BetweenResidual<SE2>,
+    BetweenResidual<SE3>,
+    BetweenResidual<SO2>,
+    BetweenResidual<SO3>,
+);
 
 // Between Variable
 #[derive(Clone, Debug, derive_more::Display)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct BetweenResidual<P: Variable> {
     delta: P,
 }
