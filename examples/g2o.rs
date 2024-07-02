@@ -76,7 +76,7 @@ fn main() {
     println!("Optimization took: {:?}", duration);
 
     match result {
-        Ok(sol) => {
+        Ok(_sol) => {
             println!("Optimization successful!");
             // visualize(&init, &sol);
         }

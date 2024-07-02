@@ -1,8 +1,9 @@
 use crate::{
     dtype,
     linalg::{
-        dvector, Const, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorView3, VectorViewX,
-        VectorX,
+        dvector, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
+        DualVector, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorDim, VectorView3,
+        VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
 };
@@ -98,6 +99,32 @@ impl<D: Numeric> Variable<D> for SO3<D> {
         SO3 {
             xyzw: Vector4::<dtype>::dual_convert(&other.xyzw),
         }
+    }
+
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy,
+    {
+        let mut x = DualVector::<N>::from_re(0.0);
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx] = 0.5;
+        x.eps = Derivative::new(Some(eps));
+
+        let mut y = DualVector::<N>::from_re(0.0);
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx + 1] = 0.5;
+        y.eps = Derivative::new(Some(eps));
+
+        let mut z = DualVector::<N>::from_re(0.0);
+        let mut eps = VectorDim::<N>::zeros();
+        eps[idx + 2] = 0.5;
+        z.eps = Derivative::new(Some(eps));
+
+        let w = DualVector::<N>::from_re(1.0);
+
+        SO3::from_xyzw(x, y, z, w)
     }
 }
 

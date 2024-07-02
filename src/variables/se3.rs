@@ -1,8 +1,9 @@
 use crate::{
     dtype,
     linalg::{
-        Const, Matrix3, Matrix3x6, Matrix4, Matrix6, MatrixView, Numeric, Vector3, VectorView3,
-        VectorView6, VectorViewX, VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Matrix3,
+        Matrix3x6, Matrix4, Matrix6, MatrixView, Numeric, Vector3, VectorView3, VectorView6,
+        VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable, SO3},
 };
@@ -122,6 +123,18 @@ impl<D: Numeric> Variable<D> for SE3<D> {
         SE3 {
             rot: SO3::<D>::dual_convert(&other.rot),
             xyz: Vector3::<D>::dual_convert(&other.xyz),
+        }
+    }
+
+    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    where
+        AllocatorBuffer<N>: Sync + Send,
+        DefaultAllocator: DualAllocator<N>,
+        DualVector<N>: Copy,
+    {
+        SE3 {
+            rot: SO3::<dtype>::dual_setup(idx),
+            xyz: Vector3::<dtype>::dual_setup(idx + 3),
         }
     }
 }
