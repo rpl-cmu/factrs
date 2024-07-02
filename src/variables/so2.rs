@@ -3,6 +3,7 @@ use std::{fmt, ops};
 use super::{Vector1, Vector2};
 use crate::{
     dtype,
+    impl_variablesafe,
     linalg::{
         dvector,
         AllocatorBuffer,
@@ -25,7 +26,10 @@ use crate::{
     variables::{MatrixLieGroup, Variable},
 };
 
+impl_variablesafe!(SO2);
+
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SO2<D: Numeric = dtype> {
     a: D,
     b: D,

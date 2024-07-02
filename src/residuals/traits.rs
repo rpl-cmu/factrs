@@ -4,7 +4,7 @@ use crate::{
     containers::{Symbol, Values},
     dtype,
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
-    variables::Variable,
+    variables::{Variable, VariableSafe},
 };
 
 type Alias<V, D> = <V as Variable>::Alias<D>;
@@ -57,7 +57,6 @@ impl<T: Residual> ResidualSafe for T {
 }
 
 // ------------------------- Use Macro to create residuals with set sizes -------------------------
-// //
 use paste::paste;
 
 macro_rules! residual_maker {
@@ -66,7 +65,7 @@ macro_rules! residual_maker {
             pub trait [<Residual $num>]: Residual
             {
                 $(
-                    type $var: Variable<Alias<dtype> = Self::$var>;
+                    type $var: Variable<Alias<dtype> = Self::$var> + VariableSafe;
                 )*
                 type DimIn: DimName;
                 type DimOut: DimName;

@@ -3,6 +3,7 @@ use std::{fmt, ops};
 use super::Vector6;
 use crate::{
     dtype,
+    impl_variablesafe,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -25,7 +26,10 @@ use crate::{
     variables::{MatrixLieGroup, Variable, SO3},
 };
 
+impl_variablesafe!(SE3);
+
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SE3<D: Numeric = dtype> {
     rot: SO3<D>,
     xyz: Vector3<D>,

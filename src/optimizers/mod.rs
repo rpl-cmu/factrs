@@ -22,12 +22,12 @@ pub mod test {
         factors::Factor,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         residuals::{BetweenResidual, PriorResidual},
-        variables::Variable,
+        variables::{Variable, VariableSafe},
     };
 
     pub fn optimize_prior<O, T, const DIM: usize>()
     where
-        T: 'static + Variable<Dim = nalgebra::Const<DIM>, Alias<dtype> = T>,
+        T: 'static + Variable<Dim = nalgebra::Const<DIM>, Alias<dtype> = T> + VariableSafe,
         O: Optimizer,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);

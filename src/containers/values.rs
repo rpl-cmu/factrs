@@ -9,6 +9,7 @@ use crate::{linear::LinearValues, variables::VariableSafe};
 // we can just use dtype rather than using generics with Numeric
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
     values: AHashMap<Symbol, Box<dyn VariableSafe>>,
 }

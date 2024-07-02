@@ -9,7 +9,7 @@ macro_rules! assert_variable_eq {
     ($x:expr, $y:expr, comp = abs, tol = $tol:expr) => {
         matrixcompare::assert_matrix_eq!(
             $x.ominus(&$y),
-            VectorX::zeros($x.dim()),
+            VectorX::zeros($crate::variables::traits::Variable::dim(&$x)),
             comp = abs,
             tol = $tol
         );
@@ -156,5 +156,27 @@ macro_rules! test_lie {
 
             matrixcompare::assert_matrix_eq!(dx, dx_exp, comp = abs, tol = 1e-6);
         }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_variablesafe {
+($($var:ident),*) => {
+        $(
+            #[cfg_attr(feature = "serde", typetag::serde)]
+            impl $crate::variables::VariableSafe for $var {
+                fn clone_box(&self) -> Box<dyn $crate::variables::VariableSafe> {
+                    Box::new((*self).clone())
+                }
+
+                fn dim(&self) -> usize {
+                    $crate::variables::Variable::dim(self)
+                }
+
+                fn oplus_mut(&mut self, delta: VectorViewX) {
+                    *self = self.oplus(delta);
+                }
+            }
+        )*
     };
 }

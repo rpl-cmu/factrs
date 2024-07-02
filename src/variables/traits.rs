@@ -91,26 +91,13 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
+#[cfg_attr(feature = "serde", typetag::serde)]
 pub trait VariableSafe: Debug + Display + Downcast {
     fn clone_box(&self) -> Box<dyn VariableSafe>;
 
     fn dim(&self) -> usize;
 
     fn oplus_mut(&mut self, delta: VectorViewX);
-}
-
-impl<T: Variable + 'static> VariableSafe for T {
-    fn clone_box(&self) -> Box<dyn VariableSafe> {
-        Box::new((*self).clone())
-    }
-
-    fn dim(&self) -> usize {
-        self.dim()
-    }
-
-    fn oplus_mut(&mut self, delta: VectorViewX) {
-        *self = self.oplus(delta);
-    }
 }
 
 impl_downcast!(VariableSafe);

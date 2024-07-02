@@ -14,7 +14,7 @@ use crate::{
         Numeric,
         VectorX,
     },
-    variables::Variable,
+    variables::{Variable, VariableSafe},
 };
 
 #[derive(Clone, Debug, derive_more::Display)]
@@ -28,7 +28,7 @@ impl<P: Variable<Alias<dtype> = P>> PriorResidual<P> {
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + 'static> Residual1 for PriorResidual<P>
+impl<P: Variable<Alias<dtype> = P> + VariableSafe + 'static> Residual1 for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
@@ -44,7 +44,7 @@ where
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + 'static> Residual for PriorResidual<P>
+impl<P: Variable<Alias<dtype> = P> + VariableSafe + 'static> Residual for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
@@ -70,7 +70,7 @@ mod test {
     use crate::{
         containers::X,
         linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
-        variables::{Vector3, SE3, SO3},
+        variables::{VariableSafe, Vector3, SE3, SO3},
     };
 
     #[cfg(not(feature = "f32"))]
@@ -85,7 +85,7 @@ mod test {
 
     fn test_prior_jacobian<P>(prior: P)
     where
-        P: Variable<Alias<dtype> = P> + 'static,
+        P: Variable<Alias<dtype> = P> + VariableSafe + 'static,
         AllocatorBuffer<P::Dim>: Sync + Send,
         DefaultAllocator: DualAllocator<P::Dim>,
         DualVector<P::Dim>: Copy,

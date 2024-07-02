@@ -10,6 +10,7 @@ const CHR_MASK: u64 = (char::MAX as u64) << IDX_BITS;
 const IDX_MASK: u64 = !CHR_MASK;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Symbol(u64);
 
 impl Symbol {
