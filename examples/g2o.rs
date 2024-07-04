@@ -1,54 +1,9 @@
 use std::{env, time::Instant};
 
-use plotters::prelude::*;
 use samrs::{
-    containers::*,
     optimizers::{GaussNewton, Optimizer},
     utils::load_g20,
-    variables::*,
 };
-
-fn visualize(init: &Values, sol: &Values) {
-    let root_drawing_area = BitMapBackend::new("m3500_rs.png", (1024, 1024)).into_drawing_area();
-    root_drawing_area.fill(&WHITE).unwrap();
-
-    let mut scatter_ctx = ChartBuilder::on(&root_drawing_area)
-        .x_label_area_size(40)
-        .y_label_area_size(40)
-        .build_cartesian_2d(-50f64..50f64, -80f64..20f64)
-        .unwrap();
-    scatter_ctx
-        .configure_mesh()
-        .disable_x_mesh()
-        .disable_y_mesh()
-        .draw()
-        .unwrap();
-
-    // Draw the initial points
-    let size = init.len() as u64;
-    let init = (0..size)
-        .map(|i| (init.get_cast::<SE2>(&X(i)).unwrap()))
-        .collect::<Vec<_>>();
-
-    scatter_ctx
-        .draw_series(
-            init.iter()
-                .map(|x| Circle::new((x.x(), x.y()), 2, GREEN.filled())),
-        )
-        .unwrap();
-
-    let sol = (0..size)
-        .map(|i| (sol.get_cast::<SE2>(&X(i)).unwrap()))
-        .collect::<Vec<_>>();
-
-    scatter_ctx
-        .draw_series(
-            sol.iter()
-                .map(|x| Circle::new((x.x(), x.y()), 2, BLUE.filled())),
-        )
-        .unwrap();
-}
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -75,7 +30,6 @@ fn main() {
     match result {
         Ok(_sol) => {
             println!("Optimization successful!");
-            // visualize(&init, &sol);
         }
         Err(e) => {
             println!("Optimization failed: {:?}", e);

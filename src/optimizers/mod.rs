@@ -1,5 +1,5 @@
 mod traits;
-pub use traits::{OptError, OptResult, Optimizer, OptimizerParams};
+pub use traits::{OptError, OptResult, Optimizer, OptimizerCallback, OptimizerParams};
 
 mod macros;
 
