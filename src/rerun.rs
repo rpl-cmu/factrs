@@ -1,6 +1,37 @@
-use rerun::{Arrows2D, Points2D, Points3D, Quaternion, Rotation3D, Transform3D, Vec2D, Vec3D};
+use rerun::{
+    Arrows2D,
+    Arrows3D,
+    Points2D,
+    Points3D,
+    Quaternion,
+    Rotation3D,
+    Transform3D,
+    Vec2D,
+    Vec3D,
+};
 
 use crate::variables::{MatrixLieGroup, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3};
+/*
+Each of our fact.rs types can be turned into a handful of rerun types. These include,
+
+VectorVar2 -> Vec2D, Points2D
+VectorVar3 -> Vec3D, Points3D
+
+SO2 -> Arrows2D
+SE2 -> Arrows2D, Points2D
+
+SO3 -> Rotation3D, Arrows3D
+SE3 -> Transform3D, Arrows3D, Points3D
+
+Furthermore, we can also convert iterators of these types into the corresponding rerun types. This is useful for visualizing multiple objects at once.
+
+VectorVar2 -> Points2D
+VectorVar3 -> Points3D
+
+SE2 -> Arrows2D, Points2D
+SE3 -> Arrows3D, Points3D
+
+*/
 
 // ------------------------- 2D Objects ------------------------- //
 // 2D Vectors
@@ -33,8 +64,9 @@ impl From<VectorVar2> for Points2D {
 impl<'a> From<&'a SO2> for Arrows2D {
     fn from(so2: &'a SO2) -> Arrows2D {
         let mat = so2.to_matrix().map(|x| x as f32);
-        Arrows2D::from_vectors([[mat[(0, 0)], mat[(0, 1)]], [mat[(1, 0)], mat[(1, 1)]]])
-            .with_colors([[255, 0, 0], [0, 255, 0]])
+        let x: [f32; 2] = mat.column(0).as_slice().try_into().unwrap();
+        let y: [f32; 2] = mat.column(1).as_slice().try_into().unwrap();
+        Arrows2D::from_vectors([x, y]).with_colors([[255, 0, 0], [0, 255, 0]])
     }
 }
 
@@ -47,7 +79,7 @@ impl From<SO2> for Arrows2D {
 // 2D SE2
 impl<'a> From<&'a SE2> for Arrows2D {
     fn from(se2: &'a SE2) -> Arrows2D {
-        let xy = [se2.x() as f32, se2.y() as f32];
+        let xy: [f32; 2] = se2.xy().map(|x| x as f32).as_slice().try_into().unwrap();
         let arrows: Arrows2D = se2.rot().into();
         arrows.with_origins([xy, xy])
     }
@@ -131,6 +163,22 @@ impl From<SO3> for Rotation3D {
     }
 }
 
+impl<'a> From<&'a SO3> for Arrows3D {
+    fn from(so3: &'a SO3) -> Arrows3D {
+        let mat = so3.to_matrix().map(|x| x as f32);
+        let x: [f32; 3] = mat.column(0).as_slice().try_into().unwrap();
+        let y: [f32; 3] = mat.column(1).as_slice().try_into().unwrap();
+        let z: [f32; 3] = mat.column(2).as_slice().try_into().unwrap();
+        Arrows3D::from_vectors([x, y, z]).with_colors([[255, 0, 0], [0, 255, 0], [0, 0, 255]])
+    }
+}
+
+impl From<SO3> for Arrows3D {
+    fn from(so3: SO3) -> Arrows3D {
+        (&so3).into()
+    }
+}
+
 // 3D Transforms
 impl<'a> From<&'a SE3> for Transform3D {
     fn from(se3: &'a SE3) -> Transform3D {
@@ -143,6 +191,20 @@ impl<'a> From<&'a SE3> for Transform3D {
 
 impl From<SE3> for Transform3D {
     fn from(se3: SE3) -> Transform3D {
+        (&se3).into()
+    }
+}
+
+impl<'a> From<&'a SE3> for Arrows3D {
+    fn from(se3: &'a SE3) -> Arrows3D {
+        let arrows: Arrows3D = se3.rot().into();
+        let xyz: [f32; 3] = se3.xyz().map(|x| x as f32).as_slice().try_into().unwrap();
+        arrows.with_origins([xyz, xyz, xyz])
+    }
+}
+
+impl From<SE3> for Arrows3D {
+    fn from(se3: SE3) -> Arrows3D {
         (&se3).into()
     }
 }
@@ -176,8 +238,19 @@ impl From<SE3> for Points3D {
 
 // ------------------------- All Together ------------------------- //
 // 2D Gatherers
-// TODO: Vectors into points
-// TODO: On non-reference versions
+impl<'a> FromIterator<&'a VectorVar2> for Points2D {
+    fn from_iter<I: IntoIterator<Item = &'a VectorVar2>>(iter: I) -> Points2D {
+        let mut points = Vec::new();
+
+        for v in iter {
+            let this: Vec2D = v.into();
+            points.push(this);
+        }
+
+        Points2D::new(points)
+    }
+}
+
 impl<'a> FromIterator<&'a SE2> for Arrows2D {
     fn from_iter<I: IntoIterator<Item = &'a SE2>>(iter: I) -> Arrows2D {
         let mut vectors = Vec::new();
@@ -219,9 +292,46 @@ impl<'a> FromIterator<&'a SE2> for Points2D {
 }
 
 // 3D Gatherers
-// TODO Vectors into points
-// TODO: SE3 into Arrows3D
-// TODO: On non-reference versions
+impl<'a> FromIterator<&'a VectorVar3> for Points3D {
+    fn from_iter<I: IntoIterator<Item = &'a VectorVar3>>(iter: I) -> Points3D {
+        let mut points = Vec::new();
+
+        for v in iter {
+            let this: Vec3D = v.into();
+            points.push(this);
+        }
+
+        Points3D::new(points)
+    }
+}
+
+impl<'a> FromIterator<&'a SE3> for Arrows3D {
+    fn from_iter<I: IntoIterator<Item = &'a SE3>>(iter: I) -> Arrows3D {
+        let mut vectors = Vec::new();
+        let mut origins = Vec::new();
+        let mut colors = Vec::new();
+
+        for se3 in iter {
+            let this: Arrows3D = se3.into();
+            vectors.extend_from_slice(&this.vectors);
+            origins.extend_from_slice(
+                &this
+                    .origins
+                    .expect("SE3 missing origins in conversion to rerun::Arrows3D"),
+            );
+            colors.extend_from_slice(
+                &this
+                    .colors
+                    .expect("SE3 missing colors in conversion to rerun::Arrows3D"),
+            );
+        }
+
+        Arrows3D::from_vectors(vectors)
+            .with_origins(origins)
+            .with_colors(colors)
+    }
+}
+
 impl<'a> FromIterator<&'a SE3> for Points3D {
     fn from_iter<I: IntoIterator<Item = &'a SE3>>(iter: I) -> Points3D {
         let mut points = Vec::new();

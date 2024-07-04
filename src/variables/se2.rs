@@ -40,6 +40,10 @@ impl<D: Numeric> SE2<D> {
         }
     }
 
+    pub fn xy(&self) -> VectorView2<D> {
+        self.xy.as_view()
+    }
+
     pub fn x(&self) -> D {
         self.xy[0]
     }
