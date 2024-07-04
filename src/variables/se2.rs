@@ -1,6 +1,6 @@
 use std::{fmt, ops};
 
-use super::Vector3;
+use super::VectorVar2;
 use crate::{
     dtype,
     linalg::{
@@ -17,6 +17,7 @@ use crate::{
         MatrixView,
         Numeric,
         Vector2,
+        Vector3,
         VectorView2,
         VectorView3,
         VectorViewX,
@@ -47,6 +48,10 @@ impl<D: Numeric> SE2<D> {
         self.xy[1]
     }
 
+    pub fn rot(&self) -> &SO2<D> {
+        &self.rot
+    }
+
     pub fn theta(&self) -> D {
         self.rot.log()[0]
     }
@@ -59,7 +64,7 @@ impl<D: Numeric> Variable<D> for SE2<D> {
     fn identity() -> Self {
         SE2 {
             rot: Variable::identity(),
-            xy: Variable::identity(),
+            xy: Vector2::zeros(),
         }
     }
 
@@ -134,7 +139,7 @@ impl<D: Numeric> Variable<D> for SE2<D> {
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SE2 {
             rot: SO2::<D>::dual_convert(&other.rot),
-            xy: Vector2::<D>::dual_convert(&other.xy),
+            xy: VectorVar2::<D>::dual_convert(&other.xy.into()).into(),
         }
     }
 
@@ -146,7 +151,7 @@ impl<D: Numeric> Variable<D> for SE2<D> {
     {
         SE2 {
             rot: SO2::<dtype>::dual_setup(idx),
-            xy: Vector2::<dtype>::dual_setup(idx + 1),
+            xy: VectorVar2::<dtype>::dual_setup(idx + 1).into(),
         }
     }
 }

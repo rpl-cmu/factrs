@@ -1,6 +1,5 @@
 use std::{fmt, ops};
 
-use super::{Vector1, Vector2};
 use crate::{
     dtype,
     linalg::{
@@ -16,6 +15,8 @@ use crate::{
         Matrix2,
         MatrixView,
         Numeric,
+        Vector1,
+        Vector2,
         VectorDim,
         VectorView1,
         VectorView2,
@@ -38,6 +39,10 @@ impl<D: Numeric> SO2<D> {
             a: (&theta).cos(),
             b: (&theta).sin(),
         }
+    }
+
+    pub fn to_theta(&self) -> D {
+        self.b.atan2(self.a)
     }
 }
 

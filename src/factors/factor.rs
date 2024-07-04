@@ -122,11 +122,11 @@ mod tests {
     use super::*;
     use crate::{
         containers::X,
-        linalg::{Diff, NumericalDiff, Vector3},
+        linalg::{Diff, NumericalDiff},
         noise::GaussianNoise,
         residuals::{BetweenResidual, PriorResidual},
         robust::GemanMcClure,
-        variables::Variable,
+        variables::{Variable, VectorVar3},
     };
 
     #[cfg(not(feature = "f32"))]
@@ -141,8 +141,8 @@ mod tests {
 
     #[test]
     fn linearize_a() {
-        let prior = Vector3::new(1.0, 2.0, 3.0);
-        let x = <Vector3 as Variable>::identity();
+        let prior = VectorVar3::new(1.0, 2.0, 3.0);
+        let x = VectorVar3::identity();
 
         let residual = PriorResidual::new(prior);
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
@@ -150,14 +150,14 @@ mod tests {
 
         let factor = Factor::new_full(&[X(0)], residual, noise, robust);
 
-        let f = |x: Vector3| {
+        let f = |x: VectorVar3| {
             let mut values = Values::new();
             values.insert(X(0), x);
             factor.error(&values)
         };
 
         let mut values = Values::new();
-        values.insert(X(0), x);
+        values.insert(X(0), x.clone());
 
         let linear = factor.linearize(&values);
         let grad_got = -linear.a.mat().transpose() * linear.b;
@@ -171,8 +171,8 @@ mod tests {
 
     #[test]
     fn linearize_block() {
-        let bet = Vector3::new(1.0, 2.0, 3.0);
-        let x = <Vector3 as Variable>::identity();
+        let bet = VectorVar3::new(1.0, 2.0, 3.0);
+        let x = <VectorVar3 as Variable>::identity();
 
         let residual = BetweenResidual::new(bet);
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
@@ -181,7 +181,7 @@ mod tests {
         let factor = Factor::new_full(&[X(0), X(1)], residual, noise, robust);
 
         let mut values = Values::new();
-        values.insert(X(0), x);
+        values.insert(X(0), x.clone());
         values.insert(X(1), x);
 
         let linear = factor.linearize(&values);

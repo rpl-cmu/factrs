@@ -1,5 +1,6 @@
 use std::{fmt, ops};
 
+use super::VectorVar4;
 use crate::{
     dtype,
     linalg::{
@@ -38,6 +39,22 @@ impl<D: Numeric> SO3<D> {
         SO3 {
             xyzw: Vector4::<D>::new(x, y, z, w),
         }
+    }
+
+    pub fn x(&self) -> D {
+        self.xyzw[0]
+    }
+
+    pub fn y(&self) -> D {
+        self.xyzw[1]
+    }
+
+    pub fn z(&self) -> D {
+        self.xyzw[2]
+    }
+
+    pub fn w(&self) -> D {
+        self.xyzw[3]
     }
 }
 
@@ -112,7 +129,7 @@ impl<D: Numeric> Variable<D> for SO3<D> {
 
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SO3 {
-            xyzw: Vector4::<dtype>::dual_convert(&other.xyzw),
+            xyzw: VectorVar4::<dtype>::dual_convert(&other.xyzw.into()).into(),
         }
     }
 

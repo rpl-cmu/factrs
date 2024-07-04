@@ -16,6 +16,11 @@ num-dual = "0.9.1"
 matrixcompare-core = { version = "0.1", optional = true }
 serde = {version = "1.0.203", optional = true }
 log = "0.4.21"
+rerun = { version = "0.16.1", optional = true}
+
+[[example]]
+name = "g2o"
+required-features = ["rerun"]
 
 
 [features]
@@ -25,6 +30,7 @@ fake_exp = []
 compare = ["dep:matrixcompare-core", "nalgebra/compare", "faer/matrixcompare"]
 serde = ["dep:serde", "nalgebra/serde", "faer/serde", "ahash/serde"]
 multithread = ["faer/rayon"]
+rerun = ["dep:rerun"]
 
 [dev-dependencies]
 matrixcompare = "0.3.0"

@@ -16,3 +16,6 @@ pub mod residuals;
 pub mod robust;
 pub mod utils;
 pub mod variables;
+
+#[cfg(feature = "rerun")]
+pub mod rerun;
