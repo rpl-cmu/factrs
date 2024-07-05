@@ -3,7 +3,7 @@ macro_rules! test_optimizer {
     ($optimizer:ident $(<$($gen:ident),* >)?) => {
         #[test]
         fn priorvector3() {
-            $crate::optimizers::test::optimize_prior::<$optimizer$(< $($gen),* >)?, $crate::variables::Vector3, 3>()
+            $crate::optimizers::test::optimize_prior::<$optimizer$(< $($gen),* >)?, $crate::variables::VectorVar3, 3>()
         }
 
         #[test]

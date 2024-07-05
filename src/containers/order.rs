@@ -69,16 +69,16 @@ mod test {
     use super::*;
     use crate::{
         containers::{Values, X},
-        variables::{Vector2, Vector3, Vector6},
+        variables::{Variable, VectorVar2, VectorVar3, VectorVar6},
     };
 
     #[test]
     fn from_values() {
         // Create some form of values
         let mut v = Values::new();
-        v.insert(X(0), Vector2::default());
-        v.insert(X(1), Vector6::default());
-        v.insert(X(2), Vector3::default());
+        v.insert(X(0), VectorVar2::identity());
+        v.insert(X(1), VectorVar6::identity());
+        v.insert(X(2), VectorVar3::identity());
 
         // Create an order
         let order = ValuesOrder::from_values(&v);

@@ -7,7 +7,7 @@ use crate::{
     containers::{Graph, Values, X},
     dtype,
     factors::Factor,
-    linalg::{Matrix3, Matrix6},
+    linalg::{Matrix3, Matrix6, Vector3},
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
     variables::*,

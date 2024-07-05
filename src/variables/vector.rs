@@ -1,3 +1,8 @@
+use std::{
+    fmt::{Debug, Display},
+    ops::Index,
+};
+
 use crate::{
     dtype,
     impl_safe_variable,
@@ -18,41 +23,48 @@ use crate::{
 };
 
 impl_safe_variable!(
-    Vector<1>,
-    Vector<2>,
-    Vector<3>,
-    Vector<4>,
-    Vector<5>,
-    Vector<6>,
+    VectorVar<1>,
+    VectorVar<2>,
+    VectorVar<3>,
+    VectorVar<4>,
+    VectorVar<5>,
+    VectorVar<6>,
 );
 
 // ------------------------- Our needs ------------------------- //
-impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {
+// We create a newtype specifically for vectors we're estimating over due to,
+// 1 - So we can manually implement Debug/Display
+// 2 - Overcome identity issues with the underlying Vector type
+// 3 - Impl Into<Rerun types>
+#[derive(Clone)]
+pub struct VectorVar<const N: usize, D: Numeric>(Vector<N, D>);
+
+impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
     type Dim = Const<N>;
-    type Alias<DD: Numeric> = Vector<N, DD>;
+    type Alias<DD: Numeric> = VectorVar<N, DD>;
 
     fn identity() -> Self {
-        Vector::zeros()
+        VectorVar(Vector::zeros())
     }
 
     fn inverse(&self) -> Self {
-        -self
+        VectorVar(-self.0)
     }
 
     fn compose(&self, other: &Self) -> Self {
-        self + other
+        VectorVar(self.0 + other.0)
     }
 
     fn exp(delta: VectorViewX<D>) -> Self {
-        Self::from_iterator(delta.iter().cloned())
+        VectorVar(Vector::from_iterator(delta.iter().cloned()))
     }
 
     fn log(&self) -> VectorX<D> {
-        VectorX::from_iterator(Self::DIM, self.iter().cloned())
+        VectorX::from_iterator(Self::DIM, self.0.iter().cloned())
     }
 
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
-        other.map(|x| x.into())
+        VectorVar(other.0.map(|x| x.into()))
     }
 
     // Mostly unncessary, but avoids having to convert VectorX to static vector
@@ -63,19 +75,85 @@ impl<const N: usize, D: Numeric> Variable<D> for Vector<N, D> {
         DualVector<NN>: Copy,
     {
         let n = VectorDim::<NN>::zeros().shape_generic().0;
-        let mut tv = Self::Alias::<DualVector<NN>>::zeros();
+        let mut tv = Vector::<N, DualVector<NN>>::zeros();
         for (i, tvi) in tv.iter_mut().enumerate() {
             tvi.eps = num_dual::Derivative::derivative_generic(n, Const::<1>, idx + i);
         }
-        tv
+        VectorVar(tv)
     }
 }
+
+// TODO: New methods for each size
+macro_rules! impl_vector_new {
+    ($($num:literal, [$($args:ident),*]);* $(;)?) => {$(
+        impl<D: Numeric> VectorVar<$num, D> {
+            pub fn new($($args: D),*) -> Self {
+                VectorVar(Vector::<$num, D>::new($($args),*))
+            }
+        }
+    )*};
+}
+
+impl_vector_new!(
+    1, [x];
+    2, [x, y];
+    3, [x, y, z];
+    4, [x, y, z, w];
+    5, [x, y, z, w, a];
+    6, [x, y, z, w, a, b];
+);
+
+impl<const N: usize, D: Numeric> From<Vector<N, D>> for VectorVar<N, D> {
+    fn from(v: Vector<N, D>) -> Self {
+        VectorVar(v)
+    }
+}
+
+impl<const N: usize, D: Numeric> From<VectorVar<N, D>> for Vector<N, D> {
+    fn from(v: VectorVar<N, D>) -> Self {
+        v.0
+    }
+}
+
+impl<const N: usize, D: Numeric> Display for VectorVar<N, D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Vector{}(", N)?;
+        for (i, x) in self.0.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:.3}", x)?;
+        }
+        write!(f, ")")
+    }
+}
+
+impl<const N: usize, D: Numeric> Debug for VectorVar<N, D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
+    }
+}
+
+impl<const N: usize, D: Numeric> Index<usize> for VectorVar<N, D> {
+    type Output = D;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+pub type VectorVar1<D = dtype> = VectorVar<1, D>;
+pub type VectorVar2<D = dtype> = VectorVar<2, D>;
+pub type VectorVar3<D = dtype> = VectorVar<3, D>;
+pub type VectorVar4<D = dtype> = VectorVar<4, D>;
+pub type VectorVar5<D = dtype> = VectorVar<5, D>;
+pub type VectorVar6<D = dtype> = VectorVar<6, D>;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{linalg::Vector6, test_variable};
+    use crate::test_variable;
 
     // Be lazy and only test Vector6 - others should work the same
-    test_variable!(Vector6);
+    test_variable!(VectorVar6);
 }

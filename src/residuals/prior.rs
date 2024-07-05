@@ -90,7 +90,7 @@ mod test {
     use crate::{
         containers::X,
         linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
-        variables::{Vector3, SE3, SO3},
+        variables::{VectorVar3, SE3, SO3},
     };
 
     #[cfg(not(feature = "f32"))]
@@ -132,7 +132,7 @@ mod test {
 
     #[test]
     fn prior_linear() {
-        test_prior_jacobian(Vector3::new(1.0, 2.0, 3.0));
+        test_prior_jacobian(VectorVar3::new(1.0, 2.0, 3.0));
     }
 
     #[test]

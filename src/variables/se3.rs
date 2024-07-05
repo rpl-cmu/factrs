@@ -1,6 +1,6 @@
 use std::{fmt, ops};
 
-use super::Vector6;
+use super::VectorVar3;
 use crate::{
     dtype,
     impl_safe_variable,
@@ -18,6 +18,7 @@ use crate::{
         MatrixView,
         Numeric,
         Vector3,
+        Vector6,
         VectorView3,
         VectorView6,
         VectorViewX,
@@ -43,6 +44,10 @@ impl<D: Numeric> SE3<D> {
     pub fn rot(&self) -> &SO3<D> {
         &self.rot
     }
+
+    pub fn xyz(&self) -> VectorView3<D> {
+        self.xyz.as_view()
+    }
 }
 
 impl<D: Numeric> Variable<D> for SE3<D> {
@@ -52,7 +57,7 @@ impl<D: Numeric> Variable<D> for SE3<D> {
     fn identity() -> Self {
         SE3 {
             rot: Variable::identity(),
-            xyz: Variable::identity(),
+            xyz: Vector3::zeros(),
         }
     }
 
@@ -140,7 +145,7 @@ impl<D: Numeric> Variable<D> for SE3<D> {
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
         SE3 {
             rot: SO3::<D>::dual_convert(&other.rot),
-            xyz: Vector3::<D>::dual_convert(&other.xyz),
+            xyz: VectorVar3::<D>::dual_convert(&other.xyz.into()).into(),
         }
     }
 
@@ -152,7 +157,7 @@ impl<D: Numeric> Variable<D> for SE3<D> {
     {
         SE3 {
             rot: SO3::<dtype>::dual_setup(idx),
-            xyz: Vector3::<dtype>::dual_setup(idx + 3),
+            xyz: VectorVar3::<dtype>::dual_setup(idx + 3).into(),
         }
     }
 }

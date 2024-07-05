@@ -17,6 +17,11 @@ pub struct OptimizerParams {
     pub error_tol_relative: dtype,
     pub error_tol_absolute: dtype,
     pub error_tol: dtype,
+    pub callbacks: Vec<Box<dyn OptimizerCallback>>,
+}
+
+pub trait OptimizerCallback {
+    fn on_step(&self, values: &Values, time: f64);
 }
 
 impl Default for OptimizerParams {
@@ -26,6 +31,20 @@ impl Default for OptimizerParams {
             error_tol_relative: 1e-6,
             error_tol_absolute: 1e-6,
             error_tol: 0.0,
+            callbacks: Vec::new(),
+        }
+    }
+}
+
+impl OptimizerParams {
+    pub fn add_callback(&mut self, callback: impl OptimizerCallback + 'static) {
+        let boxed = Box::new(callback);
+        self.callbacks.push(boxed);
+    }
+
+    pub fn notify_callbacks(&self, values: &Values, idx: usize) {
+        for callback in &self.callbacks {
+            callback.on_step(values, idx as f64);
         }
     }
 }
@@ -98,6 +117,9 @@ pub trait Optimizer {
                 error_decrease_abs,
                 error_decrease_rel
             );
+
+            // Notify callbacks
+            self.params().notify_callbacks(&values, i);
 
             // Check if we need to stop
             if error_new <= self.params().error_tol {
