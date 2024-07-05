@@ -1,8 +1,7 @@
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 use crate::dtype;
 
-// TODO: Consider changing names to \rho and w
 pub trait RobustCost: Default + Debug {
     fn loss(&self, d2: dtype) -> dtype;
 

@@ -36,8 +36,7 @@ impl Values {
         key: Symbol,
         value: impl VariableSafe,
     ) -> Option<Box<dyn VariableSafe>> {
-        // TODO: Avoid cloning here?
-        self.values.insert(key, value.clone_box())
+        self.values.insert(key, Box::new(value))
     }
 
     pub fn get(&self, key: &Symbol) -> Option<&Box<dyn VariableSafe>> {

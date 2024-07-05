@@ -3,7 +3,6 @@ use nalgebra::{DimNameAdd, DimNameSum};
 use super::{Residual, Residual2};
 use crate::{
     containers::{Symbol, Values},
-    dtype,
     impl_safe_residual,
     linalg::{
         AllocatorBuffer,
