@@ -6,7 +6,6 @@ use samrs::{
     robust::{GemanMcClure, Huber, L2},
     variables::{SE2, SO2},
 };
-use serde_json;
 
 fn main() {
     // ------------------------- Try with values ------------------------- //

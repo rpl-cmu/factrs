@@ -37,7 +37,8 @@ impl_safe_variable!(
 // 2 - Overcome identity issues with the underlying Vector type
 // 3 - Impl Into<Rerun types>
 #[derive(Clone)]
-pub struct VectorVar<const N: usize, D: Numeric>(Vector<N, D>);
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct VectorVar<const N: usize, D: Numeric = dtype>(Vector<N, D>);
 
 impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
     type Dim = Const<N>;

@@ -10,29 +10,53 @@ derive_more = "0.99.17"
 paste = "1.0.15"
 downcast-rs = "1.2.1"
 log = "0.4.21"
-log = "0.4.21"
 
 # numerical 
-faer = { version = "0.19.0", default-features = false, features = ["perf-warn", "std"] }
+faer = { version = "0.19.0", default-features = false, features = [
+    "perf-warn",
+    "std",
+] }
 faer-ext = { version = "0.2.0", features = ["nalgebra"] }
 nalgebra = { version = "0.32.5" }
 num-dual = "0.9.1"
 matrixcompare-core = { version = "0.1", optional = true }
 
 # serialization
-serde = {version = "1.0.203", optional = true }
-typetag = {version = "0.2.16", optional = true }
+serde = { version = "1.0.203", optional = true }
+typetag = { version = "0.2.16", optional = true }
+serde_json = { version = "1.0.120", optional = true }
 
 # rerun support
-rerun = { version = "0.16.1", optional = true}
+rerun = { version = "0.16.1", optional = true }
 
 [features]
+# Run everything with f32 instead of the defaul f64
 f32 = []
+
+# Use left instead of right for lie group updates
 left = []
+
+# use SO(n) x R instead of SE(n) for exponential map
 fake_exp = []
+
+# Necessary dependencies for matrix comparing
 compare = ["dep:matrixcompare-core", "nalgebra/compare", "faer/matrixcompare"]
-serde = ["dep:serde", "dep:typetag", "nalgebra/serde-serialize", "faer/serde", "ahash/serde"]
-multithread = ["faer/rayon"]
+
+# Add multithreaded support (may run slower on smaller problems)
+rayon = ["faer/rayon"]
+
+# Add support for serialization
+serde = [
+    "dep:serde",
+    "dep:typetag",
+    "nalgebra/serde-serialize",
+    "faer/serde",
+    "ahash/serde",
+]
+# just used for examples
+serde_json = ["dep:serde_json"]
+
+# Support for conversion to rerun variable types
 rerun = ["dep:rerun"]
 
 [dev-dependencies]
@@ -49,4 +73,4 @@ required-features = ["rerun"]
 
 [[example]]
 name = "serde"
-required-features=["serde"]
+required-features = ["serde", "serde_json"]
