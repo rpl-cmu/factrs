@@ -23,7 +23,7 @@ use crate::{
         Vector6,
         VectorX,
     },
-    variables::{Variable, VariableSafe, SE2, SE3, SO2, SO3},
+    variables::{Variable, VariableUmbrella, SE2, SE3, SO2, SO3},
 };
 
 impl_safe_residual!(
@@ -52,7 +52,7 @@ impl<P: Variable> BetweenResidual<P> {
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + VariableSafe + 'static> Residual2 for BetweenResidual<P>
+impl<P: VariableUmbrella + 'static> Residual2 for BetweenResidual<P>
 where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
@@ -76,7 +76,7 @@ where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
     DualVector<DimNameSum<P::Dim, P::Dim>>: Copy,
-    P: Variable<Alias<dtype> = P> + VariableSafe + 'static,
+    P: VariableUmbrella + 'static,
     P::Dim: DimNameAdd<P::Dim>,
 {
     type DimOut = <Self as Residual2>::DimOut;

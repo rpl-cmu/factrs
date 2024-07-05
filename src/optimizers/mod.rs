@@ -23,12 +23,12 @@ pub mod test {
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{GaussianNoise, NoiseModelSafe},
         residuals::{BetweenResidual, PriorResidual, ResidualSafe},
-        variables::{Variable, VariableSafe},
+        variables::{Variable, VariableSafe, VariableUmbrella},
     };
 
     pub fn optimize_prior<O, T, const DIM: usize>()
     where
-        T: 'static + Variable<Dim = nalgebra::Const<DIM>, Alias<dtype> = T> + VariableSafe,
+        T: 'static + VariableUmbrella<Dim = Const<DIM>>,
         GaussianNoise<DIM>: NoiseModelSafe,
         PriorResidual<T>: ResidualSafe,
         O: Optimizer,

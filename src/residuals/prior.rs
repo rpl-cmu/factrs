@@ -1,7 +1,6 @@
 use super::{Residual, Residual1};
 use crate::{
     containers::{Symbol, Values},
-    dtype,
     impl_safe_residual,
     linalg::{
         AllocatorBuffer,
@@ -21,7 +20,7 @@ use crate::{
         Vector6,
         VectorX,
     },
-    variables::{Variable, VariableSafe, SE2, SE3, SO2, SO3},
+    variables::{Variable, VariableUmbrella, SE2, SE3, SO2, SO3},
 };
 
 impl_safe_residual!(
@@ -43,13 +42,13 @@ pub struct PriorResidual<P: Variable> {
     prior: P,
 }
 
-impl<P: Variable<Alias<dtype> = P>> PriorResidual<P> {
+impl<P: VariableUmbrella> PriorResidual<P> {
     pub fn new(prior: P) -> Self {
         Self { prior }
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + VariableSafe + 'static> Residual1 for PriorResidual<P>
+impl<P: VariableUmbrella + 'static> Residual1 for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
@@ -65,7 +64,7 @@ where
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + VariableSafe + 'static> Residual for PriorResidual<P>
+impl<P: VariableUmbrella + 'static> Residual for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
@@ -91,7 +90,7 @@ mod test {
     use crate::{
         containers::X,
         linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
-        variables::{VariableSafe, Vector3, SE3, SO3},
+        variables::{Vector3, SE3, SO3},
     };
 
     #[cfg(not(feature = "f32"))]
@@ -106,7 +105,7 @@ mod test {
 
     fn test_prior_jacobian<P>(prior: P)
     where
-        P: Variable<Alias<dtype> = P> + VariableSafe + 'static,
+        P: VariableUmbrella + 'static,
         AllocatorBuffer<P::Dim>: Sync + Send,
         DefaultAllocator: DualAllocator<P::Dim>,
         DualVector<P::Dim>: Copy,

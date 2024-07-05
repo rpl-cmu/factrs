@@ -2,9 +2,8 @@ use std::fmt::{Debug, Display};
 
 use crate::{
     containers::{Symbol, Values},
-    dtype,
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
-    variables::{Variable, VariableSafe},
+    variables::{Variable, VariableUmbrella},
 };
 
 type Alias<V, D> = <V as Variable>::Alias<D>;
@@ -48,7 +47,7 @@ macro_rules! residual_maker {
             pub trait [<Residual $num>]: Residual
             {
                 $(
-                    type $var: Variable<Alias<dtype> = Self::$var> + VariableSafe;
+                    type $var: VariableUmbrella;
                 )*
                 type DimIn: DimName;
                 type DimOut: DimName;

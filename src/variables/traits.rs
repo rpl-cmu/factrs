@@ -100,6 +100,12 @@ pub trait VariableSafe: Debug + Display + Downcast {
     fn oplus_mut(&mut self, delta: VectorViewX);
 }
 
+pub trait VariableUmbrella<D: Numeric = dtype>:
+    VariableSafe + Variable<D, Alias<D> = Self>
+{
+}
+impl<D: Numeric, T: VariableSafe + Variable<D, Alias<D> = T>> VariableUmbrella<D> for T {}
+
 impl_downcast!(VariableSafe);
 
 impl Clone for Box<dyn VariableSafe> {
