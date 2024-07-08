@@ -297,7 +297,7 @@ mod test {
     const TOL: dtype = 1e-6;
 
     #[cfg(feature = "f32")]
-    const EPS: dtype = 1e-33;
+    const EPS: dtype = 1e-3;
     #[cfg(feature = "f32")]
     const TOL: dtype = 1e-2;
 
