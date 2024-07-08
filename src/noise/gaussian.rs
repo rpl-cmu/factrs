@@ -1,19 +1,9 @@
 use std::fmt;
 
-use super::NoiseModel;
+use super::{NoiseModel, UnitNoise};
 use crate::{
     dtype,
-    linalg::{
-        Const,
-        Matrix,
-        MatrixView,
-        MatrixViewX,
-        MatrixX,
-        Vector,
-        VectorView,
-        VectorViewX,
-        VectorX,
-    },
+    linalg::{Const, Matrix, MatrixView, MatrixX, Vector, VectorView, VectorX},
 };
 
 impl_safe_noise!(
@@ -40,13 +30,13 @@ pub struct GaussianNoise<const N: usize> {
 impl<const N: usize> NoiseModel for GaussianNoise<N> {
     type Dim = Const<N>;
 
-    fn whiten_vec(&self, v: VectorViewX) -> VectorX {
+    fn whiten_vec(&self, v: VectorX) -> VectorX {
         let mut out = VectorX::zeros(v.len());
         self.sqrt_inf.mul_to(&v, &mut out);
         out
     }
 
-    fn whiten_mat(&self, m: MatrixViewX) -> MatrixX {
+    fn whiten_mat(&self, m: MatrixX) -> MatrixX {
         let mut out = MatrixX::zeros(m.nrows(), m.ncols());
         self.sqrt_inf.mul_to(&m, &mut out);
         out
@@ -54,9 +44,8 @@ impl<const N: usize> NoiseModel for GaussianNoise<N> {
 }
 
 impl<const N: usize> GaussianNoise<N> {
-    pub fn identity() -> Self {
-        let sqrt_inf = Matrix::<N, N>::identity();
-        Self { sqrt_inf }
+    pub fn identity() -> UnitNoise<N> {
+        UnitNoise
     }
 
     pub fn from_scalar_sigma(sigma: dtype) -> Self {
@@ -123,16 +112,7 @@ macro_rules! make_gaussian_vector {
 
 make_gaussian_vector!(1, [s0]);
 make_gaussian_vector!(2, [s0, s1]);
-impl GaussianNoise<3> {
-    pub fn from_diag_sigmas(s0: dtype, s1: dtype, s2: dtype) -> Self {
-        let sigmas = Vector::<3>::new(s0, s1, s2);
-        Self::from_vec_sigma(sigmas.as_view())
-    }
-    pub fn from_diag_covs(s0: dtype, s1: dtype, s2: dtype) -> Self {
-        let sigmas = Vector::<3>::new(s0, s1, s2);
-        Self::from_vec_cov(sigmas.as_view())
-    }
-}
+make_gaussian_vector!(3, [s0, s1, s2]);
 make_gaussian_vector!(4, [s0, s1, s2, s3]);
 make_gaussian_vector!(5, [s0, s1, s2, s3, s4]);
 make_gaussian_vector!(6, [s0, s1, s2, s3, s4, s5]);

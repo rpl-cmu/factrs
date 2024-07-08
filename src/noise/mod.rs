@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-use crate::linalg::{DimName, MatrixViewX, MatrixX, VectorViewX, VectorX};
+use crate::linalg::{DimName, MatrixX, VectorX};
 pub trait NoiseModel: Debug + Display {
     type Dim: DimName;
 
@@ -8,18 +8,18 @@ pub trait NoiseModel: Debug + Display {
         Self::Dim::USIZE
     }
 
-    fn whiten_vec(&self, v: VectorViewX) -> VectorX;
+    fn whiten_vec(&self, v: VectorX) -> VectorX;
 
-    fn whiten_mat(&self, m: MatrixViewX) -> MatrixX;
+    fn whiten_mat(&self, m: MatrixX) -> MatrixX;
 }
 
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait NoiseModelSafe: Debug + Display {
     fn dim(&self) -> usize;
 
-    fn whiten_vec(&self, v: VectorViewX) -> VectorX;
+    fn whiten_vec(&self, v: VectorX) -> VectorX;
 
-    fn whiten_mat(&self, m: MatrixViewX) -> MatrixX;
+    fn whiten_mat(&self, m: MatrixX) -> MatrixX;
 }
 
 #[macro_export]
@@ -35,11 +35,11 @@ macro_rules! impl_safe_noise {
                         $crate::noise::NoiseModel::dim(self)
                     }
 
-                    fn whiten_vec(&self, v: VectorViewX) -> VectorX {
+                    fn whiten_vec(&self, v: VectorX) -> VectorX {
                         $crate::noise::NoiseModel::whiten_vec(self, v)
                     }
 
-                    fn whiten_mat(&self, m: MatrixViewX) -> MatrixX {
+                    fn whiten_mat(&self, m: MatrixX) -> MatrixX {
                         $crate::noise::NoiseModel::whiten_mat(self, m)
                     }
                 }
@@ -50,3 +50,6 @@ macro_rules! impl_safe_noise {
 
 mod gaussian;
 pub use gaussian::GaussianNoise;
+
+mod unit;
+pub use unit::UnitNoise;

@@ -3,7 +3,7 @@ use crate::{
     dtype,
     linalg::{AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, MatrixBlock},
     linear::LinearFactor,
-    noise::{GaussianNoise, NoiseModel, NoiseModelSafe},
+    noise::{NoiseModel, NoiseModelSafe, UnitNoise},
     residuals::{Residual, ResidualSafe},
     robust::{RobustCostSafe, L2},
 };
@@ -26,12 +26,12 @@ impl Factor {
         R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>> + ResidualSafe,
         AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
-        GaussianNoise<DIM_OUT>: NoiseModelSafe,
+        UnitNoise<DIM_OUT>: NoiseModelSafe,
     {
         Self {
             keys: keys.to_vec(),
             residual: Box::new(residual),
-            noise: Box::new(GaussianNoise::<DIM_OUT>::identity()),
+            noise: Box::new(UnitNoise::<DIM_OUT>),
             robust: Box::new(L2),
         }
     }
@@ -78,7 +78,7 @@ impl Factor {
 
     pub fn error(&self, values: &Values) -> dtype {
         let r = self.residual.residual(values, &self.keys);
-        let r = self.noise.whiten_vec(r.as_view());
+        let r = self.noise.whiten_vec(r);
         let norm2 = r.norm_squared();
         self.robust.loss(norm2)
     }
@@ -92,8 +92,8 @@ impl Factor {
         let DiffResult { value: r, diff: a } = self.residual.residual_jacobian(values, &self.keys);
 
         // Whiten residual and jacobian
-        let r = self.noise.whiten_vec(r.as_view());
-        let a = self.noise.whiten_mat(a.as_view());
+        let r = self.noise.whiten_vec(r);
+        let a = self.noise.whiten_mat(a);
 
         // Weight according to robust cost
         let norm2 = r.norm_squared();

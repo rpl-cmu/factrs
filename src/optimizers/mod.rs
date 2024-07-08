@@ -20,7 +20,7 @@ pub mod test {
         dtype,
         factors::Factor,
         linalg::{Const, VectorX},
-        noise::{GaussianNoise, NoiseModelSafe},
+        noise::{NoiseModelSafe, UnitNoise},
         residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
         variables::VariableUmbrella,
     };
@@ -28,7 +28,7 @@ pub mod test {
     pub fn optimize_prior<O, T, const DIM: usize>()
     where
         T: 'static + VariableUmbrella<Dim = Const<DIM>>,
-        GaussianNoise<DIM>: NoiseModelSafe,
+        UnitNoise<DIM>: NoiseModelSafe,
         PriorResidual<T>: ResidualSafe,
         O: Optimizer,
     {
@@ -58,7 +58,7 @@ pub mod test {
     pub fn optimize_between<O, T, const DIM: usize, const DIM_DOUBLE: usize>()
     where
         T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>>,
-        GaussianNoise<DIM>: NoiseModelSafe,
+        UnitNoise<DIM>: NoiseModelSafe,
         PriorResidual<T>:
             ResidualSafe + Residual<DimIn = Const<DIM>, DimOut = Const<DIM>, NumVars = Const<1>>,
         BetweenResidual<T>: ResidualSafe
