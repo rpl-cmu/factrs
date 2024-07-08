@@ -4,13 +4,13 @@ use std::{
     time::Instant,
 };
 
-use rerun::{Arrows2D, Arrows3D, Points2D, Points3D};
-use samrs::{
+use factrs::{
     optimizers::{GaussNewton, Optimizer},
     rerun::RerunSender,
     utils::load_g20,
     variables::*,
 };
+use rerun::{Arrows2D, Arrows3D, Points2D, Points3D};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------- Parse Arguments & Load data ------------------------- //

@@ -1,4 +1,4 @@
-use samrs::{
+use factrs::{
     containers::{Graph, Values, X},
     factors::Factor,
     noise::GaussianNoise,

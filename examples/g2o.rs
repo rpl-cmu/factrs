@@ -1,6 +1,6 @@
 use std::{env, time::Instant};
 
-use samrs::{
+use factrs::{
     optimizers::{GaussNewton, Optimizer},
     utils::load_g20,
 };

@@ -1797,6 +1797,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "factrs"
+version = "0.1.0"
+dependencies = [
+ "ahash",
+ "derive_more",
+ "downcast-rs",
+ "faer",
+ "faer-ext",
+ "log",
+ "matrixcompare",
+ "matrixcompare-core",
+ "nalgebra",
+ "num-dual",
+ "paste",
+ "pretty_env_logger",
+ "rerun",
+ "serde",
+ "serde_json",
+ "typetag",
+]
+
+[[package]]
 name = "faer"
 version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5324,28 +5346,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "samrs"
-version = "0.1.0"
-dependencies = [
- "ahash",
- "derive_more",
- "downcast-rs",
- "faer",
- "faer-ext",
- "log",
- "matrixcompare",
- "matrixcompare-core",
- "nalgebra",
- "num-dual",
- "paste",
- "pretty_env_logger",
- "rerun",
- "serde",
- "serde_json",
- "typetag",
 ]
 
 [[package]]
