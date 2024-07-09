@@ -27,7 +27,9 @@ typetag = { version = "0.2.16", optional = true }
 serde_json = { version = "1.0.120", optional = true }
 
 # rerun support
-rerun = { version = "0.16.1", optional = true }
+rerun = { version = "0.16.1", optional = true, default-features = false, features = [
+    "sdk",
+] }
 
 [features]
 # Run everything with f32 instead of the defaul f64

@@ -1,7 +1,7 @@
 use std::{env, time::Instant};
 
 use factrs::{
-    optimizers::{GaussNewton, Optimizer},
+    optimizers::{GaussNewton, GraphOptimizer, Optimizer},
     utils::load_g20,
 };
 fn main() {

@@ -62,6 +62,13 @@ impl Values {
         self.values.get_mut(key)
     }
 
+    // TODO: This should be some kind of error
+    pub fn get_mut_cast<T: VariableSafe>(&mut self, key: &Symbol) -> Option<&mut T> {
+        self.values
+            .get_mut(key)
+            .and_then(|value| value.downcast_mut::<T>())
+    }
+
     pub fn remove(&mut self, key: &Symbol) -> Option<Box<dyn VariableSafe>> {
         self.values.remove(key)
     }

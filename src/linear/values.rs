@@ -16,18 +16,27 @@ impl LinearValues {
         Self { values, order }
     }
 
-    pub fn from_order_and_values(order: ValuesOrder, values: VectorX) -> Self {
-        assert!(
-            values.len() == order.dim(),
-            "Values and order must have the same dimension when creating LinearValues"
-        );
-        Self { values, order }
-    }
-
     pub fn zero_from_values(values: &Values) -> Self {
         let order = ValuesOrder::from_values(values);
         let values = VectorX::zeros(order.dim());
         Self { values, order }
+    }
+
+    pub fn from_order_and_vector(order: ValuesOrder, values: VectorX) -> Self {
+        assert!(
+            values.len() == order.dim(),
+            "Vector and order must have the same dimension when creating LinearValues"
+        );
+        Self { values, order }
+    }
+
+    pub fn from_values_and_vector(values: &Values, vector: VectorX) -> Self {
+        let order = ValuesOrder::from_values(values);
+        assert!(
+            vector.len() == order.dim(),
+            "Vector and values must have the same dimension when creating LinearValues"
+        );
+        Self::from_order_and_vector(order, vector)
     }
 
     pub fn len(&self) -> usize {
@@ -96,11 +105,11 @@ mod test {
     }
 
     #[test]
-    fn from_order_and_values() {
+    fn from_order_and_vector() {
         let (order, vector) = make_order_vector();
 
         // Create LinearValues
-        let linear_values = LinearValues::from_order_and_values(order, vector);
+        let linear_values = LinearValues::from_order_and_vector(order, vector);
         assert!(linear_values.len() == 3);
         assert!(linear_values.dim() == 11);
         assert!(linear_values.get(&X(0)).unwrap().len() == 2);
@@ -114,6 +123,6 @@ mod test {
     fn mismatched_size() {
         let (order, vector) = make_order_vector();
         let vector = vector.push(0.0);
-        LinearValues::from_order_and_values(order, vector);
+        LinearValues::from_order_and_vector(order, vector);
     }
 }

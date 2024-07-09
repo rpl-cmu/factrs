@@ -1,5 +1,13 @@
 mod traits;
-pub use traits::{OptError, OptResult, Optimizer, OptimizerCallback, OptimizerParams};
+pub use traits::{
+    GraphOptimizer,
+    OptError,
+    OptObserver,
+    OptObserverVec,
+    OptParams,
+    OptResult,
+    Optimizer,
+};
 
 mod macros;
 
@@ -30,7 +38,7 @@ pub mod test {
         T: 'static + VariableUmbrella<Dim = Const<DIM>>,
         UnitNoise<DIM>: NoiseModelSafe,
         PriorResidual<T>: ResidualSafe,
-        O: Optimizer,
+        O: Optimizer<Input = Values> + GraphOptimizer,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
         let p = T::exp(t.as_view());
@@ -63,7 +71,7 @@ pub mod test {
             ResidualSafe + Residual<DimIn = Const<DIM>, DimOut = Const<DIM>, NumVars = Const<1>>,
         BetweenResidual<T>: ResidualSafe
             + Residual<DimIn = Const<DIM_DOUBLE>, DimOut = Const<DIM>, NumVars = Const<2>>,
-        O: Optimizer,
+        O: Optimizer<Input = Values> + GraphOptimizer,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i as dtype) - (T::DIM as dtype)) / 10.0);
         let p1 = T::exp(t.as_view());

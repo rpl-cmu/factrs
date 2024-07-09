@@ -1,6 +1,6 @@
 use faer_ext::IntoNalgebra;
 
-use super::{OptResult, Optimizer, OptimizerParams};
+use super::{GraphOptimizer, OptObserverVec, OptParams, OptResult, Optimizer};
 use crate::{
     containers::{Graph, GraphOrder, Values, ValuesOrder},
     linalg::DiffResult,
@@ -11,17 +11,19 @@ use crate::{
 pub struct GaussNewton<S: LinearSolver = CholeskySolver> {
     graph: Graph,
     solver: S,
-    pub params: OptimizerParams,
+    pub params: OptParams,
+    pub observers: OptObserverVec<Values>,
     // For caching computation between steps
     graph_order: Option<GraphOrder>,
 }
 
-impl<S: LinearSolver> Optimizer for GaussNewton<S> {
+impl<S: LinearSolver> GraphOptimizer for GaussNewton<S> {
     fn new(graph: Graph) -> Self {
         Self {
             graph,
             solver: S::default(),
-            params: OptimizerParams::default(),
+            observers: OptObserverVec::default(),
+            params: OptParams::default(),
             graph_order: None,
         }
     }
@@ -29,8 +31,20 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
     fn graph(&self) -> &Graph {
         &self.graph
     }
+}
 
-    fn params(&self) -> &OptimizerParams {
+impl<S: LinearSolver> Optimizer for GaussNewton<S> {
+    type Input = Values;
+
+    fn observers(&self) -> &OptObserverVec<Values> {
+        &self.observers
+    }
+
+    fn error(&self, values: &Values) -> crate::dtype {
+        self.graph.error(values)
+    }
+
+    fn params(&self) -> &OptParams {
         &self.params
     }
 
@@ -43,7 +57,7 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
         );
     }
 
-    fn step(&mut self, mut values: Values) -> OptResult {
+    fn step(&mut self, mut values: Values) -> OptResult<Values> {
         // Solve the linear system
         let linear_graph = self.graph.linearize(&values);
         let DiffResult { value: r, diff: j } =
@@ -59,7 +73,7 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
             .clone_owned();
 
         // Update the values
-        let dx = LinearValues::from_order_and_values(
+        let dx = LinearValues::from_order_and_vector(
             self.graph_order.as_ref().unwrap().order.clone(),
             delta,
         );
