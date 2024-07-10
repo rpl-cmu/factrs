@@ -160,23 +160,8 @@ macro_rules! test_lie {
 }
 
 #[macro_export]
-macro_rules! impl_safe_variable {
-($($var:ident $(< $num:literal >)? ),* $(,)?) => {
-        $(
-            #[cfg_attr(feature = "serde", typetag::serde)]
-            impl $crate::variables::VariableSafe for $var$(< $num >)? {
-                fn clone_box(&self) -> Box<dyn $crate::variables::VariableSafe> {
-                    Box::new((*self).clone())
-                }
-
-                fn dim(&self) -> usize {
-                    $crate::variables::Variable::dim(self)
-                }
-
-                fn oplus_mut(&mut self, delta: VectorViewX) {
-                    *self = self.oplus(delta);
-                }
-            }
-        )*
-    };
+macro_rules! tag_variable {
+    ($($ty:ty),* $(,)?) => {$(
+        $crate::register_typetag!($crate::variables::VariableSafe, $ty);
+    )*};
 }

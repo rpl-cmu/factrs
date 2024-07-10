@@ -100,6 +100,34 @@ pub trait VariableSafe: Debug + Display + Downcast {
     fn oplus_mut(&mut self, delta: VectorViewX);
 }
 
+impl<
+        #[cfg(not(feature = "serde"))] T: Variable + 'static,
+        #[cfg(feature = "serde")] T: Variable + 'static + crate::serde::Tagged,
+    > VariableSafe for T
+{
+    fn clone_box(&self) -> Box<dyn VariableSafe> {
+        Box::new((*self).clone())
+    }
+
+    fn dim(&self) -> usize {
+        self.dim()
+    }
+
+    fn oplus_mut(&mut self, delta: VectorViewX) {
+        *self = self.oplus(delta);
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_name(&self) -> &'static str {
+        Self::TAG
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_deserialize(&self) {}
+}
+
 pub trait VariableUmbrella<D: Numeric = dtype>:
     VariableSafe + Variable<D, Alias<D> = Self>
 {

@@ -5,7 +5,6 @@ use std::{
 
 use crate::{
     dtype,
-    impl_safe_variable,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -19,10 +18,11 @@ use crate::{
         VectorViewX,
         VectorX,
     },
+    tag_variable,
     variables::Variable,
 };
 
-impl_safe_variable!(
+tag_variable!(
     VectorVar<1>,
     VectorVar<2>,
     VectorVar<3>,
