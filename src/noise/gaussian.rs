@@ -4,9 +4,10 @@ use super::{NoiseModel, UnitNoise};
 use crate::{
     dtype,
     linalg::{Const, Matrix, MatrixView, MatrixX, Vector, VectorView, VectorX},
+    register_noise,
 };
 
-impl_safe_noise!(
+register_noise!(
     GaussianNoise<1>,
     GaussianNoise<2>,
     GaussianNoise<3>,

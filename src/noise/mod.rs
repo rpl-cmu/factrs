@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display};
 
 use crate::linalg::{DimName, MatrixX, VectorX};
+
 pub trait NoiseModel: Debug + Display {
     type Dim: DimName;
 
@@ -22,30 +23,39 @@ pub trait NoiseModelSafe: Debug + Display {
     fn whiten_mat(&self, m: MatrixX) -> MatrixX;
 }
 
+impl<
+        #[cfg(not(feature = "serde"))] T: NoiseModel,
+        #[cfg(feature = "serde")] T: NoiseModel + crate::serde::Tagged,
+    > NoiseModelSafe for T
+{
+    fn dim(&self) -> usize {
+        NoiseModel::dim(self)
+    }
+
+    fn whiten_vec(&self, v: VectorX) -> VectorX {
+        NoiseModel::whiten_vec(self, v)
+    }
+
+    fn whiten_mat(&self, m: MatrixX) -> MatrixX {
+        NoiseModel::whiten_mat(self, m)
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_name(&self) -> &'static str {
+        Self::TAG
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_deserialize(&self) {}
+}
+
 #[macro_export]
-macro_rules! impl_safe_noise {
-    ($($var:ident < $num:literal > ),* $(,)?) => {
-        use paste::paste;
-        paste!{
-            $(
-                type [<$var $num>] = $var< $num >;
-                #[cfg_attr(feature = "serde", typetag::serde)]
-                impl $crate::noise::NoiseModelSafe for [<$var $num>]{
-                    fn dim(&self) -> usize {
-                        $crate::noise::NoiseModel::dim(self)
-                    }
-
-                    fn whiten_vec(&self, v: VectorX) -> VectorX {
-                        $crate::noise::NoiseModel::whiten_vec(self, v)
-                    }
-
-                    fn whiten_mat(&self, m: MatrixX) -> MatrixX {
-                        $crate::noise::NoiseModel::whiten_mat(self, m)
-                    }
-                }
-            )*
-        }
-    };
+macro_rules! register_noise {
+    ($($ty:ty),* $(,)?) => {$(
+        $crate::register_typetag!($crate::noise::NoiseModelSafe, $ty);
+    )*};
 }
 
 mod gaussian;

@@ -1,7 +1,10 @@
 use super::NoiseModel;
-use crate::linalg::{Const, MatrixX, VectorX};
+use crate::{
+    linalg::{Const, MatrixX, VectorX},
+    register_noise,
+};
 
-impl_safe_noise!(
+register_noise!(
     UnitNoise<1>,
     UnitNoise<2>,
     UnitNoise<3>,
