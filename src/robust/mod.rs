@@ -15,25 +15,38 @@ pub trait RobustCostSafe: Debug {
     fn weight(&self, d2: dtype) -> dtype;
 }
 
-#[macro_export]
-macro_rules! impl_safe_robust {
-    ($($var:ident),*) => {
-        $(
-            #[cfg_attr(feature = "serde", typetag::serde)]
-            impl $crate::robust::RobustCostSafe for $var {
-                fn loss(&self, d2: dtype) -> dtype {
-                    $crate::robust::RobustCost::loss(self, d2)
-                }
+impl<
+        #[cfg(not(feature = "serde"))] T: RobustCost,
+        #[cfg(feature = "serde")] T: RobustCost + crate::serde::Tagged,
+    > RobustCostSafe for T
+{
+    fn loss(&self, d2: dtype) -> dtype {
+        RobustCost::loss(self, d2)
+    }
 
-                fn weight(&self, d2: dtype) -> dtype {
-                    $crate::robust::RobustCost::weight(self, d2)
-                }
-            }
-        )*
-    };
+    fn weight(&self, d2: dtype) -> dtype {
+        RobustCost::weight(self, d2)
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_name(&self) -> &'static str {
+        Self::TAG
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_deserialize(&self) {}
 }
 
-impl_safe_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
+#[macro_export]
+macro_rules! register_robust {
+    ($($ty:ty),* $(,)?) => {$(
+        $crate::register_typetag!($crate::robust::RobustCostSafe, $ty);
+    )*};
+}
+
+register_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
 
 // ------------------------- L2 Norm ------------------------- //
 #[derive(Debug)]

@@ -37,7 +37,7 @@ pub mod serde {
 
             typetag::__private::inventory::submit! {
                 <dyn $trait>::typetag_register(
-                    <$ty as $crate::noise::Tagged>::TAG,
+                    <$ty as $crate::serde::Tagged>::TAG, // Tag of the type
                     (|deserializer| typetag::__private::Result::Ok(
                         typetag::__private::Box::new(
                             typetag::__private::erased_serde::deserialize::<$ty>(deserializer)?
@@ -49,6 +49,7 @@ pub mod serde {
     }
 }
 
+// Dummy implementation so things don't break when the serde feature is disabled
 #[cfg(not(feature = "serde"))]
 pub mod serde {
     #[macro_export]
