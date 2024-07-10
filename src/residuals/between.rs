@@ -1,9 +1,9 @@
 use nalgebra::{DimNameAdd, DimNameSum};
 
 use super::{Residual, Residual2};
+#[allow(unused_imports)]
 use crate::{
     containers::{Symbol, Values},
-    impl_safe_residual,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -16,6 +16,7 @@ use crate::{
         Numeric,
         VectorX,
     },
+    tag_residual,
     variables::{
         Variable,
         VariableUmbrella,
@@ -32,7 +33,7 @@ use crate::{
     },
 };
 
-impl_safe_residual!(
+tag_residual!(
     BetweenResidual<VectorVar1>,
     BetweenResidual<VectorVar2>,
     BetweenResidual<VectorVar3>,

@@ -3,7 +3,7 @@ use factrs::{
     factors::Factor,
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
-    robust::{GemanMcClure, Huber, L2},
+    robust::{GemanMcClure, L2},
     variables::{SE2, SO2},
 };
 
@@ -32,12 +32,7 @@ fn main() {
         GaussianNoise::from_scalar_cov(0.1),
         GemanMcClure::default(),
     );
-    let bet = Factor::new_full(
-        &[X(0), X(1)],
-        bet,
-        GaussianNoise::from_scalar_cov(10.0),
-        Huber::default(),
-    );
+    let bet = Factor::new_full(&[X(0), X(1)], bet, GaussianNoise::from_scalar_cov(10.0), L2);
     let mut graph = Graph::new();
     graph.add_factor(prior);
     graph.add_factor(bet);
@@ -46,5 +41,5 @@ fn main() {
     println!("serialized = {}", serialized);
 
     let deserialized: Graph = serde_json::from_str(&serialized).unwrap();
-    println!("deserialized = {:?}", graph);
+    println!("deserialized = {:?}", deserialized);
 }

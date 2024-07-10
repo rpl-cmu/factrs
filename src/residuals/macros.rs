@@ -23,31 +23,8 @@ macro_rules! impl_residual {
 }
 
 #[macro_export]
-macro_rules! impl_safe_residual {
-    ($($var:ident < $T:ident > ),* $(,)?) => {
-        use paste::paste;
-        $(
-            paste!{
-                type [<$var $T>] = $var< $T >;
-                #[cfg_attr(feature = "serde", typetag::serde)]
-                impl $crate::residuals::ResidualSafe for [<$var $T>] {
-                    fn dim_in(&self) -> usize {
-                        $crate::residuals::Residual::dim_in(self)
-                    }
-
-                    fn dim_out(&self) -> usize {
-                        $crate::residuals::Residual::dim_out(self)
-                    }
-
-                    fn residual(&self, values: &$crate::containers::Values, keys: &[Symbol]) -> VectorX {
-                        $crate::residuals::Residual::residual(self, values, keys)
-                    }
-
-                    fn residual_jacobian(&self, values: &$crate::containers::Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
-                        $crate::residuals::Residual::residual_jacobian(self, values, keys)
-                    }
-                }
-            }
-        )*
-    };
+macro_rules! tag_residual {
+    ($($ty:ty),* $(,)?) => {$(
+        $crate::register_typetag!($crate::residuals::ResidualSafe, $ty);
+    )*};
 }

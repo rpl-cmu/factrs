@@ -1,7 +1,7 @@
 use super::{Residual, Residual1};
+#[allow(unused_imports)]
 use crate::{
     containers::{Symbol, Values},
-    impl_safe_residual,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -14,6 +14,7 @@ use crate::{
         Numeric,
         VectorX,
     },
+    tag_residual,
     variables::{
         Variable,
         VariableUmbrella,
@@ -30,7 +31,7 @@ use crate::{
     },
 };
 
-impl_safe_residual!(
+tag_residual!(
     PriorResidual<VectorVar1>,
     PriorResidual<VectorVar2>,
     PriorResidual<VectorVar3>,

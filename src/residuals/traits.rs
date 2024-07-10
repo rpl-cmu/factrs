@@ -38,6 +38,38 @@ pub trait ResidualSafe: Debug + Display {
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
+impl<
+        #[cfg(not(feature = "serde"))] T: Residual,
+        #[cfg(feature = "serde")] T: Residual + crate::serde::Tagged,
+    > ResidualSafe for T
+{
+    fn dim_in(&self) -> usize {
+        Residual::dim_in(self)
+    }
+
+    fn dim_out(&self) -> usize {
+        Residual::dim_out(self)
+    }
+
+    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
+        Residual::residual(self, values, keys)
+    }
+
+    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
+        Residual::residual_jacobian(self, values, keys)
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_name(&self) -> &'static str {
+        Self::TAG
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_deserialize(&self) {}
+}
+
 // ------------------------- Use Macro to create residuals with set sizes -------------------------
 use paste::paste;
 
