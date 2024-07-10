@@ -19,6 +19,7 @@ jobs:
         components: clippy
     - uses: giraffate/clippy-action@v1
       with:
+        clippy_flags: -- -Dwarnings
         reporter: 'github-pr-review'
   test:
     runs-on: ubuntu-latest
