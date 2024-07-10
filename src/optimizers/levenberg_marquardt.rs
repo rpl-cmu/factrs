@@ -3,7 +3,7 @@ use std::ops::Mul;
 use faer::{scale, sparse::SparseColMat};
 use faer_ext::IntoNalgebra;
 
-use super::{OptError, OptResult, Optimizer, OptimizerParams};
+use super::{GraphOptimizer, OptError, OptObserverVec, OptParams, OptResult, Optimizer};
 use crate::{
     containers::{Graph, GraphOrder, Values, ValuesOrder},
     dtype,
@@ -32,20 +32,22 @@ impl Default for LevenParams {
 pub struct LevenMarquardt<S: LinearSolver = CholeskySolver> {
     graph: Graph,
     solver: S,
-    pub params_base: OptimizerParams,
+    pub params_base: OptParams,
     pub params_leven: LevenParams,
+    observers: OptObserverVec<Values>,
     lambda: dtype,
     // For caching computation between steps
     graph_order: Option<GraphOrder>,
 }
 
-impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
+impl<S: LinearSolver> GraphOptimizer for LevenMarquardt<S> {
     fn new(graph: Graph) -> Self {
         Self {
             graph,
             solver: S::default(),
-            params_base: OptimizerParams::default(),
+            params_base: OptParams::default(),
             params_leven: LevenParams::default(),
+            observers: OptObserverVec::default(),
             lambda: 1e-5,
             graph_order: None,
         }
@@ -54,9 +56,21 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
     fn graph(&self) -> &Graph {
         &self.graph
     }
+}
 
-    fn params(&self) -> &OptimizerParams {
+impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
+    type Input = Values;
+
+    fn observers(&self) -> &OptObserverVec<Self::Input> {
+        &self.observers
+    }
+
+    fn params(&self) -> &OptParams {
         &self.params_base
+    }
+
+    fn error(&self, values: &Values) -> crate::dtype {
+        self.graph.error(values)
     }
 
     fn init(&mut self, _values: &Values) {
@@ -70,7 +84,7 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
 
     // TODO: Some form of logging of the lambda value
     // TODO: More sophisticated stopping criteria based on magnitude of the gradient
-    fn step(&mut self, mut values: Values) -> OptResult {
+    fn step(&mut self, mut values: Values) -> OptResult<Values> {
         // Make an ordering
         let order = ValuesOrder::from_values(&values);
 
@@ -122,7 +136,7 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
                 .into_nalgebra()
                 .column(0)
                 .clone_owned();
-            dx = LinearValues::from_order_and_values(
+            dx = LinearValues::from_order_and_vector(
                 self.graph_order.as_ref().unwrap().order.clone(),
                 delta,
             );

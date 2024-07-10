@@ -1,9 +1,9 @@
 use nalgebra::{DimNameAdd, DimNameSum};
 
 use super::{Residual, Residual2};
+#[allow(unused_imports)]
 use crate::{
     containers::{Symbol, Values},
-    dtype,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -16,11 +16,39 @@ use crate::{
         Numeric,
         VectorX,
     },
-    variables::Variable,
+    tag_residual,
+    variables::{
+        Variable,
+        VariableUmbrella,
+        VectorVar1,
+        VectorVar2,
+        VectorVar3,
+        VectorVar4,
+        VectorVar5,
+        VectorVar6,
+        SE2,
+        SE3,
+        SO2,
+        SO3,
+    },
 };
+
+tag_residual!(
+    BetweenResidual<VectorVar1>,
+    BetweenResidual<VectorVar2>,
+    BetweenResidual<VectorVar3>,
+    BetweenResidual<VectorVar4>,
+    BetweenResidual<VectorVar5>,
+    BetweenResidual<VectorVar6>,
+    BetweenResidual<SE2>,
+    BetweenResidual<SE3>,
+    BetweenResidual<SO2>,
+    BetweenResidual<SO3>,
+);
 
 // Between Variable
 #[derive(Clone, Debug, derive_more::Display)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct BetweenResidual<P: Variable> {
     delta: P,
 }
@@ -31,7 +59,7 @@ impl<P: Variable> BetweenResidual<P> {
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + 'static> Residual2 for BetweenResidual<P>
+impl<P: VariableUmbrella + 'static> Residual2 for BetweenResidual<P>
 where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
@@ -55,7 +83,7 @@ where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
     DualVector<DimNameSum<P::Dim, P::Dim>>: Copy,
-    P: Variable<Alias<dtype> = P> + 'static,
+    P: VariableUmbrella + 'static,
     P::Dim: DimNameAdd<P::Dim>,
 {
     type DimOut = <Self as Residual2>::DimOut;

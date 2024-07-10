@@ -9,6 +9,7 @@ use crate::{linear::LinearValues, variables::VariableSafe};
 // we can just use dtype rather than using generics with Numeric
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
     values: AHashMap<Symbol, Box<dyn VariableSafe>>,
 }
@@ -35,8 +36,7 @@ impl Values {
         key: Symbol,
         value: impl VariableSafe,
     ) -> Option<Box<dyn VariableSafe>> {
-        // TODO: Avoid cloning here?
-        self.values.insert(key, value.clone_box())
+        self.values.insert(key, Box::new(value))
     }
 
     pub fn get(&self, key: &Symbol) -> Option<&Box<dyn VariableSafe>> {
@@ -60,6 +60,13 @@ impl Values {
 
     pub fn get_mut(&mut self, key: &Symbol) -> Option<&mut Box<dyn VariableSafe>> {
         self.values.get_mut(key)
+    }
+
+    // TODO: This should be some kind of error
+    pub fn get_mut_cast<T: VariableSafe>(&mut self, key: &Symbol) -> Option<&mut T> {
+        self.values
+            .get_mut(key)
+            .and_then(|value| value.downcast_mut::<T>())
     }
 
     pub fn remove(&mut self, key: &Symbol) -> Option<Box<dyn VariableSafe>> {

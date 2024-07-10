@@ -3,11 +3,13 @@ use crate::{
     dtype,
     linalg::{AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, MatrixBlock},
     linear::LinearFactor,
-    noise::{GaussianNoise, NoiseModel, NoiseModelSafe},
+    noise::{NoiseModel, NoiseModelSafe, UnitNoise},
     residuals::{Residual, ResidualSafe},
-    robust::{RobustCost, RobustCostSafe, L2},
+    robust::{RobustCostSafe, L2},
 };
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
     pub keys: Vec<Symbol>,
     residual: Box<dyn ResidualSafe>,
@@ -21,14 +23,15 @@ impl Factor {
         residual: R,
     ) -> Self
     where
-        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>> + ResidualSafe,
         AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
+        UnitNoise<DIM_OUT>: NoiseModelSafe,
     {
         Self {
             keys: keys.to_vec(),
             residual: Box::new(residual),
-            noise: Box::new(GaussianNoise::<DIM_OUT>::identity()),
+            noise: Box::new(UnitNoise::<DIM_OUT>),
             robust: Box::new(L2),
         }
     }
@@ -39,8 +42,8 @@ impl Factor {
         noise: N,
     ) -> Self
     where
-        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
-        N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>> + ResidualSafe,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModelSafe,
         AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
     {
@@ -59,11 +62,11 @@ impl Factor {
         robust: C,
     ) -> Self
     where
-        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>>,
+        R: 'static + Residual<NumVars = Const<NUM_VARS>, DimOut = Const<DIM_OUT>> + ResidualSafe,
         AllocatorBuffer<R::DimIn>: Sync + Send,
         DefaultAllocator: DualAllocator<R::DimIn>,
-        N: 'static + NoiseModel<Dim = Const<DIM_OUT>>,
-        C: 'static + RobustCost,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModelSafe,
+        C: 'static + RobustCostSafe,
     {
         Self {
             keys: keys.to_vec(),
@@ -75,7 +78,7 @@ impl Factor {
 
     pub fn error(&self, values: &Values) -> dtype {
         let r = self.residual.residual(values, &self.keys);
-        let r = self.noise.whiten_vec(r.as_view());
+        let r = self.noise.whiten_vec(r);
         let norm2 = r.norm_squared();
         self.robust.loss(norm2)
     }
@@ -89,8 +92,8 @@ impl Factor {
         let DiffResult { value: r, diff: a } = self.residual.residual_jacobian(values, &self.keys);
 
         // Whiten residual and jacobian
-        let r = self.noise.whiten_vec(r.as_view());
-        let a = self.noise.whiten_mat(a.as_view());
+        let r = self.noise.whiten_vec(r);
+        let a = self.noise.whiten_mat(a);
 
         // Weight according to robust cost
         let norm2 = r.norm_squared();

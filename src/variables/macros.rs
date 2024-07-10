@@ -9,7 +9,7 @@ macro_rules! assert_variable_eq {
     ($x:expr, $y:expr, comp = abs, tol = $tol:expr) => {
         matrixcompare::assert_matrix_eq!(
             $x.ominus(&$y),
-            VectorX::zeros($x.dim()),
+            VectorX::zeros($crate::variables::traits::Variable::dim(&$x)),
             comp = abs,
             tol = $tol
         );
@@ -157,4 +157,11 @@ macro_rules! test_lie {
             matrixcompare::assert_matrix_eq!(dx, dx_exp, comp = abs, tol = 1e-6);
         }
     };
+}
+
+#[macro_export]
+macro_rules! tag_variable {
+    ($($ty:ty),* $(,)?) => {$(
+        $crate::register_typetag!($crate::variables::VariableSafe, $ty);
+    )*};
 }

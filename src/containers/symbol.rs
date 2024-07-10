@@ -10,9 +10,14 @@ const CHR_MASK: u64 = (char::MAX as u64) << IDX_BITS;
 const IDX_MASK: u64 = !CHR_MASK;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Symbol(u64);
 
 impl Symbol {
+    pub fn new_raw(key: u64) -> Self {
+        Symbol(key)
+    }
+
     pub fn chr(&self) -> char {
         ((self.0 & CHR_MASK) >> IDX_BITS) as u8 as char
     }

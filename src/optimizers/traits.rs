@@ -1,71 +1,82 @@
-use crate::{
-    containers::{Graph, Values},
-    dtype,
-};
+use crate::{containers::Graph, dtype};
 
 #[derive(Debug)]
 pub enum OptError {
-    MaxIterations(Values),
+    MaxIterations,
     InvalidSystem,
     FailedToStep,
 }
 
-pub type OptResult = Result<Values, OptError>;
+pub type OptResult<Input> = Result<Input, OptError>;
 
-pub struct OptimizerParams {
+// ------------------------- Optimizer Params ------------------------- //
+pub struct OptParams {
     pub max_iterations: usize,
     pub error_tol_relative: dtype,
     pub error_tol_absolute: dtype,
     pub error_tol: dtype,
-    pub callbacks: Vec<Box<dyn OptimizerCallback>>,
 }
 
-pub trait OptimizerCallback {
-    fn on_step(&self, values: &Values, time: f64);
-}
-
-impl Default for OptimizerParams {
+impl Default for OptParams {
     fn default() -> Self {
         Self {
             max_iterations: 100,
             error_tol_relative: 1e-6,
             error_tol_absolute: 1e-6,
             error_tol: 0.0,
-            callbacks: Vec::new(),
         }
     }
 }
 
-impl OptimizerParams {
-    pub fn add_callback(&mut self, callback: impl OptimizerCallback + 'static) {
+// ------------------------- Optimizer Observers ------------------------- //
+pub trait OptObserver {
+    type Input;
+    fn on_step(&self, values: &Self::Input, time: f64);
+}
+
+pub struct OptObserverVec<I> {
+    observers: Vec<Box<dyn OptObserver<Input = I>>>,
+}
+
+impl<I> OptObserverVec<I> {
+    pub fn add(&mut self, callback: impl OptObserver<Input = I> + 'static) {
         let boxed = Box::new(callback);
-        self.callbacks.push(boxed);
+        self.observers.push(boxed);
     }
 
-    pub fn notify_callbacks(&self, values: &Values, idx: usize) {
-        for callback in &self.callbacks {
+    pub fn notify(&self, values: &I, idx: usize) {
+        for callback in &self.observers {
             callback.on_step(values, idx as f64);
         }
     }
 }
 
-pub trait Optimizer {
-    fn new(graph: Graph) -> Self;
-
-    fn graph(&self) -> &Graph;
-
-    fn params(&self) -> &OptimizerParams;
-
-    fn step(&mut self, values: Values) -> OptResult;
-
-    fn error(&self, values: &Values) -> dtype {
-        self.graph().error(values)
+impl<I> Default for OptObserverVec<I> {
+    fn default() -> Self {
+        Self {
+            observers: Vec::new(),
+        }
     }
+}
 
-    fn init(&mut self, _values: &Values) {}
+// ------------------------- Actual Trait Impl ------------------------- //
+pub trait Optimizer {
+    type Input;
+
+    // Wrappers for setup
+    fn observers(&self) -> &OptObserverVec<Self::Input>;
+
+    fn params(&self) -> &OptParams;
+
+    // Core optimization functions
+    fn step(&mut self, values: Self::Input) -> OptResult<Self::Input>;
+
+    fn error(&self, values: &Self::Input) -> dtype;
+
+    fn init(&mut self, _values: &Self::Input) {}
 
     // TODO: Custom logging based on optimizer
-    fn optimize(&mut self, mut values: Values) -> OptResult {
+    fn optimize(&mut self, mut values: Self::Input) -> OptResult<Self::Input> {
         // Setup up everything from our values
         self.init(&values);
 
@@ -118,8 +129,8 @@ pub trait Optimizer {
                 error_decrease_rel
             );
 
-            // Notify callbacks
-            self.params().notify_callbacks(&values, i);
+            // Notify observers
+            self.observers().notify(&values, i);
 
             // Check if we need to stop
             if error_new <= self.params().error_tol {
@@ -136,6 +147,12 @@ pub trait Optimizer {
             }
         }
 
-        Err(OptError::MaxIterations(values))
+        Err(OptError::MaxIterations)
     }
+}
+
+pub trait GraphOptimizer: Optimizer {
+    fn new(graph: Graph) -> Self;
+
+    fn graph(&self) -> &Graph;
 }

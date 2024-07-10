@@ -13,8 +13,8 @@ use rerun::{
 
 use crate::{
     containers::Values,
-    optimizers::OptimizerCallback,
-    variables::{MatrixLieGroup, Variable, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
+    optimizers::OptObserver,
+    variables::{MatrixLieGroup, VariableUmbrella, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
 };
 /*
 Each of our fact.rs types can be turned into a handful of rerun types. These include,
@@ -351,9 +351,9 @@ impl<'a> FromIterator<&'a SE3> for Points3D {
 }
 
 // ------------------------- Streamer ------------------------- //
-pub struct RerunSender<V, R>
+pub struct RerunObserver<V, R>
 where
-    V: Variable + 'static,
+    V: VariableUmbrella + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
@@ -363,9 +363,9 @@ where
     v_phantom: std::marker::PhantomData<V>,
 }
 
-impl<V, R> RerunSender<V, R>
+impl<V, R> RerunObserver<V, R>
 where
-    V: Variable + 'static,
+    V: VariableUmbrella + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
@@ -379,12 +379,14 @@ where
     }
 }
 
-impl<V, R> OptimizerCallback for RerunSender<V, R>
+impl<V, R> OptObserver for RerunObserver<V, R>
 where
-    V: Variable + 'static,
+    V: VariableUmbrella + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
+    type Input = Values;
+
     fn on_step(&self, values: &Values, idx: f64) {
         self.rec.set_time_seconds("stable_time", idx);
         let sol: R = values.filter::<V>().collect();

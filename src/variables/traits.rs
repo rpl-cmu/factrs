@@ -91,6 +91,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait VariableSafe: Debug + Display + Downcast {
     fn clone_box(&self) -> Box<dyn VariableSafe>;
 
@@ -99,7 +100,11 @@ pub trait VariableSafe: Debug + Display + Downcast {
     fn oplus_mut(&mut self, delta: VectorViewX);
 }
 
-impl<T: Variable + 'static> VariableSafe for T {
+impl<
+        #[cfg(not(feature = "serde"))] T: Variable + 'static,
+        #[cfg(feature = "serde")] T: Variable + 'static + crate::serde::Tagged,
+    > VariableSafe for T
+{
     fn clone_box(&self) -> Box<dyn VariableSafe> {
         Box::new((*self).clone())
     }
@@ -111,7 +116,23 @@ impl<T: Variable + 'static> VariableSafe for T {
     fn oplus_mut(&mut self, delta: VectorViewX) {
         *self = self.oplus(delta);
     }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_name(&self) -> &'static str {
+        Self::TAG
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_deserialize(&self) {}
 }
+
+pub trait VariableUmbrella<D: Numeric = dtype>:
+    VariableSafe + Variable<D, Alias<D> = Self>
+{
+}
+impl<D: Numeric, T: VariableSafe + Variable<D, Alias<D> = T>> VariableUmbrella<D> for T {}
 
 impl_downcast!(VariableSafe);
 

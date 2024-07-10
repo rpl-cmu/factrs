@@ -3,7 +3,8 @@ use faer::sparse::SymbolicSparseColMat;
 use super::{Idx, Values, ValuesOrder};
 use crate::{dtype, factors::Factor, linear::LinearGraph};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Graph {
     factors: Vec<Factor>,
 }

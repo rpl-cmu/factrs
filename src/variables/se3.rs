@@ -23,10 +23,14 @@ use crate::{
         VectorViewX,
         VectorX,
     },
+    tag_variable,
     variables::{MatrixLieGroup, Variable, SO3},
 };
 
+tag_variable!(SE3);
+
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SE3<D: Numeric = dtype> {
     rot: SO3<D>,
     xyz: Vector3<D>,

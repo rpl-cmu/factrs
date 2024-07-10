@@ -1,7 +1,7 @@
 use super::{Residual, Residual1};
+#[allow(unused_imports)]
 use crate::{
     containers::{Symbol, Values},
-    dtype,
     linalg::{
         AllocatorBuffer,
         Const,
@@ -14,21 +14,49 @@ use crate::{
         Numeric,
         VectorX,
     },
-    variables::Variable,
+    tag_residual,
+    variables::{
+        Variable,
+        VariableUmbrella,
+        VectorVar1,
+        VectorVar2,
+        VectorVar3,
+        VectorVar4,
+        VectorVar5,
+        VectorVar6,
+        SE2,
+        SE3,
+        SO2,
+        SO3,
+    },
 };
 
+tag_residual!(
+    PriorResidual<VectorVar1>,
+    PriorResidual<VectorVar2>,
+    PriorResidual<VectorVar3>,
+    PriorResidual<VectorVar4>,
+    PriorResidual<VectorVar5>,
+    PriorResidual<VectorVar6>,
+    PriorResidual<SE2>,
+    PriorResidual<SE3>,
+    PriorResidual<SO2>,
+    PriorResidual<SO3>,
+);
+
 #[derive(Clone, Debug, derive_more::Display)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct PriorResidual<P: Variable> {
     prior: P,
 }
 
-impl<P: Variable<Alias<dtype> = P>> PriorResidual<P> {
+impl<P: VariableUmbrella> PriorResidual<P> {
     pub fn new(prior: P) -> Self {
         Self { prior }
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + 'static> Residual1 for PriorResidual<P>
+impl<P: VariableUmbrella + 'static> Residual1 for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
@@ -44,7 +72,7 @@ where
     }
 }
 
-impl<P: Variable<Alias<dtype> = P> + 'static> Residual for PriorResidual<P>
+impl<P: VariableUmbrella + 'static> Residual for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
@@ -85,7 +113,7 @@ mod test {
 
     fn test_prior_jacobian<P>(prior: P)
     where
-        P: Variable<Alias<dtype> = P> + 'static,
+        P: VariableUmbrella + 'static,
         AllocatorBuffer<P::Dim>: Sync + Send,
         DefaultAllocator: DualAllocator<P::Dim>,
         DualVector<P::Dim>: Copy,

@@ -23,10 +23,14 @@ use crate::{
         VectorViewX,
         VectorX,
     },
+    tag_variable,
     variables::{MatrixLieGroup, Variable},
 };
 
+tag_variable!(SO2);
+
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SO2<D: Numeric = dtype> {
     a: D,
     b: D,

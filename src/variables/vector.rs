@@ -18,15 +18,27 @@ use crate::{
         VectorViewX,
         VectorX,
     },
+    tag_variable,
     variables::Variable,
 };
 
+tag_variable!(
+    VectorVar<1>,
+    VectorVar<2>,
+    VectorVar<3>,
+    VectorVar<4>,
+    VectorVar<5>,
+    VectorVar<6>,
+);
+
+// ------------------------- Our needs ------------------------- //
 // We create a newtype specifically for vectors we're estimating over due to,
 // 1 - So we can manually implement Debug/Display
 // 2 - Overcome identity issues with the underlying Vector type
 // 3 - Impl Into<Rerun types>
 #[derive(Clone)]
-pub struct VectorVar<const N: usize, D: Numeric>(Vector<N, D>);
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct VectorVar<const N: usize, D: Numeric = dtype>(Vector<N, D>);
 
 impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
     type Dim = Const<N>;

@@ -4,13 +4,13 @@ use std::{
     time::Instant,
 };
 
-use rerun::{Arrows2D, Arrows3D, Points2D, Points3D};
-use samrs::{
-    optimizers::{GaussNewton, Optimizer},
-    rerun::RerunSender,
+use factrs::{
+    optimizers::{GaussNewton, GraphOptimizer, Optimizer},
+    rerun::RerunObserver,
     utils::load_g20,
     variables::*,
 };
+use rerun::{Arrows2D, Arrows3D, Points2D, Points3D};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------- Parse Arguments & Load data ------------------------- //
@@ -46,20 +46,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let topic = "base/solution";
     match (dim, obj) {
         ("se2", "points") => {
-            let callback = RerunSender::<SE2, Points2D>::new(rec, topic);
-            optimizer.params.add_callback(callback)
+            let callback = RerunObserver::<SE2, Points2D>::new(rec, topic);
+            optimizer.observers.add(callback)
         }
         ("se2", "arrows") => {
-            let callback = RerunSender::<SE2, Arrows2D>::new(rec, topic);
-            optimizer.params.add_callback(callback)
+            let callback = RerunObserver::<SE2, Arrows2D>::new(rec, topic);
+            optimizer.observers.add(callback)
         }
         ("se3", "points") => {
-            let callback = RerunSender::<SE3, Points3D>::new(rec, topic);
-            optimizer.params.add_callback(callback)
+            let callback = RerunObserver::<SE3, Points3D>::new(rec, topic);
+            optimizer.observers.add(callback)
         }
         ("se3", "arrows") => {
-            let callback = RerunSender::<SE3, Arrows3D>::new(rec, topic);
-            optimizer.params.add_callback(callback)
+            let callback = RerunObserver::<SE3, Arrows3D>::new(rec, topic);
+            optimizer.observers.add(callback)
         }
         _ => panic!("Invalid arguments"),
     };

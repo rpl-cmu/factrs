@@ -1,16 +1,15 @@
-use std::fmt;
+use std::fmt::{Debug, Display};
 
 use crate::{
     containers::{Symbol, Values},
-    dtype,
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
-    variables::Variable,
+    variables::{Variable, VariableUmbrella},
 };
 
 type Alias<V, D> = <V as Variable>::Alias<D>;
 
 // ------------------------- Base Residual Trait & Helpers ------------------------- //
-pub trait Residual: fmt::Debug {
+pub trait Residual: Debug + Display {
     type DimIn: DimName;
     type DimOut: DimName;
     type NumVars: DimName;
@@ -28,7 +27,8 @@ pub trait Residual: fmt::Debug {
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
-pub trait ResidualSafe {
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
+pub trait ResidualSafe: Debug + Display {
     fn dim_in(&self) -> usize;
 
     fn dim_out(&self) -> usize;
@@ -38,26 +38,39 @@ pub trait ResidualSafe {
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
-impl<T: Residual> ResidualSafe for T {
+impl<
+        #[cfg(not(feature = "serde"))] T: Residual,
+        #[cfg(feature = "serde")] T: Residual + crate::serde::Tagged,
+    > ResidualSafe for T
+{
     fn dim_in(&self) -> usize {
-        T::DimIn::USIZE
+        Residual::dim_in(self)
     }
 
     fn dim_out(&self) -> usize {
-        T::DimOut::USIZE
+        Residual::dim_out(self)
     }
 
     fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
-        self.residual(values, keys)
+        Residual::residual(self, values, keys)
     }
 
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
-        self.residual_jacobian(values, keys)
+        Residual::residual_jacobian(self, values, keys)
     }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_name(&self) -> &'static str {
+        Self::TAG
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "serde")]
+    fn typetag_deserialize(&self) {}
 }
 
 // ------------------------- Use Macro to create residuals with set sizes -------------------------
-// //
 use paste::paste;
 
 macro_rules! residual_maker {
@@ -66,7 +79,7 @@ macro_rules! residual_maker {
             pub trait [<Residual $num>]: Residual
             {
                 $(
-                    type $var: Variable<Alias<dtype> = Self::$var>;
+                    type $var: VariableUmbrella;
                 )*
                 type DimIn: DimName;
                 type DimOut: DimName;
