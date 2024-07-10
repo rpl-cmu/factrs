@@ -40,13 +40,13 @@ impl<
 }
 
 #[macro_export]
-macro_rules! register_robust {
+macro_rules! tag_robust {
     ($($ty:ty),* $(,)?) => {$(
         $crate::register_typetag!($crate::robust::RobustCostSafe, $ty);
     )*};
 }
 
-register_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
+tag_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
 
 // ------------------------- L2 Norm ------------------------- //
 #[derive(Debug)]

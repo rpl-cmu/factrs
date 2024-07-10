@@ -52,7 +52,7 @@ impl<
 }
 
 #[macro_export]
-macro_rules! register_noise {
+macro_rules! tag_noise {
     ($($ty:ty),* $(,)?) => {$(
         $crate::register_typetag!($crate::noise::NoiseModelSafe, $ty);
     )*};

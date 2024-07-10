@@ -1,10 +1,10 @@
 use super::NoiseModel;
 use crate::{
     linalg::{Const, MatrixX, VectorX},
-    register_noise,
+    tag_noise,
 };
 
-register_noise!(
+tag_noise!(
     UnitNoise<1>,
     UnitNoise<2>,
     UnitNoise<3>,
