@@ -3,6 +3,16 @@ use faer::sparse::SymbolicSparseColMat;
 use super::{Idx, Values, ValuesOrder};
 use crate::{dtype, factors::Factor, linear::LinearGraph};
 
+/// Structure to represent a nonlinear factor graph
+///
+/// Main usage will be via `add_factor` to add new [factors](Factor) to the graph.
+/// Also of note is the `linearize` function that returns a [linear (aka Gaussian) factor graph](LinearGraph).
+/// ```
+/// # use factrs::prelude::*;
+/// # let factor = Factor::new_base(&[X(0)], PriorResidual::new(SO2::identity()));
+/// let mut graph = Graph::new();
+/// graph.add_factor(factor);
+/// ```
 #[derive(Default, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Graph {
