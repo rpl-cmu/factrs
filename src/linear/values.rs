@@ -1,7 +1,7 @@
 use std::collections::hash_map::Iter as HashMapIter;
 
 use crate::{
-    containers::{Idx, Key, Symbol, Values, ValuesOrder},
+    containers::{Idx, Symbol, Values, ValuesOrder},
     linalg::{VectorViewX, VectorX},
 };
 
@@ -60,7 +60,7 @@ impl LinearValues {
         self.get_idx(idx).into()
     }
 
-    pub fn iter(&self) -> Iter<'_, Symbol> {
+    pub fn iter(&self) -> Iter<'_> {
         Iter {
             values: self,
             idx: self.order.iter(),
@@ -68,13 +68,13 @@ impl LinearValues {
     }
 }
 
-pub struct Iter<'a, K: Key> {
+pub struct Iter<'a> {
     values: &'a LinearValues,
-    idx: HashMapIter<'a, K, Idx>,
+    idx: HashMapIter<'a, Symbol, Idx>,
 }
 
-impl<'a, K: Key> Iterator for Iter<'a, K> {
-    type Item = (&'a K, VectorViewX<'a>);
+impl<'a> Iterator for Iter<'a> {
+    type Item = (&'a Symbol, VectorViewX<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let n = self.idx.next()?;
