@@ -36,10 +36,6 @@ impl<S: LinearSolver> GraphOptimizer for GaussNewton<S> {
 impl<S: LinearSolver> Optimizer for GaussNewton<S> {
     type Input = Values;
 
-    fn observers(&self) -> &OptObserverVec<Values> {
-        &self.observers
-    }
-
     fn error(&self, values: &Values) -> crate::dtype {
         self.graph.error(values)
     }
@@ -57,7 +53,7 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
         );
     }
 
-    fn step(&mut self, mut values: Values) -> OptResult<Values> {
+    fn step(&mut self, mut values: Values, idx: usize) -> OptResult<Values> {
         // Solve the linear system
         let linear_graph = self.graph.linearize(&values);
         let DiffResult { value: r, diff: j } =
@@ -78,6 +74,8 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
             delta,
         );
         values.oplus_mut(&dx);
+
+        self.observers.notify(&values, idx);
 
         Ok(values)
     }
