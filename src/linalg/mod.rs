@@ -1,4 +1,4 @@
-use nalgebra::{self as na, allocator::Allocator, OVector};
+use nalgebra::{self as na, OVector};
 
 use crate::dtype;
 
@@ -6,7 +6,17 @@ mod dual;
 pub use dual::{AllocatorBuffer, DualAllocator, DualScalar, DualVector, Numeric};
 // Re-export all nalgebra types to put default dtype on everything
 // Misc imports
-pub use na::{dmatrix, dvector, Const, DefaultAllocator, Dim, DimName, Dyn, RealField};
+pub use na::{
+    allocator::Allocator,
+    dmatrix,
+    dvector,
+    Const,
+    DefaultAllocator,
+    Dim,
+    DimName,
+    Dyn,
+    RealField,
+};
 // Dual numbers
 pub use num_dual::Derivative;
 

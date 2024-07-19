@@ -61,10 +61,6 @@ impl<S: LinearSolver> GraphOptimizer for LevenMarquardt<S> {
 impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
     type Input = Values;
 
-    fn observers(&self) -> &OptObserverVec<Self::Input> {
-        &self.observers
-    }
-
     fn params(&self) -> &OptParams {
         &self.params_base
     }
@@ -84,7 +80,7 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
 
     // TODO: Some form of logging of the lambda value
     // TODO: More sophisticated stopping criteria based on magnitude of the gradient
-    fn step(&mut self, mut values: Values) -> OptResult<Values> {
+    fn step(&mut self, mut values: Values, idx: usize) -> OptResult<Values> {
         // Make an ordering
         let order = ValuesOrder::from_values(&values);
 
@@ -160,6 +156,9 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
         if self.lambda < self.params_leven.lambda_min {
             self.lambda = self.params_leven.lambda_min;
         }
+
+        self.observers.notify(&values, idx);
+
         Ok(values)
     }
 }

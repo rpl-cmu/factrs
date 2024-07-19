@@ -1,13 +1,13 @@
 use crate::{containers::Graph, dtype};
 
 #[derive(Debug)]
-pub enum OptError {
-    MaxIterations,
+pub enum OptError<Input> {
+    MaxIterations(Input),
     InvalidSystem,
     FailedToStep,
 }
 
-pub type OptResult<Input> = Result<Input, OptError>;
+pub type OptResult<Input> = Result<Input, OptError<Input>>;
 
 // ------------------------- Optimizer Params ------------------------- //
 pub struct OptParams {
@@ -64,12 +64,10 @@ pub trait Optimizer {
     type Input;
 
     // Wrappers for setup
-    fn observers(&self) -> &OptObserverVec<Self::Input>;
-
     fn params(&self) -> &OptParams;
 
     // Core optimization functions
-    fn step(&mut self, values: Self::Input) -> OptResult<Self::Input>;
+    fn step(&mut self, values: Self::Input, idx: usize) -> OptResult<Self::Input>;
 
     fn error(&self, values: &Self::Input) -> dtype;
 
@@ -113,7 +111,7 @@ pub trait Optimizer {
         let mut error_new = error_old;
         for i in 1..self.params().max_iterations + 1 {
             error_old = error_new;
-            values = self.step(values)?;
+            values = self.step(values, i)?;
 
             // Evaluate error again to see how we did
             error_new = self.error(&values);
@@ -128,9 +126,6 @@ pub trait Optimizer {
                 error_decrease_abs,
                 error_decrease_rel
             );
-
-            // Notify observers
-            self.observers().notify(&values, i);
 
             // Check if we need to stop
             if error_new <= self.params().error_tol {
@@ -147,7 +142,7 @@ pub trait Optimizer {
             }
         }
 
-        Err(OptError::MaxIterations)
+        Err(OptError::MaxIterations(values))
     }
 }
 
