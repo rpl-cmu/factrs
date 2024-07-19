@@ -1,8 +1,10 @@
-//! fact.rs is a nonlinear least squares optimization library over factor graphs, specifically geared for sensor fusion in robotics.
+//! fact.rs is a nonlinear least squares optimization library over factor
+//! graphs, specifically geared for sensor fusion in robotics.
 //!
 //! Currently, it supports the following features
 //! - Gauss-Newton & Levenberg-Marquadt Optimizers
-//! - Common Lie Groups supported (SO2, SO3, SE2, SE3) with optimization in Lie Algebras
+//! - Common Lie Groups supported (SO2, SO3, SE2, SE3) with optimization in Lie
+//!   Algebras
 //! - Automatic differentiation via dual numbers
 //! - First class support for robust kernels
 //! - Serialization of graphs & variables via optional serde support
@@ -11,7 +13,7 @@
 //! # Example
 //! ```
 //! use factrs::prelude::*;
-//! 
+//!
 //! // Make all the values
 //! let mut values = Values::new();
 //!
@@ -20,7 +22,7 @@
 //! values.insert(X(0), SO2::identity());
 //! values.insert(X(1), SO2::identity());
 //!
-//! // Make the graph
+//! // Make the factors & insert into graph
 //! let mut graph = Graph::new();
 //!
 //! let res = PriorResidual::new(x.clone());
@@ -34,7 +36,7 @@
 //! graph.add_factor(factor);
 //!
 //! // Optimize!
-//! let mut opt : GaussNewton = GaussNewton::new(graph);
+//! let mut opt: GaussNewton = GaussNewton::new(graph);
 //! let result = opt.optimize(values);
 //! ```
 
@@ -47,7 +49,6 @@ pub type dtype = f64;
 pub type dtype = f32;
 
 pub mod containers;
-pub mod factors;
 pub mod linalg;
 pub mod linear;
 pub mod noise;
@@ -58,13 +59,14 @@ pub mod utils;
 pub mod variables;
 
 pub mod prelude {
-    pub use crate::containers::*;
-    pub use crate::factors::Factor;
-    pub use crate::noise::*;
-    pub use crate::optimizers::*;
-    pub use crate::residuals::*;
-    pub use crate::robust::*;
-    pub use crate::variables::*;
+    pub use crate::{
+        containers::*,
+        noise::*,
+        optimizers::*,
+        residuals::*,
+        robust::*,
+        variables::*,
+    };
 }
 
 #[cfg(feature = "rerun")]

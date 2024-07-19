@@ -4,9 +4,8 @@ use std::{
 };
 
 use crate::{
-    containers::{Graph, Values, X},
+    containers::{Factor, Graph, Values, X},
     dtype,
-    factors::Factor,
     linalg::{Matrix3, Matrix6, Vector3},
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},

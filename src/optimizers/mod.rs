@@ -24,9 +24,8 @@ pub mod test {
 
     use super::*;
     use crate::{
-        containers::{Graph, Values, X},
+        containers::{Factor, Graph, Values, X},
         dtype,
-        factors::Factor,
         linalg::{Const, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
         residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
