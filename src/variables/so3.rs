@@ -4,7 +4,7 @@ use super::VectorVar4;
 use crate::{
     dtype,
     linalg::{
-        dvector,
+        vectorx,
         AllocatorBuffer,
         Const,
         DefaultAllocator,
@@ -119,7 +119,7 @@ impl<D: Numeric> Variable<D> for SO3<D> {
     }
 
     fn log(&self) -> VectorX<D> {
-        let xi = dvector![self.xyzw[0], self.xyzw[1], self.xyzw[2]];
+        let xi = vectorx![self.xyzw[0], self.xyzw[1], self.xyzw[2]];
         // Abs value in case we had a negative quaternion
         let w = self.xyzw[3].abs();
 

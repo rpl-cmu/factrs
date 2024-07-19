@@ -6,6 +6,15 @@ use crate::{
     variables::Variable,
 };
 
+/// Forward mode differentiator
+///
+/// It operates on functions with regular dtype inputs and outputs, no dual
+/// numbers required. The generic parameter `PWR` is used to specify the power
+/// of the step size, it PWR=6 uses 1e-6 as a step size.
+///
+/// This struct is used to compute the Jacobian of a function using forward mode
+/// differentiation via dual-numbers. It can operate on functions with up to 6
+/// inputs and with vector-valued outputs.
 pub struct NumericalDiff<const PWR: i32 = 6>;
 
 macro_rules! count {
@@ -13,7 +22,6 @@ macro_rules! count {
     ( $x:tt $($xs:tt)* ) => (1usize + count!($($xs)*));
 }
 
-// ------------------------- Default Implementation (doesn't use duals) ------------------------- //
 macro_rules! numerical_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {

@@ -79,6 +79,11 @@ impl Graph {
     }
 }
 
+/// Simple structure to hold the order of the graph
+///
+/// Specifically this is used to cache linearization results such as the order
+/// of the graph and the sparsity pattern of the Jacobian (allows use to avoid
+/// resorting indices).
 pub struct GraphOrder {
     // Contains the order of the variables
     pub order: ValuesOrder,

@@ -40,6 +40,7 @@
 //! let result = opt.optimize(values);
 //! ```
 
+/// The default floating point type used in the library
 #[cfg(not(feature = "f32"))]
 #[allow(non_camel_case_types)]
 pub type dtype = f64;

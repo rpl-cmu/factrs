@@ -3,7 +3,7 @@ use std::{fmt, ops};
 use crate::{
     dtype,
     linalg::{
-        dvector,
+        vectorx,
         AllocatorBuffer,
         Const,
         DefaultAllocator,
@@ -81,7 +81,7 @@ impl<D: Numeric> Variable<D> for SO2<D> {
     }
 
     fn log(&self) -> VectorX<D> {
-        dvector![self.b.atan2(self.a)]
+        vectorx![self.b.atan2(self.a)]
     }
 
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {

@@ -4,7 +4,7 @@ use super::VectorVar2;
 use crate::{
     dtype,
     linalg::{
-        dvector,
+        vectorx,
         AllocatorBuffer,
         Const,
         DefaultAllocator,
@@ -141,7 +141,7 @@ impl<D: Numeric> Variable<D> for SE2<D> {
             &(Vinv * self.xy)
         };
 
-        dvector![theta, xy[0], xy[1]]
+        vectorx![theta, xy[0], xy[1]]
     }
 
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {

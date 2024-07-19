@@ -97,7 +97,7 @@ mod test {
     use super::*;
     use crate::{
         containers::X,
-        linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
+        linalg::{vectorx, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
         variables::{VectorVar3, SE3, SO3},
     };
 
@@ -145,13 +145,13 @@ mod test {
 
     #[test]
     fn prior_so3() {
-        let prior = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
+        let prior = SO3::exp(vectorx![0.1, 0.2, 0.3].as_view());
         test_prior_jacobian(prior);
     }
 
     #[test]
     fn prior_se3() {
-        let prior = SE3::exp(dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0].as_view());
+        let prior = SE3::exp(vectorx![0.1, 0.2, 0.3, 1.0, 2.0, 3.0].as_view());
         test_prior_jacobian(prior);
     }
 }

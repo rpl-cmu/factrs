@@ -1,16 +1,16 @@
-use nalgebra::{allocator::Allocator, Const, DefaultAllocator};
+use nalgebra::{allocator::Allocator, Const};
 
 use super::{Dim, RealField};
 use crate::dtype;
 
-// Setup dual num
+/// Wrapper for all properties needed for dual numbers
 pub trait Numeric: RealField + num_dual::DualNum<dtype> + From<dtype> + Copy {}
 impl<G: RealField + num_dual::DualNum<dtype> + From<dtype> + Copy> Numeric for G {}
 
 pub type DualVector<N> = num_dual::DualVec<dtype, dtype, N>;
 pub type DualScalar = num_dual::Dual<dtype, dtype>;
 
-// Make allocator binds easier
+/// Make allocator binds easier for dual numbers
 pub trait DualAllocator<N: Dim>:
     Allocator<dtype, N>
     + Allocator<dtype, Const<1>, N>
@@ -28,5 +28,3 @@ impl<
     > DualAllocator<N> for T
 {
 }
-
-pub type AllocatorBuffer<N> = <DefaultAllocator as Allocator<dtype, N>>::Buffer;
