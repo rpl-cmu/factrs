@@ -5,23 +5,33 @@ use crate::{
     linalg::{VectorViewX, VectorX},
 };
 
+/// Structure to store linear (aka all vector) values
+///
+/// This structure is the linear equivalent of [Values]. It stores all values in
+/// a single vector, along with indices and dimensions of each variable. Ideally
+/// *shouldn't* ever be needed in practice.
 pub struct LinearValues {
     values: VectorX,
     order: ValuesOrder,
 }
 
 impl LinearValues {
+    /// Create a zero/identity LinearValues from a [ValuesOrder]
     pub fn zero_from_order(order: ValuesOrder) -> Self {
         let values = VectorX::zeros(order.dim());
         Self { values, order }
     }
 
+    /// Create a zero/identity LinearValues from a [Values]
+    ///
+    /// The order is inferred from the values
     pub fn zero_from_values(values: &Values) -> Self {
         let order = ValuesOrder::from_values(values);
         let values = VectorX::zeros(order.dim());
         Self { values, order }
     }
 
+    /// Create a LinearValues from a [ValuesOrder] and a vector
     pub fn from_order_and_vector(order: ValuesOrder, values: VectorX) -> Self {
         assert!(
             values.len() == order.dim(),
@@ -30,6 +40,9 @@ impl LinearValues {
         Self { values, order }
     }
 
+    /// Create a LinearValues from a [Values] and a vector
+    ///
+    /// The order is inferred from the values
     pub fn from_values_and_vector(values: &Values, vector: VectorX) -> Self {
         let order = ValuesOrder::from_values(values);
         assert!(
@@ -55,6 +68,7 @@ impl LinearValues {
         self.values.rows(idx.idx, idx.dim)
     }
 
+    /// Retrieve a vector from the LinearValues
     pub fn get(&self, key: &Symbol) -> Option<VectorViewX<'_>> {
         let idx = self.order.get(key)?;
         self.get_idx(idx).into()

@@ -9,15 +9,25 @@ use faer::{
 
 use crate::dtype;
 
+/// Trait to solve sparse linear systems
 pub trait LinearSolver: Default {
+    /// Solve a symmetric linear system
+    ///
+    /// This will be used by Cholesky to solve A^T A and by Levenberg-Marquardt
+    /// to solve J^T J
     fn solve_symmetric(&mut self, a: SparseColMatRef<usize, dtype>, b: MatRef<dtype>)
         -> Mat<dtype>;
 
+    /// Solve a least squares problem
+    ///
+    /// Used by QR to solve Ax = b, where the number of rows in A is greater
+    /// than the number of columns
     fn solve_lst_sq(&mut self, a: SparseColMatRef<usize, dtype>, b: MatRef<dtype>) -> Mat<dtype>;
 }
 
 // ------------------------- Cholesky Linear Solver ------------------------- //
 
+/// Cholesky linear solver
 #[derive(Default)]
 pub struct CholeskySolver {
     sparsity_pattern: Option<solvers::SymbolicCholesky<usize>>,
@@ -54,6 +64,7 @@ impl LinearSolver for CholeskySolver {
 
 // ------------------------- QR Linear Solver ------------------------- //
 
+/// QR linear solver
 #[derive(Default)]
 pub struct QRSolver {
     sparsity_pattern: Option<solvers::SymbolicQr<usize>>,
@@ -85,6 +96,7 @@ impl LinearSolver for QRSolver {
 
 // ------------------------- LU Linear Solver ------------------------- //
 
+/// LU linear solver
 #[derive(Default)]
 pub struct LUSolver {
     sparsity_pattern: Option<solvers::SymbolicLu<usize>>,
