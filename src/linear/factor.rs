@@ -7,9 +7,9 @@ use crate::{
 
 /// Represents a linear (aka Gaussian) factor.
 ///
-/// This is the linear equivalent of [Factor]. It consists of the relevant keys,
-/// a [MatrixBlock] A, and a [VectorX] b. Again, this *shouldn't* ever need to
-/// be used by hand.
+/// This is the linear equivalent of [Factor](crate::containers::Factor). It
+/// consists of the relevant keys, a [MatrixBlock] A, and a [VectorX] b. Again,
+/// this *shouldn't* ever need to be used by hand.
 pub struct LinearFactor {
     pub keys: Vec<Symbol>,
     pub a: MatrixBlock,
