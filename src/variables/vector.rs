@@ -38,7 +38,7 @@ tag_variable!(
 // 3 - Impl Into<Rerun types>
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct VectorVar<const N: usize, D: Numeric = dtype>(Vector<N, D>);
+pub struct VectorVar<const N: usize, D: Numeric = dtype>(pub Vector<N, D>);
 
 impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
     type Dim = Const<N>;
