@@ -40,6 +40,9 @@
 //! let result = opt.optimize(values);
 //! ```
 
+// TODO: Add some math using latex in documentation
+// https://stackoverflow.com/questions/46495063/how-to-write-math-formulas-for-rust-documentation
+
 /// The default floating point type used in the library
 #[cfg(not(feature = "f32"))]
 #[allow(non_camel_case_types)]

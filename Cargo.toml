@@ -3,6 +3,9 @@ name = "factrs"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header", "katex-header.html"]
+
 [dependencies]
 # base
 ahash = "0.8.11"

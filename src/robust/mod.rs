@@ -8,20 +8,18 @@
 //!
 //! | Name         | Loss Function | Weight Function | Asymptotic Behavior |
 //! |--------------|---------------|-----------------|---------------------|
-//! | L2           | x^2 / 2       | 1               | Quadratic           |
-//! | L1           | \|x\|         | 1 / \|x\|       | Linear              |
-//! | Huber        | --            | --              | Linear              |
-//! | Fair         | --            | --              | Linear              |
-//! | Cauchy       | --            | --              | Constant            |
-//! | Geman-McClure| --            | --              | Constant            |
-//! | Welsch       | --            | --              | Constant            |
-//! | Tukey        | --            | --              | Constant            |
+//! | L2           | $x^2 / 2$ | $1$ | Quadratic           |
+//! | L1           | $\|x\|$ | $1 / \|x\|$ | Linear              |
+//! | Huber $\begin{cases} \|x\| \leq k \\\\ \|x\| > k \end{cases}$ | $\begin{cases} x^2/2 \\\\ k(\|x\| - k/2) \end{cases}$ | $\begin{cases} 1 \\\\ k/\|x\| \end{cases}$ | Linear              |
+//! | Fair         | $c^2 \left(\frac{\|x\|}{c} - \ln(1 + \frac{\|x\|}{c})\right)$ | $1 / (1 + \frac{\|x\|}{c})$ | Linear              |
+//! | Cauchy       | $\frac{c^2}{2}\ln\left(1 + (x/c)^2\right)$ | $1 / (1 + (x/c)^2)$ | Constant            |
+//! | Geman-McClure| $\frac{c^2 x^2}{2} / (c^2 + x^2)$ | $c^2 / (c^2 + x^2)^2$ | Constant            |
+//! | Welsch       | $\frac{c^2}{2}\left(1 - \exp(-(x/c)^2)\right)$ | $\exp(-(x/c)^2)$ | Constant            |
+//! | Tukey $\begin{cases} \|x\| \leq c \\\\ \|x\| > c \end{cases}$ | $\begin{cases} \frac{c^2}{6}\left(1 - \left(1 - (x/c)^2\right)^3\right) \\\\ \frac{c^2}{6} \end{cases}$ | $\begin{cases} \left(1 - (x/c)^2\right)^2 \\\\ 0 \end{cases}$ | Constant            |
 //!
-//! Generally constant is the best at outlier rejection, but relies heavily on
-//! good initialization, although some work such as Graduated Non-Convexity has
-//! been shown to circumvent this requirement.
-//!
-//! TODO: Figure out latex to fill this out better
+//! Generally constant asymptotic behavior is the best at outlier rejection, but
+//! relies heavily on good initialization. Some work, such as Graduated
+//! Non-Convexity (GNC), has been shown to circumvent this requirement.
 
 use std::fmt::Debug;
 
@@ -90,8 +88,7 @@ macro_rules! tag_robust {
 tag_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
 
 // ------------------------- L2 Norm ------------------------- //
-/// L2 norm -> x^2 / 2
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct L2;
 
@@ -112,8 +109,7 @@ impl RobustCost for L2 {
 }
 
 // ------------------------- L1 Norm ------------------------- //
-/// L1 norm -> |x|
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct L1;
 
@@ -138,8 +134,7 @@ impl RobustCost for L1 {
 }
 
 // ------------------------- Huber ------------------------- //
-/// Huber -> x^2 / 2 if |x| <= k, k * |x| - k^2 / 2 otherwise
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Huber {
     k: dtype,
@@ -178,8 +173,7 @@ impl RobustCost for Huber {
 }
 
 // ------------------------- Fair ------------------------- //
-/// Fair -> c^2 * (sqrt(x^2 / c^2) - ln(1 + sqrt(x^2 / c^2)))
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Fair {
     c: dtype,
@@ -209,8 +203,7 @@ impl RobustCost for Fair {
 }
 
 // ------------------------- Cauchy ------------------------- //
-/// Cauchy -> c^2 * ln(1 + x^2 / c^2) / 2
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cauchy {
     c2: dtype,
@@ -241,8 +234,7 @@ impl RobustCost for Cauchy {
 }
 
 // ------------------------- Geman-McClure ------------------------- //
-/// Geman-McClure -> c^2 * x^2 / (c^2 + x^2) / 2
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GemanMcClure {
     c2: dtype,
@@ -275,8 +267,7 @@ impl RobustCost for GemanMcClure {
 }
 
 // ------------------------- Welsch ------------------------- //
-/// Welsch -> c^2 * (1 - exp(-x^2 / c^2)) / 2
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Welsch {
     c2: dtype,
@@ -307,8 +298,7 @@ impl RobustCost for Welsch {
 }
 
 // ------------------------- Tukey ------------------------- //
-/// Tukey -> c^2 * (1 - (1 - x^2 / c^2)^3) / 6
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tukey {
     c2: dtype,
