@@ -19,7 +19,32 @@
                 { left: '\\[', right: '\\]', display: true }
             ],
             // • rendering keys, e.g.:
-            throwOnError: false
+            throwOnError: false,
+            // Macros
+            macros: {
+                "\\blue": "\\textcolor{##0173b2}{#1}",
+                "\\orange": "\\textcolor{##de8f05}{#1}",
+                "\\green": "\\textcolor{##029e73}{#1}",
+                "\\red": "\\textcolor{##d55e00}{#1}",
+                "\\purple": "\\textcolor{##cc78bc}{#1}",
+                "\\brown": "\\textcolor{##ca9161}{#1}",
+                "\\pink": "\\textcolor{##fbafe4}{#1}",
+                "\\grey": "\\textcolor{##949494}{#1}",
+                "\\yellow": "\\textcolor{##ece133}{#1}",
+                "\\teal": "\\textcolor{##56b4e9}{#1}",
+            },
         });
     });
 </script>
+<style>
+ blue {color: #0173b2}
+ orange {color: #de8f05}
+ green {color: #029e73}
+ red {color: #d55e00}
+ purple {color: #cc78bc}
+ brown {color: #ca9161}
+ pink {color: #fbafe4}
+ grey {color: #949494}
+ yellow {color: #ece133}
+ teal {color: #56b4e9}
+</style>

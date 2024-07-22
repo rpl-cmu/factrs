@@ -10,10 +10,26 @@ use crate::{
 
 /// Main structure to represent a factor in the graph.
 ///
+/// $$ \blue{\rho_i}(||\orange{r_i}(\green{\Theta})||_{\red{\Sigma_i}} ) $$
+///
 /// Factors are the main building block of the factor graph. They are composed
-/// of a keys, residual, noise, and a robust kernel. Constructors are available
-/// for a number of default cases including default robust kernel [L2], default
-/// noise model [UnitNoise]. Keys and residual are always required.
+/// of four pieces:
+/// - <green>Keys</green>: The variables that the factor depends on, given by a
+///   slice of [Symbols](Symbol).
+/// - <orange>Residual</orange>: The function that computes the error of the
+///   factor given a set of values, from the [residual](crate::residuals)
+///   module.
+/// - <red>Noise Model</red>: The noise model that describes the uncertainty of
+///   the residual, given by the trait [noise](crate::noise) module.
+/// - <blue>Robust Kernel</blue>: The robust kernel that weights the error of
+///   the factor, given by the trait [robust](crate::robust) module.
+///
+/// Constructors are available for a number of default cases including default
+/// robust kernel [L2], default noise model [UnitNoise]. Keys and residual are
+/// always required.
+///
+/// During optimization the factor is linearized around a set of values into a
+/// [LinearFactor].
 ///
 ///  ```
 /// # use factrs::prelude::*;
@@ -26,7 +42,7 @@ use crate::{
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
-    pub keys: Vec<Symbol>,
+    keys: Vec<Symbol>,
     residual: Box<dyn ResidualSafe>,
     noise: Box<dyn NoiseModelSafe>,
     robust: Box<dyn RobustCostSafe>,
@@ -146,6 +162,11 @@ impl Factor {
         let a = MatrixBlock::new(a, idx);
 
         LinearFactor::new(self.keys.clone(), a, b)
+    }
+
+    /// Get the keys of the factor.
+    pub fn keys(&self) -> &[Symbol] {
+        &self.keys
     }
 }
 

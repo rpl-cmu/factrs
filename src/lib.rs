@@ -10,6 +10,27 @@
 //! - Serialization of graphs & variables via optional serde support
 //! - Easy conversion to rerun types for simple visualization
 //!
+//! # Background
+//!
+//! Specifically, we solve the following problem,
+//!
+//! $$ \blue{\Theta^*} = \orange{\argmin_{\Theta}}
+//! \sum_{i} \green{\rho_i(||r_i(\Theta)||_{\Sigma_i} )} $$
+//!
+//! The fact.rs API takes heavy inspiration from the [gtsam library](https://gtsam.org/), and is loosely structure as follows,
+//! - <blue>Variables</blue>: These are the unknowns in the optimization
+//!   problem. They can be vector-valued or lie-group values and implement
+//!   [Variable](crate::variables::Variable) trait. A collection of variables is
+//!   stored in a [Values](crate::containers::Values) container.
+//! - <green>Factors</green>: Each factor represents a probabilistic constraint
+//!   in the optimization. More info in [Factor](crate::containers::Factor). A
+//!   collection of factors is stored in a [Graph](crate::containers::Graph)
+//!   container.
+//! - <orange>Optimizers</orange>: The optimizer is responsible for finding the
+//!   optimal variables that minimize the factors. More info on factor graph
+//!   optimizers in [Optimizers](crate::optimizers).
+//!
+//!
 //! # Example
 //! ```
 //! use factrs::prelude::*;
@@ -39,9 +60,6 @@
 //! let mut opt: GaussNewton = GaussNewton::new(graph);
 //! let result = opt.optimize(values);
 //! ```
-
-// TODO: Add some math using latex in documentation
-// https://stackoverflow.com/questions/46495063/how-to-write-math-formulas-for-rust-documentation
 
 /// The default floating point type used in the library
 #[cfg(not(feature = "f32"))]

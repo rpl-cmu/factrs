@@ -9,6 +9,10 @@ use crate::{containers::Factor, dtype, linear::LinearGraph};
 /// graph. Also of note is the `linearize` function that returns a [linear (aka
 /// Gaussian) factor graph](LinearGraph).
 ///
+/// Since the graph represents a nonlinear least-squares problem, during
+/// optimization it will be iteratively linearized about a set of variables and
+/// solved iteratively.
+///
 /// ```
 /// # use factrs::prelude::*;
 /// # let factor = Factor::new_base(&[X(0)], PriorResidual::new(SO2::identity()));
@@ -54,7 +58,7 @@ impl Graph {
         let mut indices = Vec::<(usize, usize)>::new();
 
         let _ = self.factors.iter().fold(0, |row, f| {
-            f.keys.iter().for_each(|key| {
+            f.keys().iter().for_each(|key| {
                 (0..f.dim_out()).for_each(|i| {
                     let Idx {
                         idx: col,
