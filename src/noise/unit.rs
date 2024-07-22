@@ -22,7 +22,7 @@ tag_noise!(
 /// A unit noise model.
 ///
 /// Represents a noise model that does not modify the input, or equal weighting
-/// in a [factor](crate::factor::Factor).
+/// in a [factor](crate::containers::Factor).
 #[derive(Clone, Debug, derive_more::Display)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UnitNoise<const N: usize>;

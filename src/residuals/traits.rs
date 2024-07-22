@@ -8,7 +8,12 @@ use crate::{
 
 type Alias<V, D> = <V as Variable>::Alias<D>;
 
-// ------------------------- Base Residual Trait & Helpers ------------------------- //
+// ------------------ Base Residual Trait & Helpers ------------------ //
+/// Base trait for residuals
+///
+/// This trait is used to implement custom residuals. It is recommended to use
+/// one of the numbered residuals traits instead, and then call the
+/// [impl_residual](crate::impl_residual) macro to implement this trait.
 pub trait Residual: Debug + Display {
     type DimIn: DimName;
     type DimOut: DimName;
@@ -27,6 +32,10 @@ pub trait Residual: Debug + Display {
     fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
 }
 
+/// The object safe version of [Residual].
+///
+/// This trait is used to allow for dynamic dispatch of residuals.
+/// Implemented for all types that implement [Residual].
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait ResidualSafe: Debug + Display {
     fn dim_in(&self) -> usize;
@@ -70,23 +79,33 @@ impl<
     fn typetag_deserialize(&self) {}
 }
 
-// ------------------------- Use Macro to create residuals with set sizes -------------------------
+// -------------- Use Macro to create residuals with set sizes -------------- //
 use paste::paste;
 
 macro_rules! residual_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
+            #[doc=concat!("Residual trait for ", $num, " variables")]
             pub trait [<Residual $num>]: Residual
             {
                 $(
+                    #[doc=concat!("Type of variable ", $idx)]
                     type $var: VariableUmbrella;
                 )*
+                /// The total input dimension
                 type DimIn: DimName;
+                /// The output dimension of the residual
                 type DimOut: DimName;
+                /// Differentiator type (see [Diff](crate::linalg::Diff))
                 type Differ: Diff;
 
+                /// Main residual computation
+                ///
+                /// If implementing your own residual, this is the only method you need to implement.
+                /// It is generic over the dtype to allow for differentiable types.
                 fn [<residual $num>]<D: Numeric>(&self, $($name: Alias<Self::$var, D>,)*) -> VectorX<D>;
 
+                #[doc=concat!("Wrapper that unpacks variables and calls [", stringify!([<residual $num>]), "](Self::", stringify!([<residual $num>]), ").")]
                 fn [<residual $num _values>](&self, values: &Values, keys: &[Symbol]) -> VectorX
                 where
                     $(
@@ -103,6 +122,7 @@ macro_rules! residual_maker {
                 }
 
 
+                #[doc=concat!("Wrapper that unpacks variables and computes jacobians using [", stringify!([<residual $num>]), "](Self::", stringify!([<residual $num>]), ").")]
                 fn [<residual $num _jacobian>](&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>
                 where
                     $(

@@ -1,7 +1,7 @@
 //! Noise model representations
 //!
 //! Represent Gaussian noise models in a factor graph, specifically used when
-//! constructing a [factor](crate::factor::Factor).
+//! constructing a [factor](crate::containers::Factor).
 
 use std::fmt::{Debug, Display};
 

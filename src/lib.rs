@@ -14,7 +14,7 @@
 //!
 //! Specifically, we solve the following problem,
 //!
-//! $$ \blue{\Theta^*} = \orange{\argmin_{\Theta}}
+//! $$ \blue{\Theta^*} = \red{\argmin_{\Theta}}
 //! \sum_{i} \green{\rho_i(||r_i(\Theta)||_{\Sigma_i} )} $$
 //!
 //! The fact.rs API takes heavy inspiration from the [gtsam library](https://gtsam.org/), and is loosely structure as follows,
@@ -22,14 +22,13 @@
 //!   problem. They can be vector-valued or lie-group values and implement
 //!   [Variable](crate::variables::Variable) trait. A collection of variables is
 //!   stored in a [Values](crate::containers::Values) container.
+//! - <red>Optimizers</red>: The optimizer is responsible for finding the
+//!   optimal variables that minimize the factors. More info on factor graph
+//!   optimizers in [Optimizers](crate::optimizers).
 //! - <green>Factors</green>: Each factor represents a probabilistic constraint
 //!   in the optimization. More info in [Factor](crate::containers::Factor). A
 //!   collection of factors is stored in a [Graph](crate::containers::Graph)
 //!   container.
-//! - <orange>Optimizers</orange>: The optimizer is responsible for finding the
-//!   optimal variables that minimize the factors. More info on factor graph
-//!   optimizers in [Optimizers](crate::optimizers).
-//!
 //!
 //! # Example
 //! ```
