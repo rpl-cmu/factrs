@@ -10,19 +10,19 @@ use crate::{
 
 /// Main structure to represent a factor in the graph.
 ///
-/// $$ \blue{\rho_i}(||\orange{r_i}(\green{\Theta})||_{\red{\Sigma_i}} ) $$
+/// $$ \blue{\rho_i}(||\purple{r_i}(\green{\Theta})||_{\red{\Sigma_i}} ) $$
 ///
 /// Factors are the main building block of the factor graph. They are composed
 /// of four pieces:
 /// - <green>Keys</green>: The variables that the factor depends on, given by a
 ///   slice of [Symbols](Symbol).
-/// - <orange>Residual</orange>: The function that computes the error of the
-///   factor given a set of values, from the [residual](crate::residuals)
-///   module.
-/// - <red>Noise Model</red>: The noise model that describes the uncertainty of
-///   the residual, given by the trait [noise](crate::noise) module.
-/// - <blue>Robust Kernel</blue>: The robust kernel that weights the error of
-///   the factor, given by the trait [robust](crate::robust) module.
+/// - <purple>Residual</purple>: The vector-valued function that computes the
+///   error of the factor given a set of values, from the
+///   [residual](crate::residuals) module.
+/// - <red>Noise Model</red>: The noise model describes the uncertainty of the
+///   residual, given by the traits in the [noise](crate::noise) module.
+/// - <blue>Robust Kernel</blue>: The robust kernel weights the error of the
+///   factor, given by the traits in the [robust](crate::robust) module.
 ///
 /// Constructors are available for a number of default cases including default
 /// robust kernel [L2], default noise model [UnitNoise]. Keys and residual are

@@ -20,46 +20,96 @@ use crate::{
     },
 };
 
+/// Variable trait for Lie groups
+///
+/// All variables must implement this trait to be used in the optimization
+/// algorithms. See [module level documentation](crate::variables) for more
+/// details.
 pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
+    /// Dimension of the Lie group / Tangent space
     type Dim: DimName;
     const DIM: usize = Self::Dim::USIZE;
+    /// Alias for the type for dual conversion
     type Alias<DD: Numeric>: Variable<DD>;
 
     // Group operations
+    /// Identity element of the group
     fn identity() -> Self;
+    /// Inverse of the group element
     fn inverse(&self) -> Self;
+    /// Composition of two group elements
     fn compose(&self, other: &Self) -> Self;
-    fn exp(delta: VectorViewX<D>) -> Self; // trivial if linear (just itself)
-    fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
+    /// Exponential map (trivial if a vectorspace)
+    fn exp(delta: VectorViewX<D>) -> Self;
+    /// Logarithm map (trivial if a vectorspace)
+    fn log(&self) -> VectorX<D>;
 
-    // Conversion to dual space
+    /// Conversion to dual space
+    ///
+    /// Simply convert all interior values of dtype to DD.
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD>;
 
-    // Helpers for enum
+    /// Dimension helper
     fn dim(&self) -> usize {
         Self::DIM
     }
 
-    // Moves to and from vector space
-    fn oplus(&self, delta: VectorViewX<D>) -> Self {
+    /// Adds value from the tangent space to the group element
+    ///
+    /// By default this uses the "right" version as found in Micro Lie Theory
+    /// $$
+    /// x \oplus \xi = x \cdot \exp(\xi)
+    /// $$
+    /// If the "left" feature is enabled, instead this turns to
+    /// $$
+    /// x \oplus \xi = \exp(\xi) \cdot x
+    /// $$
+    fn oplus(&self, xi: VectorViewX<D>) -> Self {
         if cfg!(feature = "left") {
-            Self::exp(delta).compose(self)
+            Self::exp(xi).compose(self)
         } else {
-            self.compose(&Self::exp(delta))
+            self.compose(&Self::exp(xi))
         }
     }
-    fn ominus(&self, other: &Self) -> VectorX<D> {
+
+    /// Compares two group elements in the tangent space
+    ///
+    /// By default this uses the "right" version as found in Micro Lie Theory
+    /// $$
+    /// x \ominus y = \log(y^{-1} \cdot x)
+    /// $$
+    /// If the "left" feature is enabled, instead this turns to
+    /// $$
+    /// x \ominus y = \log(x \cdot y^{-1})
+    /// $$
+    fn ominus(&self, y: &Self) -> VectorX<D> {
         if cfg!(feature = "left") {
-            self.compose(&other.inverse()).log()
+            self.compose(&y.inverse()).log()
         } else {
-            other.inverse().compose(self).log()
+            y.inverse().compose(self).log()
         }
     }
+    /// Subtract out portion from other variable.
+    ///
+    /// This can be seen as a "tip-to-tail" computation. IE it computes the
+    /// transformation between two poses. I like to think of it as "taking away"
+    /// the portion subtracted out, for example given a chain of poses $a, b,
+    /// c$,
+    ///
+    /// $$
+    /// {}_a T_c \boxminus {}_a T_b = ({}_a T_b)^{-1} {}_a T_c = {}_b T_c
+    /// $$
+    ///
+    /// This operation is NOT effected by the left/right feature.
     fn minus(&self, other: &Self) -> Self {
         other.inverse().compose(self)
     }
 
-    // Setup group element correctly using the tangent space
+    /// Setup group element correctly using the tangent space
+    ///
+    /// By default this uses the exponential map to propagate dual numbers to
+    /// the variable to setup the jacobian properly. Can be hardcoded to avoid
+    /// the repeated computation.
     fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
@@ -74,7 +124,10 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
         Self::Alias::<DualVector<N>>::exp(tv.as_view())
     }
 
-    // Applies the tangent vector in dual space
+    /// Applies the tangent vector in dual space
+    ///
+    /// Takes the results from [dual_setup](Self::dual_setup) and applies the
+    /// tangent vector using the right/left oplus operator.
     fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
@@ -91,6 +144,10 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     }
 }
 
+/// The object safe version of [Variable].
+///
+/// This trait is used to allow for dynamic dispatch of noise models.
+/// Implemented for all types that implement [Variable].
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait VariableSafe: Debug + Display + Downcast {
     fn clone_box(&self) -> Box<dyn VariableSafe>;
@@ -128,6 +185,10 @@ impl<
     fn typetag_deserialize(&self) {}
 }
 
+/// Umbrella trait for variables
+///
+/// This trait is 100% for convenience. It wraps all types that implements
+/// [VariableSafe] and [Variable] (with proper aliases) into a single trait.
 pub trait VariableUmbrella<D: Numeric = dtype>:
     VariableSafe + Variable<D, Alias<D> = Self>
 {
@@ -144,6 +205,11 @@ impl Clone for Box<dyn VariableSafe> {
 
 use nalgebra as na;
 
+/// Properties specific to matrix Lie groups
+///
+/// Many variables used in robotics state estimation are specific Lie Groups
+/// that consist of matrix elements. We encapsulate a handful of their
+/// properties here.
 pub trait MatrixLieGroup<D: Numeric = dtype>: Variable<D>
 where
     na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
@@ -152,30 +218,60 @@ where
     na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Const<1>>,
     na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Const<1>>,
 {
+    /// Dimension of the tangent space
     type TangentDim: DimName;
+    /// Dimension of the corresponding matrix representation
     type MatrixDim: DimName;
+    /// Dimension of vectors that can be transformed
     type VectorDim: DimName;
 
+    /// Adjoint operator
     fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, D>;
 
+    /// Hat operator
+    ///
+    /// Converts a vector from $\xi \in \mathbb{R}^n$ to the Lie algebra
+    /// $\xi^\wedge \in \mathfrak{g}$
     fn hat(
         xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, D>,
     ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, D>;
 
+    /// Vee operator
+    ///
+    /// Inverse of the hat operator. Converts a matrix from the Lie algebra
+    /// $\xi^\wedge \in \mathfrak{g}$ to a vector $\xi \in \mathbb{R}^n$
     fn vee(
         xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, D>,
     ) -> MatrixDim<Self::TangentDim, Const<1>, D>;
 
+    /// Hat operator for swapping
+    ///
+    /// This is our own version of the hat operator used for swapping with
+    /// vectors to be rotated. For many common Lie groups, this encodes the
+    /// following "swap"
+    ///
+    /// $$
+    /// \xi^\wedge p = \text{hat\\_swap}(p) \xi
+    /// $$
+    ///
+    ///
+    /// For example, in SO(3) $\text{hat\\_swap}(p) = -p^\wedge$.
     fn hat_swap(
         xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, D>,
     ) -> MatrixDim<Self::VectorDim, Self::TangentDim, D>;
 
+    /// Transform a vector
+    ///
+    /// Transform/rotate a vector using the group element. In SO(3), this is
+    /// rotation, in SE(3) this is a rigid body transformation.
     fn apply(
         &self,
         v: MatrixViewDim<'_, Self::VectorDim, Const<1>, D>,
     ) -> MatrixDim<Self::VectorDim, Const<1>, D>;
 
+    /// Transform group element to a matrix
     fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, D>;
 
+    /// Create a group element from a matrix
     fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, D>) -> Self;
 }

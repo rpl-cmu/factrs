@@ -29,6 +29,9 @@ use crate::{
 
 tag_variable!(SE2);
 
+/// Special Euclidean Group in 2D
+///
+/// Implementation of SE(2) for 2D transformations.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SE2<D: Numeric = dtype> {
@@ -37,6 +40,7 @@ pub struct SE2<D: Numeric = dtype> {
 }
 
 impl<D: Numeric> SE2<D> {
+    /// Create a new SE2 from an angle, x, and y coordinates
     pub fn new(theta: D, x: D, y: D) -> Self {
         SE2 {
             rot: SO2::from_theta(theta),

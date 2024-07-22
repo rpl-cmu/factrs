@@ -12,7 +12,7 @@ use crate::{
 /// A graph of linear factors
 ///
 /// This is the linear equivalent of [Graph](crate::containers::Graph). Rather
-/// than store nonlinear factors, it stores [LinearFactor]s.
+/// than store nonlinear factors, it stores [LinearFactors](LinearFactor).
 #[derive(Default)]
 pub struct LinearGraph {
     factors: Vec<LinearFactor>,

@@ -28,7 +28,7 @@ macro_rules! impl_residual {
     };
 }
 
-/// Register a type as a noise model for serde serialization.
+/// Register a type as a [residual](crate::residuals) for serialization.
 #[macro_export]
 macro_rules! tag_residual {
     ($($ty:ty),* $(,)?) => {$(

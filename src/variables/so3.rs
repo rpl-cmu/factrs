@@ -28,6 +28,11 @@ use crate::{
 
 tag_variable!(SO3);
 
+/// 3D Special Orthogonal Group
+///
+/// Implementation of SO(3) for 3D rotations. Specifically, we use quaternions
+/// to represent rotations due to their underyling efficiency when computing
+/// log/exp maps.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SO3<D: Numeric = dtype> {
@@ -35,10 +40,12 @@ pub struct SO3<D: Numeric = dtype> {
 }
 
 impl<D: Numeric> SO3<D> {
+    /// Create a new SO3 from a Vector4
     pub fn from_vec(xyzw: Vector4<D>) -> Self {
         SO3 { xyzw }
     }
 
+    /// Create a new SO3 from x, y, z, w
     pub fn from_xyzw(x: D, y: D, z: D, w: D) -> Self {
         SO3 {
             xyzw: Vector4::<D>::new(x, y, z, w),
@@ -175,7 +182,8 @@ impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
         let q2 = self.xyzw[1];
         let q3 = self.xyzw[2];
 
-        // Same as to_matrix function of SO3 -> Just avoiding copying from Matrix3 to MatrixD
+        // Same as to_matrix function of SO3 -> Just avoiding copying from Matrix3 to
+        // MatrixD
         let mut mat = Matrix3::zeros();
         mat[(0, 0)] = D::from(1.0) - (q2 * q2 + q3 * q3) * 2.0;
         mat[(0, 1)] = (q1 * q2 - q0 * q3) * 2.0;

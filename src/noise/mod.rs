@@ -64,7 +64,7 @@ impl<
     fn typetag_deserialize(&self) {}
 }
 
-/// Register a type as a noise model for serde serialization.
+/// Register a type as a [noise model](crate::noise) for serialization.
 #[macro_export]
 macro_rules! tag_noise {
     ($($ty:ty),* $(,)?) => {$(

@@ -77,7 +77,7 @@ impl<
     fn typetag_deserialize(&self) {}
 }
 
-/// Register a type as a [RobustCostSafe] for serialization.
+/// Register a type as a [robust cost](crate::robust) for serialization.
 #[macro_export]
 macro_rules! tag_robust {
     ($($ty:ty),* $(,)?) => {$(

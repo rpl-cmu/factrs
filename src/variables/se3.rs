@@ -29,6 +29,9 @@ use crate::{
 
 tag_variable!(SE3);
 
+/// Special Euclidean Group in 3D
+///
+/// Implementation of SE(3) for 3D transformations.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SE3<D: Numeric = dtype> {
@@ -37,6 +40,7 @@ pub struct SE3<D: Numeric = dtype> {
 }
 
 impl<D: Numeric> SE3<D> {
+    /// Create a new SE3 from an SO3 and a Vector3
     pub fn from_rot_trans(rot: SO3<D>, xyz: Vector3<D>) -> Self {
         SE3 { rot, xyz }
     }

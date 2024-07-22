@@ -10,13 +10,13 @@ const CHR_MASK: u64 = (char::MAX as u64) << IDX_BITS;
 const IDX_MASK: u64 = !CHR_MASK;
 
 /// Newtype wrap around u64
-/// 
+///
 /// First bits contain the index, last bits contain the character.
-/// Helpers exist (such as [X], [B], [L]) to create new versions. 
-/// 
+/// Helpers exist (such as [X], [B], [L]) to create new versions.
+///
 /// In implementation, the u64 is exclusively used, the chr/idx aren't at all.
-/// If you'd like to use a custom symbol (ie with two chars for multi-robot experiments), 
-/// simply define a new trait that parses the u64 as you desire to create a new Symbol.
+/// If you'd like to use a custom symbol (ie with two chars for multi-robot
+/// experiments), simply define a new trait that creates the u64 as you desire.
 #[derive(Clone, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Symbol(u64);

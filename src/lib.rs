@@ -17,11 +17,13 @@
 //! $$ \blue{\Theta^*} = \red{\argmin_{\Theta}}
 //! \sum_{i} \green{\rho_i(||r_i(\Theta)||_{\Sigma_i} )} $$
 //!
-//! The fact.rs API takes heavy inspiration from the [gtsam library](https://gtsam.org/), and is loosely structure as follows,
+//! The fact.rs API takes heavy inspiration from the [gtsam library](https://gtsam.org/),
+//! and is loosely structured as follows,
 //! - <blue>Variables</blue>: These are the unknowns in the optimization
-//!   problem. They can be vector-valued or lie-group values and implement
-//!   [Variable](crate::variables::Variable) trait. A collection of variables is
-//!   stored in a [Values](crate::containers::Values) container.
+//!   problem. They are all lie-group based (even if trivially so). See the
+//!   [variable](crate::variables) module for details on custom implementations.
+//!   A collection of variables is stored in a
+//!   [Values](crate::containers::Values) container.
 //! - <red>Optimizers</red>: The optimizer is responsible for finding the
 //!   optimal variables that minimize the factors. More info on factor graph
 //!   optimizers in [Optimizers](crate::optimizers).
@@ -125,6 +127,7 @@ pub mod serde {
 // Dummy implementation so things don't break when the serde feature is disabled
 #[cfg(not(feature = "serde"))]
 pub mod serde {
+    //! Misc helpers for serde support. Enable feature to use.
     #[macro_export]
     macro_rules! register_typetag {
         ($trait:path, $ty:ty) => {};
