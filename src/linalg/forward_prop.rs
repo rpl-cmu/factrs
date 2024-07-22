@@ -20,7 +20,7 @@ macro_rules! forward_maker {
     ($num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::D>,)*) -> VectorX<Self::D>>
+            fn [<jacobian_ $num>]<$( $var: Variable<D=$crate::dtype, Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::D>,)*) -> VectorX<Self::D>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>{
                 // Prepare variables
                 let mut curr_dim = 0;

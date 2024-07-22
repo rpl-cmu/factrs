@@ -50,7 +50,8 @@ impl<D: Numeric> SE3<D> {
     }
 }
 
-impl<D: Numeric> Variable<D> for SE3<D> {
+impl<D: Numeric> Variable for SE3<D> {
+    type D = D;
     type Dim = Const<6>;
     type Alias<DD: Numeric> = SE3<DD>;
 
@@ -162,7 +163,7 @@ impl<D: Numeric> Variable<D> for SE3<D> {
     }
 }
 
-impl<D: Numeric> MatrixLieGroup<D> for SE3<D> {
+impl<D: Numeric> MatrixLieGroup for SE3<D> {
     type TangentDim = Const<6>;
     type MatrixDim = Const<4>;
     type VectorDim = Const<3>;

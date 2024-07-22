@@ -20,17 +20,18 @@ use crate::{
     },
 };
 
-pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
+pub trait Variable: Clone + Sized + Display + Debug {
+    type D: Numeric;
     type Dim: DimName;
     const DIM: usize = Self::Dim::USIZE;
-    type Alias<DD: Numeric>: Variable<DD>;
+    type Alias<DD: Numeric>: Variable<D = DD>;
 
     // Group operations
     fn identity() -> Self;
     fn inverse(&self) -> Self;
     fn compose(&self, other: &Self) -> Self;
-    fn exp(delta: VectorViewX<D>) -> Self; // trivial if linear (just itself)
-    fn log(&self) -> VectorX<D>; // trivial if linear (just itself)
+    fn exp(delta: VectorViewX<Self::D>) -> Self; // trivial if linear (just itself)
+    fn log(&self) -> VectorX<Self::D>; // trivial if linear (just itself)
 
     // Conversion to dual space
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD>;
@@ -41,14 +42,14 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     }
 
     // Moves to and from vector space
-    fn oplus(&self, delta: VectorViewX<D>) -> Self {
+    fn oplus(&self, delta: VectorViewX<Self::D>) -> Self {
         if cfg!(feature = "left") {
             Self::exp(delta).compose(self)
         } else {
             self.compose(&Self::exp(delta))
         }
     }
-    fn ominus(&self, other: &Self) -> VectorX<D> {
+    fn ominus(&self, other: &Self) -> VectorX<Self::D> {
         if cfg!(feature = "left") {
             self.compose(&other.inverse()).log()
         } else {
@@ -101,8 +102,8 @@ pub trait VariableSafe: Debug + Display + Downcast {
 }
 
 impl<
-        #[cfg(not(feature = "serde"))] T: Variable + 'static,
-        #[cfg(feature = "serde")] T: Variable + 'static + crate::serde::Tagged,
+        #[cfg(not(feature = "serde"))] T: Variable<D = dtype> + 'static,
+        #[cfg(feature = "serde")] T: Variable<D = dtype> + 'static + crate::serde::Tagged,
     > VariableSafe for T
 {
     fn clone_box(&self) -> Box<dyn VariableSafe> {
@@ -128,11 +129,8 @@ impl<
     fn typetag_deserialize(&self) {}
 }
 
-pub trait VariableUmbrella<D: Numeric = dtype>:
-    VariableSafe + Variable<D, Alias<D> = Self>
-{
-}
-impl<D: Numeric, T: VariableSafe + Variable<D, Alias<D> = T>> VariableUmbrella<D> for T {}
+pub trait VariableUmbrella: VariableSafe + Variable<D = dtype, Alias<dtype> = Self> {}
+impl<T: VariableSafe + Variable<D = dtype, Alias<dtype> = Self>> VariableUmbrella for T {}
 
 impl_downcast!(VariableSafe);
 
@@ -144,38 +142,38 @@ impl Clone for Box<dyn VariableSafe> {
 
 use nalgebra as na;
 
-pub trait MatrixLieGroup<D: Numeric = dtype>: Variable<D>
+pub trait MatrixLieGroup: Variable
 where
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::MatrixDim, Self::MatrixDim>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Self::TangentDim>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Const<1>>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Const<1>>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::D, Self::TangentDim, Self::TangentDim>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::D, Self::MatrixDim, Self::MatrixDim>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::D, Self::VectorDim, Self::TangentDim>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::D, Self::TangentDim, Const<1>>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::D, Self::VectorDim, Const<1>>,
 {
     type TangentDim: DimName;
     type MatrixDim: DimName;
     type VectorDim: DimName;
 
-    fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, D>;
+    fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, Self::D>;
 
     fn hat(
-        xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, D>,
-    ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, D>;
+        xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, Self::D>,
+    ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, Self::D>;
 
     fn vee(
-        xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, D>,
-    ) -> MatrixDim<Self::TangentDim, Const<1>, D>;
+        xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, Self::D>,
+    ) -> MatrixDim<Self::TangentDim, Const<1>, Self::D>;
 
     fn hat_swap(
-        xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, D>,
-    ) -> MatrixDim<Self::VectorDim, Self::TangentDim, D>;
+        xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, Self::D>,
+    ) -> MatrixDim<Self::VectorDim, Self::TangentDim, Self::D>;
 
     fn apply(
         &self,
-        v: MatrixViewDim<'_, Self::VectorDim, Const<1>, D>,
-    ) -> MatrixDim<Self::VectorDim, Const<1>, D>;
+        v: MatrixViewDim<'_, Self::VectorDim, Const<1>, Self::D>,
+    ) -> MatrixDim<Self::VectorDim, Const<1>, Self::D>;
 
-    fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, D>;
+    fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, Self::D>;
 
-    fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, D>) -> Self;
+    fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, Self::D>) -> Self;
 }

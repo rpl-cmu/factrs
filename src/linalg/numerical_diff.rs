@@ -18,7 +18,7 @@ macro_rules! numerical_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_$num>]<$( $var: Variable, )* F: Fn($($var,)*) -> VectorX>
+            fn [<jacobian_$num>]<$( $var: Variable<D=$crate::dtype, Alias<dtype> = $var>, )* F: Fn($($var,)*) -> VectorX>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX> {
                 let eps = dtype::powi(10.0, -PWR);
 

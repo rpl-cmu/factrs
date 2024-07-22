@@ -40,7 +40,8 @@ tag_variable!(
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VectorVar<const N: usize, D: Numeric = dtype>(Vector<N, D>);
 
-impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
+impl<const N: usize, D: Numeric> Variable for VectorVar<N, D> {
+    type D = D;
     type Dim = Const<N>;
     type Alias<DD: Numeric> = VectorVar<N, DD>;
 

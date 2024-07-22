@@ -50,7 +50,8 @@ impl<D: Numeric> SO2<D> {
     }
 }
 
-impl<D: Numeric> Variable<D> for SO2<D> {
+impl<D: Numeric> Variable for SO2<D> {
+    type D = D;
     type Dim = Const<1>;
     type Alias<DD: Numeric> = SO2<DD>;
 
@@ -109,7 +110,7 @@ impl<D: Numeric> Variable<D> for SO2<D> {
     }
 }
 
-impl<D: Numeric> MatrixLieGroup<D> for SO2<D> {
+impl<D: Numeric> MatrixLieGroup for SO2<D> {
     type TangentDim = Const<1>;
     type MatrixDim = Const<2>;
     type VectorDim = Const<2>;

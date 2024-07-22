@@ -62,7 +62,8 @@ impl<D: Numeric> SO3<D> {
     }
 }
 
-impl<D: Numeric> Variable<D> for SO3<D> {
+impl<D: Numeric> Variable for SO3<D> {
+    type D = D;
     type Dim = Const<3>;
     type Alias<DD: Numeric> = SO3<DD>;
 
@@ -164,7 +165,7 @@ impl<D: Numeric> Variable<D> for SO3<D> {
     }
 }
 
-impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
+impl<D: Numeric> MatrixLieGroup for SO3<D> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<3>;

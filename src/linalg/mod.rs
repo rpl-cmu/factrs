@@ -168,7 +168,7 @@ pub struct DiffResult<V, G> {
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<gradient_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::D>,)*) -> Self::D>
+            fn [<gradient_ $num>]<$( $var: Variable<D=$crate::dtype, Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::D>,)*) -> Self::D>
                     (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
                     let f_wrapped = |$($name: $var::Alias<Self::D>,)*| dvector![f($($name.clone(),)*)];
                     let DiffResult { value, diff } = Self::[<jacobian_ $num>](f_wrapped, $($name,)*);
@@ -180,7 +180,7 @@ macro_rules! fn_maker {
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<jacobian_ $num>]<$( $var: Variable<Alias<$crate::dtype>=$var>, )* F: Fn($($var::Alias<Self::D>,)*) -> VectorX<Self::D>>
+            fn [<jacobian_ $num>]<$( $var: Variable<D=$crate::dtype, Alias<$crate::dtype>=$var>, )* F: Fn($($var::Alias<Self::D>,)*) -> VectorX<Self::D>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };
