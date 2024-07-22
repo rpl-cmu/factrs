@@ -1,3 +1,8 @@
+/// Test for optimizers
+///
+/// This macro generates a handful of sanity tests for an optimizer. It tests
+/// - Prior optimization for VectorVar3, SO3, and SE3
+/// - Between optimization for VectorVar3, SO3, and SE3
 #[macro_export]
 macro_rules! test_optimizer {
     ($optimizer:ident $(<$($gen:ident),* >)?) => {

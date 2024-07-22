@@ -14,8 +14,10 @@
 //!
 //! Specifically, we solve the following problem,
 //!
-//! $$ \blue{\Theta^*} = \red{\argmin_{\Theta}}
-//! \sum_{i} \green{\rho_i(||r_i(\Theta)||_{\Sigma_i} )} $$
+//! $$
+//! \blue{\Theta^*} = \red{\argmin_{\Theta}}
+//! \sum_{i} \green{\rho_i(||r_i(\Theta)||_{\Sigma_i} )}
+//! $$
 //!
 //! The fact.rs API takes heavy inspiration from the [gtsam library](https://gtsam.org/),
 //! and is loosely structured as follows,
@@ -81,6 +83,13 @@ pub mod robust;
 pub mod utils;
 pub mod variables;
 
+/// Helper module to import common types
+///
+/// This module is meant to be glob imported to make it easier to use the
+/// library.
+/// ```
+/// use factrs::prelude::*;
+/// ```
 pub mod prelude {
     pub use crate::{
         containers::*,
@@ -128,6 +137,10 @@ pub mod serde {
 #[cfg(not(feature = "serde"))]
 pub mod serde {
     //! Misc helpers for serde support. Enable feature to use.
+    /// Register a type for serialization.
+    ///
+    /// Prefer usage of [tag_variable](crate::tag_variable),
+    /// [tag_noise](crate::tag_noise), etc.
     #[macro_export]
     macro_rules! register_typetag {
         ($trait:path, $ty:ty) => {};

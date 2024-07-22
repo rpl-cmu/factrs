@@ -29,12 +29,23 @@ impl Default for LevenParams {
     }
 }
 
+/// The Levenberg-Marquadt optimizer
+///
+/// Solves a damped version of the normal equations,  
+/// $$A^\top A \Delta \Theta + \lambda diag(A) = A^\top b$$
+/// each optimizer steps. Parameters can be modified using the `params_base` and
+/// `params_leven` fields, and observers add using `observers`. Additionally, is
+/// generic over the linear solver, but defaults to [CholeskySolver]. See the
+/// [linear](crate::linear) module for more linear solver options.
 pub struct LevenMarquardt<S: LinearSolver = CholeskySolver> {
     graph: Graph,
     solver: S,
+    /// Basic parameters for the optimizer
     pub params_base: OptParams,
+    /// Levenberg-Marquardt specific parameters
     pub params_leven: LevenParams,
-    observers: OptObserverVec<Values>,
+    /// Observers for the optimizer
+    pub observers: OptObserverVec<Values>,
     lambda: dtype,
     // For caching computation between steps
     graph_order: Option<GraphOrder>,

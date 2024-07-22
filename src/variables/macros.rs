@@ -1,3 +1,7 @@
+/// Variable wrapper around [matrixcompare::assert_matrix_eq]
+///
+/// This compares two variables using
+/// [ominus](crate::variables::Variable::ominus)
 #[macro_export]
 macro_rules! assert_variable_eq {
     ($x:expr, $y:expr) => {
@@ -35,12 +39,13 @@ macro_rules! assert_variable_eq {
     };
 }
 
-// Try to test all the lie group rules
-// Closure should come by default (test manifold structure for SO(3) somehow?)
-// identity
-// inverse
-// associativity
-// exp/log are invertible near the origin
+/// Test (most of) the lie group rules
+///
+/// Specifically this tests:
+/// - identity
+/// - inverse
+/// - associativity
+/// - exp/log are invertible near the origin
 #[macro_export]
 macro_rules! test_variable {
     ($var:ident) => {
@@ -95,7 +100,12 @@ macro_rules! test_variable {
     };
 }
 
-// Check Lie Algebra rules
+/// Test (most of) the matrix lie group rules
+///
+/// Specifcally test
+/// - to/form matrix
+/// - hat/vee
+/// - jacobian of rotation function with hat_swap
 #[macro_export]
 macro_rules! test_lie {
     ($var:ident) => {
@@ -159,6 +169,7 @@ macro_rules! test_lie {
     };
 }
 
+/// Register a type as a [variable](crate::variables) for serialization.
 #[macro_export]
 macro_rules! tag_variable {
     ($($ty:ty),* $(,)?) => {$(
