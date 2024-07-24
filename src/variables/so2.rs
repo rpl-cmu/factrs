@@ -3,7 +3,7 @@ use std::{fmt, ops};
 use crate::{
     dtype,
     linalg::{
-        dvector,
+        vectorx,
         AllocatorBuffer,
         Const,
         DefaultAllocator,
@@ -29,6 +29,10 @@ use crate::{
 
 tag_variable!(SO2);
 
+/// Special Orthogonal Group in 2D
+///
+/// Implementation of SO(2) for 2D rotations. Specifically, we use complex
+/// numbers to represent rotations.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SO2<D: Numeric = dtype> {
@@ -37,6 +41,7 @@ pub struct SO2<D: Numeric = dtype> {
 }
 
 impl<D: Numeric> SO2<D> {
+    /// Create a new SO2 from an angle in radians
     #[allow(clippy::needless_borrow)]
     pub fn from_theta(theta: D) -> Self {
         SO2 {
@@ -45,6 +50,7 @@ impl<D: Numeric> SO2<D> {
         }
     }
 
+    /// Convert SO2 to an angle in radians
     pub fn to_theta(&self) -> D {
         self.b.atan2(self.a)
     }
@@ -81,7 +87,7 @@ impl<D: Numeric> Variable<D> for SO2<D> {
     }
 
     fn log(&self) -> VectorX<D> {
-        dvector![self.b.atan2(self.a)]
+        vectorx![self.b.atan2(self.a)]
     }
 
     fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {

@@ -32,13 +32,15 @@ tag_variable!(
 );
 
 // ------------------------- Our needs ------------------------- //
-// We create a newtype specifically for vectors we're estimating over due to,
-// 1 - So we can manually implement Debug/Display
-// 2 - Overcome identity issues with the underlying Vector type
-// 3 - Impl Into<Rerun types>
+/// Newtype wrapper around nalgebra::Vector
+///
+/// We create a newtype specifically for vectors we're estimating over due to,
+/// 1 - So we can manually implement Debug/Display
+/// 2 - Overcome identity issues with the underlying Vector type
+/// 3 - Impl Into\<Rerun types\>
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct VectorVar<const N: usize, D: Numeric = dtype>(Vector<N, D>);
+pub struct VectorVar<const N: usize, D: Numeric = dtype>(pub Vector<N, D>);
 
 impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
     type Dim = Const<N>;
@@ -143,11 +145,17 @@ impl<const N: usize, D: Numeric> Index<usize> for VectorVar<N, D> {
     }
 }
 
+/// 1D Vector Variable
 pub type VectorVar1<D = dtype> = VectorVar<1, D>;
+/// 2D Vector Variable
 pub type VectorVar2<D = dtype> = VectorVar<2, D>;
+/// 3D Vector Variable
 pub type VectorVar3<D = dtype> = VectorVar<3, D>;
+/// 4D Vector Variable
 pub type VectorVar4<D = dtype> = VectorVar<4, D>;
+/// 5D Vector Variable
 pub type VectorVar5<D = dtype> = VectorVar<5, D>;
+/// 6D Vector Variable
 pub type VectorVar6<D = dtype> = VectorVar<6, D>;
 
 #[cfg(test)]

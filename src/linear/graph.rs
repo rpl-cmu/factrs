@@ -9,6 +9,10 @@ use crate::{
     linear::LinearFactor,
 };
 
+/// A graph of linear factors
+///
+/// This is the linear equivalent of [Graph](crate::containers::Graph). Rather
+/// than store nonlinear factors, it stores [LinearFactors](LinearFactor).
 #[derive(Default)]
 pub struct LinearGraph {
     factors: Vec<LinearFactor>,
@@ -31,7 +35,8 @@ impl LinearGraph {
         self.factors.iter().map(|f| f.error(values)).sum()
     }
 
-    // TODO: This is identical for nonlinear case, is there a way we can reduce code reuse?
+    // TODO: This is identical for nonlinear case, is there a way we can reduce code
+    // reuse?
     pub fn sparsity_pattern(&self, order: ValuesOrder) -> GraphOrder {
         let total_rows = self.factors.iter().map(|f| f.dim_out()).sum();
         let total_columns = order.dim();
@@ -64,6 +69,7 @@ impl LinearGraph {
         }
     }
 
+    /// Computes J and r for use in solver
     pub fn residual_jacobian(
         &self,
         graph_order: &GraphOrder,

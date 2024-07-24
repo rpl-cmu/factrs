@@ -1,13 +1,51 @@
+//! Robust kernels (M-Estimators) for robust estimation.
+//!
+//! We recommend checking out "Parameter Estimation Techniques:  A Tutorial with
+//! Application to Conic Fitting" by Zhengyou Zhang for details on our
+//! implementations.
+//!
+//! They can roughly be split into the following categories:
+//!
+//! | Name         | Loss Function | Weight Function | Asymptotic Behavior |
+//! |--------------|---------------|-----------------|---------------------|
+//! | L2           | $x^2 / 2$ | $1$ | Quadratic           |
+//! | L1           | $\|x\|$ | $1 / \|x\|$ | Linear              |
+//! | Huber $\begin{cases} \|x\| \leq k \\\\ \|x\| > k \end{cases}$ | $\begin{cases} x^2/2 \\\\ k(\|x\| - k/2) \end{cases}$ | $\begin{cases} 1 \\\\ k/\|x\| \end{cases}$ | Linear              |
+//! | Fair         | $c^2 \left(\frac{\|x\|}{c} - \ln(1 + \frac{\|x\|}{c})\right)$ | $1 / (1 + \frac{\|x\|}{c})$ | Linear              |
+//! | Cauchy       | $\frac{c^2}{2}\ln\left(1 + (x/c)^2\right)$ | $1 / (1 + (x/c)^2)$ | Constant            |
+//! | Geman-McClure| $\frac{c^2 x^2}{2} / (c^2 + x^2)$ | $c^2 / (c^2 + x^2)^2$ | Constant            |
+//! | Welsch       | $\frac{c^2}{2}\left(1 - \exp(-(x/c)^2)\right)$ | $\exp(-(x/c)^2)$ | Constant            |
+//! | Tukey $\begin{cases} \|x\| \leq c \\\\ \|x\| > c \end{cases}$ | $\begin{cases} \frac{c^2}{6}\left(1 - \left(1 - (x/c)^2\right)^3\right) \\\\ \frac{c^2}{6} \end{cases}$ | $\begin{cases} \left(1 - (x/c)^2\right)^2 \\\\ 0 \end{cases}$ | Constant            |
+//!
+//! Generally constant asymptotic behavior is the best at outlier rejection, but
+//! relies heavily on good initialization. Some work, such as Graduated
+//! Non-Convexity (GNC), has been shown to circumvent this requirement.
+
 use std::fmt::Debug;
 
 use crate::dtype;
 
+/// Robust cost function
+///
+/// Represents a robust cost function \rho. Note that most robust cost functions
+/// use x^2 in some form, so rather than passing x, we pass x^2. If you'd like
+/// to implement your own kernel, we recommend using
+/// [NumericalDiff](crate::linalg::NumericalDiff) to check that the weight is
+/// correct.
+
 pub trait RobustCost: Default + Debug {
+    /// Compute the loss \rho(x^2)
     fn loss(&self, d2: dtype) -> dtype;
 
+    /// Compute the weight \rho'(x^2) / x
     fn weight(&self, d2: dtype) -> dtype;
 }
 
+/// Safe version of [RobustCost] that can be used in trait objects
+///
+/// This will be implemented via a blanket impl for all types that implement
+/// [RobustCost]. It's actually redundant, but we include it for completeness in
+/// case we want to add additional methods in the future.
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait RobustCostSafe: Debug {
     fn loss(&self, d2: dtype) -> dtype;
@@ -39,6 +77,7 @@ impl<
     fn typetag_deserialize(&self) {}
 }
 
+/// Register a type as a [robust cost](crate::robust) for serialization.
 #[macro_export]
 macro_rules! tag_robust {
     ($($ty:ty),* $(,)?) => {$(
@@ -49,7 +88,7 @@ macro_rules! tag_robust {
 tag_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
 
 // ------------------------- L2 Norm ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct L2;
 
@@ -70,7 +109,7 @@ impl RobustCost for L2 {
 }
 
 // ------------------------- L1 Norm ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct L1;
 
@@ -95,7 +134,7 @@ impl RobustCost for L1 {
 }
 
 // ------------------------- Huber ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Huber {
     k: dtype,
@@ -134,7 +173,7 @@ impl RobustCost for Huber {
 }
 
 // ------------------------- Fair ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Fair {
     c: dtype,
@@ -164,7 +203,7 @@ impl RobustCost for Fair {
 }
 
 // ------------------------- Cauchy ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cauchy {
     c2: dtype,
@@ -195,7 +234,7 @@ impl RobustCost for Cauchy {
 }
 
 // ------------------------- Geman-McClure ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GemanMcClure {
     c2: dtype,
@@ -228,7 +267,7 @@ impl RobustCost for GemanMcClure {
 }
 
 // ------------------------- Welsch ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Welsch {
     c2: dtype,
@@ -259,7 +298,7 @@ impl RobustCost for Welsch {
 }
 
 // ------------------------- Tukey ------------------------- //
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tukey {
     c2: dtype,

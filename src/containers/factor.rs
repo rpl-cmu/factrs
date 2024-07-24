@@ -8,16 +8,52 @@ use crate::{
     robust::{RobustCostSafe, L2},
 };
 
+/// Main structure to represent a factor in the graph.
+///
+/// $$ \blue{\rho_i}(||\purple{r_i}(\green{\Theta})||_{\red{\Sigma_i}} ) $$
+///
+/// Factors are the main building block of the factor graph. They are composed
+/// of four pieces:
+/// - <green>Keys</green>: The variables that the factor depends on, given by a
+///   slice of [Symbols](Symbol).
+/// - <purple>Residual</purple>: The vector-valued function that computes the
+///   error of the factor given a set of values, from the
+///   [residual](crate::residuals) module.
+/// - <red>Noise Model</red>: The noise model describes the uncertainty of the
+///   residual, given by the traits in the [noise](crate::noise) module.
+/// - <blue>Robust Kernel</blue>: The robust kernel weights the error of the
+///   factor, given by the traits in the [robust](crate::robust) module.
+///
+/// Constructors are available for a number of default cases including default
+/// robust kernel [L2], default noise model [UnitNoise]. Keys and residual are
+/// always required.
+///
+/// During optimization the factor is linearized around a set of values into a
+/// [LinearFactor].
+///
+///  ```
+/// # use factrs::prelude::*;
+/// let prior = VectorVar3::new(1.0, 2.0, 3.0);
+/// let residual = PriorResidual::new(prior);
+/// let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
+/// let robust = GemanMcClure::default();
+/// let factor = Factor::new_full(&[X(0)], residual, noise, robust);
+/// ```
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
-    pub keys: Vec<Symbol>,
+    keys: Vec<Symbol>,
     residual: Box<dyn ResidualSafe>,
     noise: Box<dyn NoiseModelSafe>,
     robust: Box<dyn RobustCostSafe>,
 }
 
 impl Factor {
+    /// Build a new factor from a set of keys and a residual.
+    ///
+    /// Keys will be compile-time checked to ensure the size is consistent with
+    /// the residual. Noise will be set to [UnitNoise] and robust kernel to
+    /// [L2].
     pub fn new_base<const NUM_VARS: usize, const DIM_OUT: usize, R>(
         keys: &[Symbol; NUM_VARS],
         residual: R,
@@ -36,6 +72,10 @@ impl Factor {
         }
     }
 
+    /// Build a new factor from a set of keys, a residual, and a noise model.
+    ///
+    /// Keys and noise will be compile-time checked to ensure the size is
+    /// consistent with the residual. Robust kernel will be set to [L2].
     pub fn new_noise<const NUM_VARS: usize, const DIM_OUT: usize, R, N>(
         keys: &[Symbol; NUM_VARS],
         residual: R,
@@ -55,6 +95,11 @@ impl Factor {
         }
     }
 
+    /// Build a new factor from a set of keys, a residual, a noise model, and a
+    /// robust kernel.
+    ///
+    /// Keys and noise will be compile-time checked to ensure the size is
+    /// consistent with the residual.
     pub fn new_full<const NUM_VARS: usize, const DIM_OUT: usize, R, N, C>(
         keys: &[Symbol; NUM_VARS],
         residual: R,
@@ -76,6 +121,7 @@ impl Factor {
         }
     }
 
+    /// Compute the error of the factor given a set of values.
     pub fn error(&self, values: &Values) -> dtype {
         let r = self.residual.residual(values, &self.keys);
         let r = self.noise.whiten_vec(r);
@@ -83,10 +129,12 @@ impl Factor {
         self.robust.loss(norm2)
     }
 
+    /// Compute the dimension of the output of the factor.
     pub fn dim_out(&self) -> usize {
         self.residual.dim_out()
     }
 
+    /// Linearize the factor given a set of values into a [LinearFactor].
     pub fn linearize(&self, values: &Values) -> LinearFactor {
         // Compute residual and jacobian
         let DiffResult { value: r, diff: a } = self.residual.residual_jacobian(values, &self.keys);
@@ -114,6 +162,11 @@ impl Factor {
         let a = MatrixBlock::new(a, idx);
 
         LinearFactor::new(self.keys.clone(), a, b)
+    }
+
+    /// Get the keys of the factor.
+    pub fn keys(&self) -> &[Symbol] {
+        &self.keys
     }
 }
 

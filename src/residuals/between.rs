@@ -46,7 +46,16 @@ tag_residual!(
     BetweenResidual<SO3>,
 );
 
-// Between Variable
+/// Binary factor between variables.
+///
+/// This residual is used to enforce a constraint between two variables.
+/// Specifically it computes
+///
+/// $$
+/// r = (v_1 z) \ominus v_2
+/// $$
+///
+/// where $z$ is the measured value.
 #[derive(Clone, Debug, derive_more::Display)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct BetweenResidual<P: Variable> {

@@ -12,6 +12,30 @@ use crate::{
     variables::Variable,
 };
 
+/// Forward mode differentiator
+///
+/// It requires a function that takes in variables with a dtype of [DualVector]
+/// and outputs a vector of the same dtype. The generic parameter `N` is used to
+/// specify the dimension of the DualVector.
+///
+/// This struct is used to compute the Jacobian of a function using forward mode
+/// differentiation via dual-numbers. It can operate on functions with up to 6
+/// inputs and with vector-valued outputs.
+///
+/// ```
+/// use factrs::{linalg::*, prelude::*};
+///
+/// fn f<D: Numeric>(x: SO2<D>, y: SO2<D>) -> VectorX<D> {
+///     x.ominus(&y)
+/// }
+///
+/// let x = SO2::from_theta(2.0);
+/// let y = SO2::from_theta(1.0);
+///
+/// // 2 as the generic since we have 2 dimensions going in
+/// let DiffResult { value, diff } = ForwardProp::<Const<2>>::jacobian_2(f, &x, &y);
+/// assert_eq!(value, vectorx![1.0]);
+/// ```
 pub struct ForwardProp<N: DimName> {
     _phantom: std::marker::PhantomData<N>,
 }

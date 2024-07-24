@@ -4,13 +4,21 @@ use ahash::HashMap;
 
 use super::{Symbol, Values};
 
-// Since the map isn't ordered, we need to track both idx and len of each variable
+/// Location of a variable in a list
+///
+/// Since the map isn't ordered, we need to track both idx and len of each
+/// variable
 #[derive(Debug, Clone)]
 pub struct Idx {
     pub idx: usize,
     pub dim: usize,
 }
 
+/// Tracks the location of each variable in the graph via an [Idx].
+///
+/// Likely won't need to ever interface with this unless a custom optimizer is
+/// being implemented. Since the map isn't ordered, we need to track both idx
+/// and len of each variable
 #[derive(Debug, Clone)]
 pub struct ValuesOrder {
     map: HashMap<Symbol, Idx>,

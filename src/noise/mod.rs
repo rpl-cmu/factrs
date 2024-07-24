@@ -1,19 +1,32 @@
+//! Noise model representations
+//!
+//! Represent Gaussian noise models in a factor graph, specifically used when
+//! constructing a [factor](crate::containers::Factor).
+
 use std::fmt::{Debug, Display};
 
 use crate::linalg::{DimName, MatrixX, VectorX};
 
+/// The trait for a noise model.
 pub trait NoiseModel: Debug + Display {
+    /// The dimension of the noise model
     type Dim: DimName;
 
     fn dim(&self) -> usize {
         Self::Dim::USIZE
     }
 
+    /// Whiten a vector
     fn whiten_vec(&self, v: VectorX) -> VectorX;
 
+    /// Whiten a matrix
     fn whiten_mat(&self, m: MatrixX) -> MatrixX;
 }
 
+/// The object safe version of [NoiseModel].
+///
+/// This trait is used to allow for dynamic dispatch of noise models.
+/// Implemented for all types that implement [NoiseModel].
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait NoiseModelSafe: Debug + Display {
     fn dim(&self) -> usize;
@@ -51,6 +64,7 @@ impl<
     fn typetag_deserialize(&self) {}
 }
 
+/// Register a type as a [noise model](crate::noise) for serialization.
 #[macro_export]
 macro_rules! tag_noise {
     ($($ty:ty),* $(,)?) => {$(

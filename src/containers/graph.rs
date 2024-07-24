@@ -1,8 +1,24 @@
 use faer::sparse::SymbolicSparseColMat;
 
 use super::{Idx, Values, ValuesOrder};
-use crate::{dtype, factors::Factor, linear::LinearGraph};
+use crate::{containers::Factor, dtype, linear::LinearGraph};
 
+/// Structure to represent a nonlinear factor graph
+///
+/// Main usage will be via `add_factor` to add new [factors](Factor) to the
+/// graph. Also of note is the `linearize` function that returns a [linear (aka
+/// Gaussian) factor graph](LinearGraph).
+///
+/// Since the graph represents a nonlinear least-squares problem, during
+/// optimization it will be iteratively linearized about a set of variables and
+/// solved iteratively.
+///
+/// ```
+/// # use factrs::prelude::*;
+/// # let factor = Factor::new_base(&[X(0)], PriorResidual::new(SO2::identity()));
+/// let mut graph = Graph::new();
+/// graph.add_factor(factor);
+/// ```
 #[derive(Default, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Graph {
@@ -42,7 +58,7 @@ impl Graph {
         let mut indices = Vec::<(usize, usize)>::new();
 
         let _ = self.factors.iter().fold(0, |row, f| {
-            f.keys.iter().for_each(|key| {
+            f.keys().iter().for_each(|key| {
                 (0..f.dim_out()).for_each(|i| {
                     let Idx {
                         idx: col,
@@ -67,6 +83,11 @@ impl Graph {
     }
 }
 
+/// Simple structure to hold the order of the graph
+///
+/// Specifically this is used to cache linearization results such as the order
+/// of the graph and the sparsity pattern of the Jacobian (allows use to avoid
+/// resorting indices).
 pub struct GraphOrder {
     // Contains the order of the variables
     pub order: ValuesOrder,

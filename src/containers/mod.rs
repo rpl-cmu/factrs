@@ -1,7 +1,4 @@
-// Key
-use std::{cmp, fmt, hash};
-pub trait Key: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + fmt::Debug + Clone {}
-impl<T: cmp::Eq + cmp::PartialEq + hash::Hash + fmt::Display + fmt::Debug + Clone> Key for T {}
+//! Various containers for storing variables, residuals, factors, etc.
 
 mod symbol;
 pub use symbol::*;
@@ -14,3 +11,6 @@ pub use order::{Idx, ValuesOrder};
 
 mod graph;
 pub use graph::{Graph, GraphOrder};
+
+mod factor;
+pub use factor::Factor;

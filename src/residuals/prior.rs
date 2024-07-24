@@ -44,6 +44,13 @@ tag_residual!(
     PriorResidual<SO3>,
 );
 
+/// Unary factor for a prior on a variable.
+///
+/// This residual is used to enforce a prior on a variable. Specifically it
+/// computes $$
+/// z \ominus v
+/// $$
+/// where $z$ is the prior value and $v$ is the variable being estimated.
 #[derive(Clone, Debug, derive_more::Display)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct PriorResidual<P: Variable> {
@@ -97,7 +104,7 @@ mod test {
     use super::*;
     use crate::{
         containers::X,
-        linalg::{dvector, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
+        linalg::{vectorx, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
         variables::{VectorVar3, SE3, SO3},
     };
 
@@ -145,13 +152,13 @@ mod test {
 
     #[test]
     fn prior_so3() {
-        let prior = SO3::exp(dvector![0.1, 0.2, 0.3].as_view());
+        let prior = SO3::exp(vectorx![0.1, 0.2, 0.3].as_view());
         test_prior_jacobian(prior);
     }
 
     #[test]
     fn prior_se3() {
-        let prior = SE3::exp(dvector![0.1, 0.2, 0.3, 1.0, 2.0, 3.0].as_view());
+        let prior = SE3::exp(vectorx![0.1, 0.2, 0.3, 1.0, 2.0, 3.0].as_view());
         test_prior_jacobian(prior);
     }
 }

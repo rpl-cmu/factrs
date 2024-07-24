@@ -1,3 +1,5 @@
+//! Structs & traits for solving linear factor graphs
+
 mod factor;
 pub use factor::LinearFactor;
 

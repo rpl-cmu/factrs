@@ -1,0 +1,50 @@
+<!-- https://raw.githubusercontent.com/InteractiveComputerGraphics/fenris/master/assets/doc-header.html -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.min.css"
+    integrity="sha384-Juol1FqnotbkyZUT5Z7gUPjQ9gzlwCENvUZTpQBAPxtusdwFLRy382PSDx5UUJ4/" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.min.js"
+    integrity="sha384-97gW6UIJxnlKemYavrqDHSX3SiygeOwIZhwyOKRfSaf0JWKRVj9hLASHgFTzT+0O"
+    crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/contrib/auto-render.min.js"
+    integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
+    crossorigin="anonymous"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        renderMathInElement(document.body, {
+            // customized options
+            // • auto-render specific keys, e.g.:
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            // • rendering keys, e.g.:
+            throwOnError: false,
+            // Macros
+            macros: {
+                "\\blue": "\\textcolor{##0173b2}{#1}",
+                "\\orange": "\\textcolor{##de8f05}{#1}",
+                "\\green": "\\textcolor{##029e73}{#1}",
+                "\\red": "\\textcolor{##d55e00}{#1}",
+                "\\purple": "\\textcolor{##cc78bc}{#1}",
+                "\\brown": "\\textcolor{##ca9161}{#1}",
+                "\\pink": "\\textcolor{##fbafe4}{#1}",
+                "\\grey": "\\textcolor{##949494}{#1}",
+                "\\yellow": "\\textcolor{##ece133}{#1}",
+                "\\teal": "\\textcolor{##56b4e9}{#1}",
+            },
+        });
+    });
+</script>
+<style>
+ blue {color: #0173b2}
+ orange {color: #de8f05}
+ green {color: #029e73}
+ red {color: #d55e00}
+ purple {color: #cc78bc}
+ brown {color: #ca9161}
+ pink {color: #fbafe4}
+ grey {color: #949494}
+ yellow {color: #ece133}
+ teal {color: #56b4e9}
+</style>

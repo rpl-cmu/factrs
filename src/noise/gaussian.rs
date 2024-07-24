@@ -22,6 +22,10 @@ tag_noise!(
     GaussianNoise<12>,
 );
 
+/// A Gaussian noise model.
+///
+/// This noise model is used to represent Gaussian noise in a factor graph. This
+/// will likely be the most used noise model.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GaussianNoise<const N: usize> {
@@ -45,35 +49,42 @@ impl<const N: usize> NoiseModel for GaussianNoise<N> {
 }
 
 impl<const N: usize> GaussianNoise<N> {
+    /// Create a unit Gaussian noise.
     pub fn identity() -> UnitNoise<N> {
         UnitNoise
     }
 
+    /// Create a Gaussian noise from a scalar sigma.
     pub fn from_scalar_sigma(sigma: dtype) -> Self {
         let sqrt_inf = Matrix::<N, N>::from_diagonal_element(1.0 / sigma);
         Self { sqrt_inf }
     }
 
+    /// Create a Gaussian noise from a scalar covariance.
     pub fn from_scalar_cov(cov: dtype) -> Self {
         let sqrt_inf = Matrix::<N, N>::from_diagonal_element(1.0 / cov.sqrt());
         Self { sqrt_inf }
     }
 
+    /// Create a diagonal Gaussian noise from a vector of sigmas.
     pub fn from_vec_sigma(sigma: VectorView<N>) -> Self {
         let sqrt_inf = Matrix::<N, N>::from_diagonal(&sigma.map(|x| 1.0 / x));
         Self { sqrt_inf }
     }
 
+    /// Create a diagonal Gaussian noise from a vector of covariances.
     pub fn from_vec_cov(cov: VectorView<N>) -> Self {
         let sqrt_inf = Matrix::<N, N>::from_diagonal(&cov.map(|x| 1.0 / x.sqrt()));
         Self { sqrt_inf }
     }
 
+    /// Create a diagonal Gaussian noise from a vector of information.
     pub fn from_vec_inf(inf: VectorView<N>) -> Self {
         let sqrt_inf = Matrix::<N, N>::from_diagonal(&inf.map(|x| x.sqrt()));
         Self { sqrt_inf }
     }
 
+    /// Create a Gaussian noise from a covariance matrix.
     pub fn from_matrix_cov(cov: MatrixView<N, N>) -> Self {
         let sqrt_inf = cov
             .try_inverse()
@@ -85,6 +96,7 @@ impl<const N: usize> GaussianNoise<N> {
         Self { sqrt_inf }
     }
 
+    /// Create a Gaussian noise from an information matrix.
     pub fn from_matrix_inf(inf: MatrixView<N, N>) -> Self {
         let sqrt_inf = inf
             .cholesky()
@@ -96,27 +108,31 @@ impl<const N: usize> GaussianNoise<N> {
 }
 
 macro_rules! make_gaussian_vector {
-    ($num:expr, [$($args:ident),*]) => {
+    ($($num:expr, [$($args:ident),*]);* $(;)?) => {$(
         impl GaussianNoise<$num> {
+            /// Create a diagonal Gaussian noise from scalar sigmas.
             pub fn from_diag_sigmas($($args: dtype),*) -> Self {
                 let sigmas = Vector::<$num>::new($($args,)*);
                 Self::from_vec_sigma(sigmas.as_view())
             }
 
+            /// Create a diagonal Gaussian noise from scalar covariances.
             pub fn from_diag_covs($($args: dtype,)*) -> Self {
                 let sigmas = Vector::<$num>::new($($args,)*);
                 Self::from_vec_cov(sigmas.as_view())
             }
         }
-    };
+    )*};
 }
 
-make_gaussian_vector!(1, [s0]);
-make_gaussian_vector!(2, [s0, s1]);
-make_gaussian_vector!(3, [s0, s1, s2]);
-make_gaussian_vector!(4, [s0, s1, s2, s3]);
-make_gaussian_vector!(5, [s0, s1, s2, s3, s4]);
-make_gaussian_vector!(6, [s0, s1, s2, s3, s4, s5]);
+make_gaussian_vector! {
+    1, [s0];
+    2, [s0, s1];
+    3, [s0, s1, s2];
+    4, [s0, s1, s2, s3];
+    5, [s0, s1, s2, s3, s4];
+    6, [s0, s1, s2, s3, s4, s5];
+}
 
 impl<const N: usize> fmt::Display for GaussianNoise<N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

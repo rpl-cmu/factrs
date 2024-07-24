@@ -1,18 +1,22 @@
+//! Misc utilities
 use std::{
     fs::File,
     io::{BufRead, BufReader},
 };
 
 use crate::{
-    containers::{Graph, Values, X},
+    containers::{Factor, Graph, Values, X},
     dtype,
-    factors::Factor,
     linalg::{Matrix3, Matrix6, Vector3},
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
     variables::*,
 };
 
+/// Load a g2o file
+///
+/// Currently supports only SE2 and SE3 pose graphs. Will autodetect which one
+/// it is, so mixed graph type isn't allowed.
 pub fn load_g20(file: &str) -> (Graph, Values) {
     let file = File::open(file).expect("File not found!");
 

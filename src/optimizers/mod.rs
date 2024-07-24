@@ -1,3 +1,39 @@
+//! Optimizers for solving non-linear least squares problems.
+//!
+//! Specifically, given a nonlinear least squares problem of the form,
+//!
+//! $$
+//! \Theta^* = \argmin_{\Theta} \sum_{i} \rho_i(||r_i(\Theta)||_{\Sigma_i} )
+//! $$
+//!
+//! These optimizers function by first, linearizing to a linear least squares
+//! problem,
+//! $$
+//! \Delta \Theta = \argmin_{\Delta \Theta} \sum_{i} ||A_i (\Delta \Theta)_i -
+//! b_i ||^2
+//! $$
+//!
+//! This can be rearranged to a large, sparse linear system given by,
+//!
+//! $$
+//! A \Delta \Theta = b
+//! $$
+//!
+//! which can then be solved. For example, Gauss-Newton solves this directly,
+//! while Levenberg-Marquardt adds a damping term to the diagonal of $A^\top A$
+//! to ensure positive definiteness.
+//!
+//! This module provides a set of optimizers that can be used to solve
+//! non-linear least squares problems. Each optimizer implements the [Optimizer]
+//! trait to give similar structure and usage.
+//!
+//! Additionally observers can be added to the optimizer to monitor the progress
+//! of the optimization. A prebuilt [Rerun](https://rerun.io/) can be enabled via
+//! the `rerun` feature.
+//!
+//! If you desire to implement your own optimizer, we additionally recommend
+//! using the [test_optimizer](crate::test_optimizer) macro to run a handful of
+//! simple tests over a few different variable types to ensure correctness.
 mod traits;
 pub use traits::{
     GraphOptimizer,
@@ -24,9 +60,8 @@ pub mod test {
 
     use super::*;
     use crate::{
-        containers::{Graph, Values, X},
+        containers::{Factor, Graph, Values, X},
         dtype,
-        factors::Factor,
         linalg::{Const, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
         residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
