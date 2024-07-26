@@ -1,6 +1,4 @@
-use nalgebra::{allocator::Allocator, Const};
-
-use super::{Dim, RealField};
+use super::{Allocator, Const, Dim, RealField};
 use crate::dtype;
 
 /// Wrapper for all properties needed for dual numbers
@@ -12,19 +10,13 @@ pub type DualScalar = num_dual::Dual<dtype, dtype>;
 
 /// Make allocator binds easier for dual numbers
 pub trait DualAllocator<N: Dim>:
-    Allocator<dtype, N>
-    + Allocator<dtype, Const<1>, N>
-    + Allocator<dtype, N, Const<1>>
-    + Allocator<dtype, N, N>
+    Allocator<N> + Allocator<Const<1>, N> + Allocator<N, Const<1>> + Allocator<N, N>
 {
 }
 
 impl<
         N: Dim,
-        T: Allocator<dtype, N>
-            + Allocator<dtype, Const<1>, N>
-            + Allocator<dtype, N, Const<1>>
-            + Allocator<dtype, N, N>,
+        T: Allocator<N> + Allocator<Const<1>, N> + Allocator<N, Const<1>> + Allocator<N, N>,
     > DualAllocator<N> for T
 {
 }

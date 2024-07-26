@@ -20,9 +20,9 @@ faer = { version = "0.19.0", default-features = false, features = [
     "std",
     "matrixcompare",
 ] }
-faer-ext = { version = "0.2.0", features = ["nalgebra"] }
-nalgebra = { version = "0.32.5", features = ["compare"] }
-num-dual = "0.9.1"
+faer-ext = { path = "../faer-ext", features = ["nalgebra"] }
+nalgebra = { version = "0.33", features = ["compare"] }
+num-dual = { path = "../num-dual" }
 matrixcompare-core = { version = "0.1" }
 
 # serialization
@@ -64,8 +64,8 @@ rerun = ["dep:rerun"]
 
 [dev-dependencies]
 matrixcompare = "0.3.0"
-pretty_env_logger = "0.4"
-nalgebra = { version = "0.32.5", features = ["compare"] }
+pretty_env_logger = "0.5"
+nalgebra = { version = "0.33", features = ["compare"] }
 
 [[example]]
 name = "g2o"
