@@ -84,15 +84,15 @@ impl<D: Numeric> Variable<D> for SO3<D> {
     }
 
     fn compose(&self, other: &Self) -> Self {
-        let x0 = self.xyzw[0];
-        let y0 = self.xyzw[1];
-        let z0 = self.xyzw[2];
-        let w0 = self.xyzw[3];
+        let x0 = self.xyzw.x;
+        let y0 = self.xyzw.y;
+        let z0 = self.xyzw.z;
+        let w0 = self.xyzw.w;
 
-        let x1 = other.xyzw[0];
-        let y1 = other.xyzw[1];
-        let z1 = other.xyzw[2];
-        let w1 = other.xyzw[3];
+        let x1 = other.xyzw.x;
+        let y1 = other.xyzw.y;
+        let z1 = other.xyzw.z;
+        let w1 = other.xyzw.w;
 
         // Compute the product of the two quaternions, term by term
         let mut xyzw = Vector4::zeros();
@@ -109,26 +109,26 @@ impl<D: Numeric> Variable<D> for SO3<D> {
         let theta = xi.norm();
 
         if theta < D::from(1e-3) {
-            xyzw[0] = xi[0] * D::from(0.5);
-            xyzw[1] = xi[1] * D::from(0.5);
-            xyzw[2] = xi[2] * D::from(0.5);
-            xyzw[3] = D::from(1.0);
+            xyzw.x = xi[0] * D::from(0.5);
+            xyzw.y = xi[1] * D::from(0.5);
+            xyzw.z = xi[2] * D::from(0.5);
+            xyzw.w = D::from(1.0);
         } else {
             let theta_half = theta / D::from(2.0);
             let sin_theta = theta_half.sin();
-            xyzw[0] = xi[0] * sin_theta / theta;
-            xyzw[1] = xi[1] * sin_theta / theta;
-            xyzw[2] = xi[2] * sin_theta / theta;
-            xyzw[3] = theta_half.cos();
+            xyzw.x = xi[0] * sin_theta / theta;
+            xyzw.y = xi[1] * sin_theta / theta;
+            xyzw.z = xi[2] * sin_theta / theta;
+            xyzw.w = theta_half.cos();
         }
 
         SO3 { xyzw }
     }
 
     fn log(&self) -> VectorX<D> {
-        let xi = vectorx![self.xyzw[0], self.xyzw[1], self.xyzw[2]];
+        let xi = vectorx![self.xyzw.x, self.xyzw.y, self.xyzw.z];
         // Abs value in case we had a negative quaternion
-        let w = self.xyzw[3].abs();
+        let w = self.xyzw.w.abs();
 
         let norm_v = xi.norm();
         if norm_v < D::from(1e-3) {
@@ -177,10 +177,10 @@ impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
     type VectorDim = Const<3>;
 
     fn adjoint(&self) -> Matrix3<D> {
-        let q0 = self.xyzw[3];
-        let q1 = self.xyzw[0];
-        let q2 = self.xyzw[1];
-        let q3 = self.xyzw[2];
+        let q0 = self.xyzw.w;
+        let q1 = self.xyzw.x;
+        let q2 = self.xyzw.y;
+        let q3 = self.xyzw.z;
 
         // Same as to_matrix function of SO3 -> Just avoiding copying from Matrix3 to
         // MatrixD
