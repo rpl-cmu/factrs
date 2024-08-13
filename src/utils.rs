@@ -5,13 +5,16 @@ use std::{
 };
 
 use crate::{
-    containers::{Factor, Graph, Values, X},
+    assign_symbols,
+    containers::{Factor, Graph, Values},
     dtype,
     linalg::{Matrix3, Matrix6, Vector3},
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
     variables::*,
 };
+
+assign_symbols!(X: SE2, SE3);
 
 /// Load a g2o file
 ///
@@ -38,7 +41,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor = Factor::new_base(&[key.clone()], PriorResidual::new(var.clone()));
+                    let factor = Factor::new_base(&[key.into()], PriorResidual::new(var.clone()));
                     graph.add_factor(factor);
                 }
 
@@ -64,7 +67,11 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let key2 = X(id_curr);
                 let var = SE2::new(theta, x, y);
                 let noise = GaussianNoise::from_matrix_inf(inf.as_view());
-                let factor = Factor::new_noise(&[key1, key2], BetweenResidual::new(var), noise);
+                let factor = Factor::new_noise(
+                    &[key1.into(), key2.into()],
+                    BetweenResidual::new(var),
+                    noise,
+                );
                 graph.add_factor(factor);
             }
 
@@ -88,7 +95,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                     let noise =
                         GaussianNoise::<6>::from_diag_covs(1e-6, 1e-6, 1e-6, 1e-4, 1e-4, 1e-4);
                     let factor =
-                        Factor::new_noise(&[key.clone()], PriorResidual::new(var.clone()), noise);
+                        Factor::new_noise(&[key.into()], PriorResidual::new(var.clone()), noise);
                     graph.add_factor(factor);
                 }
 
@@ -148,7 +155,11 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let key1 = X(id_prev);
                 let key2 = X(id_curr);
                 let noise = GaussianNoise::from_matrix_inf(inf.as_view());
-                let factor = Factor::new_noise(&[key1, key2], BetweenResidual::new(var), noise);
+                let factor = Factor::new_noise(
+                    &[key1.into(), key2.into()],
+                    BetweenResidual::new(var),
+                    noise,
+                );
                 graph.add_factor(factor);
             }
 

@@ -1,5 +1,10 @@
 // Similar to gtsam: https://github.com/borglab/gtsam/blob/develop/gtsam/inference/Symbol.cpp
-use std::{fmt, mem::size_of};
+use std::{
+    fmt::{self},
+    mem::size_of,
+};
+
+use crate::prelude::VariableUmbrella;
 
 // Char is stored in last CHR_BITS
 // Value is stored in the first IDX_BITS
@@ -9,124 +14,114 @@ const IDX_BITS: usize = KEY_BITS - CHR_BITS;
 const CHR_MASK: u64 = (char::MAX as u64) << IDX_BITS;
 const IDX_MASK: u64 = !CHR_MASK;
 
+// ------------------------- Symbol Parser ------------------------- //
+
 /// Newtype wrap around u64
-///
-/// First bits contain the index, last bits contain the character.
-/// Helpers exist (such as [X], [B], [L]) to create new versions.
 ///
 /// In implementation, the u64 is exclusively used, the chr/idx aren't at all.
 /// If you'd like to use a custom symbol (ie with two chars for multi-robot
 /// experiments), simply define a new trait that creates the u64 as you desire.
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Symbol(u64);
+pub struct Key(pub u64);
 
-impl Symbol {
-    pub fn new_raw(key: u64) -> Self {
-        Symbol(key)
-    }
+impl Symbol for Key {}
 
-    pub fn chr(&self) -> char {
-        ((self.0 & CHR_MASK) >> IDX_BITS) as u8 as char
-    }
+/// This provides a custom conversion two and from a u64 key.
+pub trait Symbol: fmt::Debug + Into<Key> {}
 
-    pub fn idx(&self) -> u64 {
-        self.0 & IDX_MASK
-    }
+pub struct DefaultSymbol {
+    chr: char,
+    idx: u64,
+}
 
-    pub fn new(c: char, i: u64) -> Self {
-        Symbol(((c as u64) << IDX_BITS) | (i & IDX_MASK))
+impl DefaultSymbol {
+    pub fn new(chr: char, idx: u64) -> Self {
+        Self { chr, idx }
     }
 }
 
-impl fmt::Display for Symbol {
+impl Symbol for DefaultSymbol {}
+
+impl From<Key> for DefaultSymbol {
+    fn from(key: Key) -> Self {
+        let chr = ((key.0 & CHR_MASK) >> IDX_BITS) as u8 as char;
+        let idx = key.0 & IDX_MASK;
+        Self { chr, idx }
+    }
+}
+
+impl From<DefaultSymbol> for Key {
+    fn from(sym: DefaultSymbol) -> Key {
+        Key((sym.chr as u64) << IDX_BITS | sym.idx & IDX_MASK)
+    }
+}
+
+impl fmt::Debug for DefaultSymbol {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", self.chr(), self.idx())
+        write!(f, "({}, {})", self.chr, self.idx)
     }
 }
 
-impl fmt::Debug for Symbol {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", self.chr(), self.idx())
-    }
+// ------------------------- Basic Keys ------------------------- //
+/*
+To figure out
+- How to store in Values and still be print when debugging
+    - Probably still want store as a Symbol for this reason
+
+Just want to replace the above functions with some sort of typing
+
+Do the reverse and assign a letter to the variable?
+- Not the best in case we have multiple letters for a single variable
+*/
+
+pub trait TypedSymbol<V: VariableUmbrella>: Symbol {}
+
+macro_rules! impl_symbol {
+    ($($name:ident),*) => {
+        $(
+            #[derive(Clone, Copy)]
+            pub struct $name(pub u64);
+
+            paste::paste! {
+                impl From<$name> for $crate::containers::DefaultSymbol {
+                    fn from(key: $name) -> $crate::containers::DefaultSymbol {
+                        let chr = stringify!([<$name:lower>]).chars().next().unwrap();
+                        let idx = key.0;
+                        $crate::containers::DefaultSymbol::new(chr, idx)
+                    }
+                }
+            }
+
+            impl From<$name> for $crate::containers::Key {
+                fn from(key: $name) -> $crate::containers::Key {
+                    $crate::containers::DefaultSymbol::from(key).into()
+                }
+            }
+
+            impl std::fmt::Debug for $name {
+                fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    $crate::containers::DefaultSymbol::from(*self).fmt(f)
+                }
+            }
+
+            impl $crate::containers::Symbol for $name {}
+        )*
+    };
 }
 
-// ------------------------- Helpers ------------------------- //
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn A(i: u64) -> Symbol { Symbol::new('a', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn B(i: u64) -> Symbol { Symbol::new('b', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn C(i: u64) -> Symbol { Symbol::new('c', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn D(i: u64) -> Symbol { Symbol::new('d', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn E(i: u64) -> Symbol { Symbol::new('e', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn F(i: u64) -> Symbol { Symbol::new('f', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn G(i: u64) -> Symbol { Symbol::new('g', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn H(i: u64) -> Symbol { Symbol::new('h', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn I(i: u64) -> Symbol { Symbol::new('i', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn J(i: u64) -> Symbol { Symbol::new('j', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn K(i: u64) -> Symbol { Symbol::new('k', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn L(i: u64) -> Symbol { Symbol::new('l', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn M(i: u64) -> Symbol { Symbol::new('m', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn N(i: u64) -> Symbol { Symbol::new('n', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn O(i: u64) -> Symbol { Symbol::new('o', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn P(i: u64) -> Symbol { Symbol::new('p', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn Q(i: u64) -> Symbol { Symbol::new('q', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn R(i: u64) -> Symbol { Symbol::new('r', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn S(i: u64) -> Symbol { Symbol::new('s', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn T(i: u64) -> Symbol { Symbol::new('t', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn U(i: u64) -> Symbol { Symbol::new('u', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn V(i: u64) -> Symbol { Symbol::new('v', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn W(i: u64) -> Symbol { Symbol::new('w', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn X(i: u64) -> Symbol { Symbol::new('x', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn Y(i: u64) -> Symbol { Symbol::new('y', i) }
-#[rustfmt::skip]
-#[allow(non_snake_case)]
-pub fn Z(i: u64) -> Symbol { Symbol::new('z', i) }
+pub(crate) use impl_symbol;
+
+impl_symbol!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z);
+
+// TODO: Will impl_symbol be accessible when this is exported?
+#[macro_export]
+macro_rules! assign_symbols {
+    ($($name:ident : $($var:ident),+);* $(;)?) => {$(
+        $crate::containers::impl_symbol!($name);
+
+        $(
+            impl $crate::containers::TypedSymbol<$var> for $name {}
+        )*
+    )*};
+}

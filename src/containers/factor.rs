@@ -1,5 +1,5 @@
 use crate::{
-    containers::{Symbol, Values},
+    containers::{Key, Values},
     dtype,
     linalg::{AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, MatrixBlock},
     linear::LinearFactor,
@@ -15,7 +15,7 @@ use crate::{
 /// Factors are the main building block of the factor graph. They are composed
 /// of four pieces:
 /// - <green>Keys</green>: The variables that the factor depends on, given by a
-///   slice of [Symbols](Symbol).
+///   slice of [Keys](Key).
 /// - <purple>Residual</purple>: The vector-valued function that computes the
 ///   error of the factor given a set of values, from the
 ///   [residual](crate::residuals) module.
@@ -42,7 +42,7 @@ use crate::{
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
-    keys: Vec<Symbol>,
+    keys: Vec<Key>,
     residual: Box<dyn ResidualSafe>,
     noise: Box<dyn NoiseModelSafe>,
     robust: Box<dyn RobustCostSafe>,
@@ -55,7 +55,7 @@ impl Factor {
     /// the residual. Noise will be set to [UnitNoise] and robust kernel to
     /// [L2].
     pub fn new_base<const NUM_VARS: usize, const DIM_OUT: usize, R>(
-        keys: &[Symbol; NUM_VARS],
+        keys: &[Key; NUM_VARS],
         residual: R,
     ) -> Self
     where
@@ -77,7 +77,7 @@ impl Factor {
     /// Keys and noise will be compile-time checked to ensure the size is
     /// consistent with the residual. Robust kernel will be set to [L2].
     pub fn new_noise<const NUM_VARS: usize, const DIM_OUT: usize, R, N>(
-        keys: &[Symbol; NUM_VARS],
+        keys: &[Key; NUM_VARS],
         residual: R,
         noise: N,
     ) -> Self
@@ -101,7 +101,7 @@ impl Factor {
     /// Keys and noise will be compile-time checked to ensure the size is
     /// consistent with the residual.
     pub fn new_full<const NUM_VARS: usize, const DIM_OUT: usize, R, N, C>(
-        keys: &[Symbol; NUM_VARS],
+        keys: &[Key; NUM_VARS],
         residual: R,
         noise: N,
         robust: C,
@@ -155,7 +155,7 @@ impl Factor {
             .iter()
             .scan(0, |sum, k| {
                 let out = Some(*sum);
-                *sum += values.get(k).unwrap().dim();
+                *sum += values.get_raw(*k).unwrap().dim();
                 out
             })
             .collect::<Vec<_>>();
@@ -165,7 +165,7 @@ impl Factor {
     }
 
     /// Get the keys of the factor.
-    pub fn keys(&self) -> &[Symbol] {
+    pub fn keys(&self) -> &[Key] {
         &self.keys
     }
 }
@@ -204,16 +204,16 @@ mod tests {
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
-        let factor = Factor::new_full(&[X(0)], residual, noise, robust);
+        let factor = Factor::new_full(&[X(0).into()], residual, noise, robust);
 
         let f = |x: VectorVar3| {
             let mut values = Values::new();
-            values.insert(X(0), x);
+            values.insert_unchecked(X(0), x);
             factor.error(&values)
         };
 
         let mut values = Values::new();
-        values.insert(X(0), x.clone());
+        values.insert_unchecked(X(0), x.clone());
 
         let linear = factor.linearize(&values);
         let grad_got = -linear.a.mat().transpose() * linear.b;
@@ -234,11 +234,11 @@ mod tests {
         let noise = GaussianNoise::<3>::from_diag_sigmas(1e-1, 2e-1, 3e-1);
         let robust = GemanMcClure::default();
 
-        let factor = Factor::new_full(&[X(0), X(1)], residual, noise, robust);
+        let factor = Factor::new_full(&[X(0).into(), X(1).into()], residual, noise, robust);
 
         let mut values = Values::new();
-        values.insert(X(0), x.clone());
-        values.insert(X(1), x);
+        values.insert_unchecked(X(0), x.clone());
+        values.insert_unchecked(X(1), x);
 
         let linear = factor.linearize(&values);
 

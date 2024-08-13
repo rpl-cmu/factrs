@@ -79,17 +79,17 @@ pub mod test {
         let p = T::exp(t.as_view());
 
         let mut values = Values::new();
-        values.insert(X(0), T::identity());
+        values.insert_unchecked(X(0), T::identity());
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(p.clone());
-        let factor = Factor::new_base(&[X(0)], res);
+        let factor = Factor::new_base(&[X(0).into()], res);
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
         values = opt.optimize(values).unwrap();
 
-        let out: &T = values.get_cast(&X(0)).unwrap();
+        let out: &T = values.get_unchecked(X(0)).unwrap();
         assert_matrix_eq!(
             out.ominus(&p),
             VectorX::zeros(T::DIM),
@@ -115,23 +115,23 @@ pub mod test {
         let p2 = T::exp(t.as_view());
 
         let mut values = Values::new();
-        values.insert(X(0), T::identity());
-        values.insert(X(1), T::identity());
+        values.insert_unchecked(X(0), T::identity());
+        values.insert_unchecked(X(1), T::identity());
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(p1.clone());
-        let factor = Factor::new_base(&[X(0)], res);
+        let factor = Factor::new_base(&[X(0).into()], res);
         graph.add_factor(factor);
 
         let diff = p2.minus(&p1);
         let res = BetweenResidual::new(diff);
-        let factor = Factor::new_base(&[X(0), X(1)], res);
+        let factor = Factor::new_base(&[X(0).into(), X(1).into()], res);
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
         values = opt.optimize(values).unwrap();
 
-        let out1: &T = values.get_cast(&X(0)).unwrap();
+        let out1: &T = values.get_unchecked(X(0)).unwrap();
         assert_matrix_eq!(
             out1.ominus(&p1),
             VectorX::zeros(T::DIM),
@@ -139,7 +139,7 @@ pub mod test {
             tol = 1e-6
         );
 
-        let out2: &T = values.get_cast(&X(1)).unwrap();
+        let out2: &T = values.get_unchecked(X(1)).unwrap();
         assert_matrix_eq!(
             out2.ominus(&p2),
             VectorX::zeros(T::DIM),

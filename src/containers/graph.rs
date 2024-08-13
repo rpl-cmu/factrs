@@ -63,7 +63,7 @@ impl Graph {
                     let Idx {
                         idx: col,
                         dim: col_dim,
-                    } = order.get(key).unwrap();
+                    } = order.get(*key).unwrap();
                     (0..*col_dim).for_each(|j| {
                         indices.push((row + i, col + j));
                     });

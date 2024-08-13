@@ -3,7 +3,7 @@ use nalgebra::{DimNameAdd, DimNameSum};
 use super::{Residual, Residual2};
 #[allow(unused_imports)]
 use crate::{
-    containers::{Symbol, Values},
+    containers::{Key, Values},
     linalg::{
         AllocatorBuffer,
         Const,
@@ -99,11 +99,11 @@ where
     type DimIn = <Self as Residual2>::DimIn;
     type NumVars = Const<2>;
 
-    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
+    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
         self.residual2_values(values, keys)
     }
 
-    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
+    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
         self.residual2_jacobian(values, keys)
     }
 }

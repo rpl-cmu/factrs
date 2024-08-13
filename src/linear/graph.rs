@@ -49,7 +49,7 @@ impl LinearGraph {
                     let Idx {
                         idx: col,
                         dim: col_dim,
-                    } = order.get(key).unwrap();
+                    } = order.get(*key).unwrap();
                     (0..*col_dim).for_each(|j| {
                         indices.push((row + i, col + j));
                     });
@@ -134,22 +134,26 @@ mod test {
         let a1 = MatrixX::from_fn(2, 2, |i, j| (i + j) as dtype);
         let block1 = MatrixBlock::new(a1, vec![0]);
         let b1 = VectorX::from_fn(2, |i, j| (i + j) as dtype);
-        graph.add_factor(LinearFactor::new(vec![X(1)], block1.clone(), b1.clone()));
+        graph.add_factor(LinearFactor::new(
+            vec![X(1).into()],
+            block1.clone(),
+            b1.clone(),
+        ));
 
         let a2 = MatrixX::from_fn(3, 5, |i, j| (i + j) as dtype);
         let block2 = MatrixBlock::new(a2, vec![0, 2]);
         let b2 = VectorX::from_fn(3, |_, _| 5.0);
         graph.add_factor(LinearFactor::new(
-            vec![X(0), X(2)],
+            vec![X(0).into(), X(2).into()],
             block2.clone(),
             b2.clone(),
         ));
 
         // Make fake ordering
         let mut map = HashMap::default();
-        map.insert(X(0), Idx { idx: 0, dim: 2 });
-        map.insert(X(1), Idx { idx: 2, dim: 2 });
-        map.insert(X(2), Idx { idx: 4, dim: 3 });
+        map.insert(X(0).into(), Idx { idx: 0, dim: 2 });
+        map.insert(X(1).into(), Idx { idx: 2, dim: 2 });
+        map.insert(X(2).into(), Idx { idx: 4, dim: 3 });
         let order = ValuesOrder::new(map);
 
         // Compute the residual and jacobian
