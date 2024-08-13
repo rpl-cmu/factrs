@@ -15,7 +15,8 @@ use crate::{containers::Factor, dtype, linear::LinearGraph};
 ///
 /// ```
 /// # use factrs::prelude::*;
-/// # let factor = Factor::new_base(&[X(0)], PriorResidual::new(SO2::identity()));
+/// # assign_symbols!(X: SO2);
+/// # let factor = FactorBuilder::new1(PriorResidual::new(SO2::identity()), X(0)).build();
 /// let mut graph = Graph::new();
 /// graph.add_factor(factor);
 /// ```
@@ -28,6 +29,12 @@ pub struct Graph {
 impl Graph {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            factors: Vec::with_capacity(capacity),
+        }
     }
 
     pub fn add_factor(&mut self, factor: Factor) {

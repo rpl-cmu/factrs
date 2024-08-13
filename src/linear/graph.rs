@@ -121,8 +121,9 @@ mod test {
 
     use super::*;
     use crate::{
-        containers::{Idx, X},
+        containers::Idx,
         linalg::{MatrixBlock, MatrixX, VectorX},
+        symbols::X,
     };
 
     #[test]

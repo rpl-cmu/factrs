@@ -103,8 +103,8 @@ mod test {
 
     use super::*;
     use crate::{
-        containers::X,
         linalg::{vectorx, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
+        symbols::X,
         variables::{VectorVar3, SE3, SO3},
     };
 

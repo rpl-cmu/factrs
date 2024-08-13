@@ -100,8 +100,8 @@ impl<'a> Iterator for Iter<'a> {
 mod test {
     use super::*;
     use crate::{
-        containers::X,
         dtype,
+        symbols::X,
         variables::{Variable, VectorVar2, VectorVar3, VectorVar6},
     };
 

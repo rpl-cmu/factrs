@@ -1,4 +1,4 @@
-/// Variable wrapper around [matrixcompare::assert_matrix_eq]
+/// Variable wrapper around [assert_matrix_eq](matrixcompare::assert_matrix_eq)
 ///
 /// This compares two variables using
 /// [ominus](crate::variables::Variable::ominus)

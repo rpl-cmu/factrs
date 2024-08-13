@@ -105,7 +105,7 @@ macro_rules! residual_maker {
                 /// It is generic over the dtype to allow for differentiable types.
                 fn [<residual $num>]<D: Numeric>(&self, $($name: Alias<Self::$var, D>,)*) -> VectorX<D>;
 
-                #[doc=concat!("Wrapper that unpacks variables and calls [", stringify!([<residual $num>]), "](Self::", stringify!([<residual $num>]), ").")]
+                #[doc="Wrapper that unpacks and calls [" [<residual $num>] "](Self::" [<residual $num>] ")."]
                 fn [<residual $num _values>](&self, values: &Values, keys: &[Key]) -> VectorX
                 where
                     $(
@@ -122,7 +122,7 @@ macro_rules! residual_maker {
                 }
 
 
-                #[doc=concat!("Wrapper that unpacks variables and computes jacobians using [", stringify!([<residual $num>]), "](Self::", stringify!([<residual $num>]), ").")]
+                #[doc="Wrapper that unpacks variables and computes jacobians using [" [<residual $num>] "](Self::" [<residual $num>] ")."]
                 fn [<residual $num _jacobian>](&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>
                 where
                     $(

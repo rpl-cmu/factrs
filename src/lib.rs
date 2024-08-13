@@ -38,6 +38,9 @@
 //! ```
 //! use factrs::prelude::*;
 //!
+//! // Assign symbols to variable types
+//! assign_symbols!(X: SO2);
+//!
 //! // Make all the values
 //! let mut values = Values::new();
 //!
@@ -50,13 +53,16 @@
 //! let mut graph = Graph::new();
 //!
 //! let res = PriorResidual::new(x.clone());
-//! let factor = Factor::new_base(&[X(0)], res);
+//! let factor = FactorBuilder::new1(res, X(0)).build();
 //! graph.add_factor(factor);
 //!
 //! let res = BetweenResidual::new(y.minus(&x));
 //! let noise = GaussianNoise::from_scalar_sigma(0.1);
 //! let robust = Huber::default();
-//! let factor = Factor::new_full(&[X(0), X(1)], res, noise, robust);
+//! let factor = FactorBuilder::new2(res, X(0), X(1))
+//!     .noise(noise)
+//!     .robust(robust)
+//!     .build();
 //! graph.add_factor(factor);
 //!
 //! // Optimize!
@@ -83,6 +89,18 @@ pub mod robust;
 pub mod utils;
 pub mod variables;
 
+/// Untagged symnbols if `unchecked` API is desired.
+///
+/// We strongly recommend using [assign_symbols](crate::assign_symbols) to
+/// create and tag symbols with the appropriate types. However, we provide a
+/// number of pre-defined symbols if desired. Note this objects can't be tagged
+/// due to the orphan rules.
+pub mod symbols {
+    crate::assign_symbols!(
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+    );
+}
+
 /// Helper module to import common types
 ///
 /// This module is meant to be glob imported to make it easier to use the
@@ -92,6 +110,7 @@ pub mod variables;
 /// ```
 pub mod prelude {
     pub use crate::{
+        assign_symbols,
         containers::*,
         noise::*,
         optimizers::*,

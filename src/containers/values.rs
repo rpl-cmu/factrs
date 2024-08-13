@@ -20,6 +20,7 @@ use crate::{
 /// will implement [VariableSafe] via a blanket implementation.
 /// ```
 /// # use factrs::prelude::*;
+/// # assign_symbols!(X: SO2);
 /// let x = SO2::from_theta(0.1);
 /// let mut values = Values::new();
 /// values.insert(X(0), x);
@@ -78,12 +79,14 @@ impl Values {
     ///
     /// This will return the value if variable is in the graph. Requires a typed
     /// symbol and as such is guaranteed to return the correct type. Returns
-    /// None if key isn't found. ```
+    /// None if key isn't found.
+    /// ```
     /// # use factrs::prelude::*;
+    /// # assign_symbols!(X: SO2);
     /// # let x = SO2::from_theta(0.1);
     /// # let mut values = Values::new();
     /// # values.insert(X(0), x);
-    /// let x_out = values.get_cast::<SO2>(&X(0));
+    /// let x_out = values.get(X(0));
     /// ```
     pub fn get<S, V>(&self, symbol: S) -> Option<&V>
     where
@@ -148,6 +151,7 @@ impl Values {
     ///
     /// ```
     /// # use factrs::prelude::*;
+    /// # assign_symbols!(X: SO2);
     /// # let mut values = Values::new();
     /// # (0..10).for_each(|i| {values.insert(X(0), SO2::identity());} );
     /// let mine: Vec<&SO2> = values.filter().collect();

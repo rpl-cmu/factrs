@@ -57,14 +57,17 @@ pub use levenberg_marquardt::LevenMarquardt;
 #[cfg(test)]
 pub mod test {
     use faer::assert_matrix_eq;
+    use nalgebra::{DefaultAllocator, DimNameAdd, DimNameSum, ToTypenum};
 
     use super::*;
     use crate::{
-        containers::{Factor, Graph, Values, X},
+        containers::{Graph, Values},
         dtype,
-        linalg::{Const, VectorX},
+        linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
+        prelude::FactorBuilder,
         residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
+        symbols::X,
         variables::VariableUmbrella,
     };
 
@@ -83,7 +86,7 @@ pub mod test {
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(p.clone());
-        let factor = Factor::new_base(&[X(0).into()], res);
+        let factor = FactorBuilder::new1_unchecked(res, X(0)).build();
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
@@ -107,6 +110,11 @@ pub mod test {
         BetweenResidual<T>: ResidualSafe
             + Residual<DimIn = Const<DIM_DOUBLE>, DimOut = Const<DIM>, NumVars = Const<2>>,
         O: Optimizer<Input = Values> + GraphOptimizer,
+        Const<DIM>: ToTypenum,
+        AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,
+        DefaultAllocator: DualAllocator<DimNameSum<Const<DIM>, Const<DIM>>>,
+        DualVector<DimNameSum<Const<DIM>, Const<DIM>>>: Copy,
+        Const<DIM>: DimNameAdd<Const<DIM>>,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i as dtype) - (T::DIM as dtype)) / 10.0);
         let p1 = T::exp(t.as_view());
@@ -120,12 +128,12 @@ pub mod test {
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(p1.clone());
-        let factor = Factor::new_base(&[X(0).into()], res);
+        let factor = FactorBuilder::new1_unchecked(res, X(0)).build();
         graph.add_factor(factor);
 
         let diff = p2.minus(&p1);
         let res = BetweenResidual::new(diff);
-        let factor = Factor::new_base(&[X(0).into(), X(1).into()], res);
+        let factor = FactorBuilder::new2_unchecked(res, X(0), X(1)).build();
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);

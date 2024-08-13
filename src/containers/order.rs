@@ -76,7 +76,8 @@ impl ValuesOrder {
 mod test {
     use super::*;
     use crate::{
-        containers::{Values, X},
+        containers::Values,
+        symbols::X,
         variables::{Variable, VectorVar2, VectorVar3, VectorVar6},
     };
 

@@ -77,7 +77,25 @@ Do the reverse and assign a letter to the variable?
 
 pub trait TypedSymbol<V: VariableUmbrella>: Symbol {}
 
-macro_rules! impl_symbol {
+/// Creates and assigns symbols to variables
+///
+/// To reduce runtime errors, fact.rs symbols are tagged
+/// with the type they will be used with. This macro will create a new symbol
+/// and implement all the necessary traits for it to be used as a symbol.
+/// ```
+/// use factrs::prelude::*;
+/// assign_symbols!(X: SO2; Y: SE2);
+/// ```
+#[macro_export]
+macro_rules! assign_symbols {
+    ($($name:ident : $($var:ident),+);* $(;)?) => {$(
+        assign_symbols!($name);
+
+        $(
+            impl $crate::containers::TypedSymbol<$var> for $name {}
+        )*
+    )*};
+
     ($($name:ident),*) => {
         $(
             #[derive(Clone, Copy)]
@@ -108,20 +126,4 @@ macro_rules! impl_symbol {
             impl $crate::containers::Symbol for $name {}
         )*
     };
-}
-
-pub(crate) use impl_symbol;
-
-impl_symbol!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z);
-
-// TODO: Will impl_symbol be accessible when this is exported?
-#[macro_export]
-macro_rules! assign_symbols {
-    ($($name:ident : $($var:ident),+);* $(;)?) => {$(
-        $crate::containers::impl_symbol!($name);
-
-        $(
-            impl $crate::containers::TypedSymbol<$var> for $name {}
-        )*
-    )*};
 }

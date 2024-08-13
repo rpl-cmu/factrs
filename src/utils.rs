@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     assign_symbols,
-    containers::{Factor, Graph, Values},
+    containers::{FactorBuilder, Graph, Values},
     dtype,
     linalg::{Matrix3, Matrix6, Vector3},
     noise::GaussianNoise,
@@ -41,7 +41,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor = Factor::new_base(&[key.into()], PriorResidual::new(var.clone()));
+                    let factor = FactorBuilder::new1(PriorResidual::new(var.clone()), key).build();
                     graph.add_factor(factor);
                 }
 
@@ -67,11 +67,9 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let key2 = X(id_curr);
                 let var = SE2::new(theta, x, y);
                 let noise = GaussianNoise::from_matrix_inf(inf.as_view());
-                let factor = Factor::new_noise(
-                    &[key1.into(), key2.into()],
-                    BetweenResidual::new(var),
-                    noise,
-                );
+                let factor = FactorBuilder::new2(BetweenResidual::new(var), key1, key2)
+                    .noise(noise)
+                    .build();
                 graph.add_factor(factor);
             }
 
@@ -94,8 +92,9 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 if values.len() == 1 {
                     let noise =
                         GaussianNoise::<6>::from_diag_covs(1e-6, 1e-6, 1e-6, 1e-4, 1e-4, 1e-4);
-                    let factor =
-                        Factor::new_noise(&[key.into()], PriorResidual::new(var.clone()), noise);
+                    let factor = FactorBuilder::new1(PriorResidual::new(var.clone()), key)
+                        .noise(noise)
+                        .build();
                     graph.add_factor(factor);
                 }
 
@@ -148,18 +147,12 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let xyz = Vector3::new(x, y, z);
                 let var = SE3::from_rot_trans(rot, xyz);
 
-                // println!("var: {:?}", var);
-                // println!("2499 {:?}", values.get_cast::<SE3>(&X(2499)).unwrap());
-                // panic!();
-
                 let key1 = X(id_prev);
                 let key2 = X(id_curr);
                 let noise = GaussianNoise::from_matrix_inf(inf.as_view());
-                let factor = Factor::new_noise(
-                    &[key1.into(), key2.into()],
-                    BetweenResidual::new(var),
-                    noise,
-                );
+                let factor = FactorBuilder::new2(BetweenResidual::new(var), key1, key2)
+                    .noise(noise)
+                    .build();
                 graph.add_factor(factor);
             }
 
