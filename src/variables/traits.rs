@@ -5,18 +5,8 @@ use downcast_rs::{impl_downcast, Downcast};
 use crate::{
     dtype,
     linalg::{
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        DimName,
-        DualAllocator,
-        DualVector,
-        MatrixDim,
-        MatrixViewDim,
-        Numeric,
-        VectorDim,
-        VectorViewX,
-        VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, MatrixDim,
+        MatrixViewDim, Numeric, VectorDim, VectorViewX, VectorX,
     },
 };
 

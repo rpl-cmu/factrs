@@ -1,26 +1,17 @@
-use std::{fmt, ops};
+use std::{
+    fmt,
+    ops::{self, SubAssign},
+};
+
+use matrixcompare::Matrix;
 
 use super::VectorVar4;
 use crate::{
     dtype,
     linalg::{
-        vectorx,
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        Derivative,
-        DimName,
-        DualAllocator,
-        DualVector,
-        Matrix3,
-        MatrixView,
-        Numeric,
-        Vector3,
-        Vector4,
-        VectorDim,
-        VectorView3,
-        VectorViewX,
-        VectorX,
+        vectorx, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
+        DualVector, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorDim, VectorView3,
+        VectorViewX, VectorX,
     },
     tag_variable,
     variables::{MatrixLieGroup, Variable},
@@ -67,6 +58,29 @@ impl<D: Numeric> SO3<D> {
     pub fn w(&self) -> D {
         self.xyzw[3]
     }
+
+    pub fn exp(xi: Vector3<D>) -> Self {
+        let mut xyzw = Vector4::zeros();
+
+        let theta = xi.norm();
+
+        xyzw.w = (theta * D::from(0.5)).cos();
+
+        if theta < D::from(1e-3) {
+            let tmp = xyzw.w * D::from(0.5);
+            xyzw.x = xi.x * tmp;
+            xyzw.y = xi.y * tmp;
+            xyzw.z = xi.z * tmp;
+        } else {
+            let omega = xi / theta;
+            let sin_theta_half = (D::from(1.0) - xyzw.w * xyzw.w).sqrt();
+            xyzw.x = omega.x * sin_theta_half;
+            xyzw.y = omega.y * sin_theta_half;
+            xyzw.z = omega.z * sin_theta_half;
+        }
+
+        SO3 { xyzw }
+    }
 }
 
 impl<D: Numeric> Variable<D> for SO3<D> {
@@ -105,6 +119,7 @@ impl<D: Numeric> Variable<D> for SO3<D> {
     }
 
     fn exp(xi: VectorViewX<D>) -> Self {
+        // TODO figure this out better
         let mut xyzw = Vector4::zeros();
         let theta = xi.norm();
 

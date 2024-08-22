@@ -1,4 +1,4 @@
-use crate::{dtype, linalg::Vector3};
+use crate::{dtype, linalg::Numeric, linalg::Vector3};
 
 pub struct ImuBias<D: Numeric = dtype> {
     pub gyro: Vector3<D>,

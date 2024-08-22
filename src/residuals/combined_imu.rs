@@ -1,6 +1,7 @@
 use crate::{
     dtype,
-    linalg::{Vector3,Matrix3},
+    linalg::{Matrix3, Numeric, Vector3},
+    prelude::{MatrixLieGroup, Variable},
     variables::{ImuBias, SO3},
 };
 
@@ -17,13 +18,15 @@ pub struct PreintegratedCombinedMeasurements<D: Numeric = dtype> {
     vel: Vector3<D>,
 }
 
-impl<D: Numeric = dtype> PreintegratedCombinedMeasurements<D> {
-    pub fn integrate_measurement(&self, meas: CombinedMeasurement<D>) {
-        tmp = SO3::exp(self.theta).apply(meas.acc) * meas.dt;
-        H = Matrix3<D>::zero();
-        self.theta += (meas.gyro - self.bias.gyro) * meas.dt;
-        self.pos += self.vel * dt + tmp * meas.dt / 2.0;
-        self.vel += tmp;
+impl PreintegratedCombinedMeasurements {
+    pub fn integrate_measurement(&self, meas: CombinedMeasurement) {
+        let rotation = SO3::exp(self.theta);
+        // let H_inv = Matrix3::zeros();
+        let norm_theta = self.theta.norm();
+
+        // self.theta += (meas.gyro - self.bias.gyro) * meas.dt;
+        // self.pos += self.vel * meas.dt + tmp * meas.dt / 2.0;
+        // self.vel += tmp;
     }
 }
 

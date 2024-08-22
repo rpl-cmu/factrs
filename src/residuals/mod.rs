@@ -6,14 +6,7 @@
 //! the [impl_residual](crate::impl_residual) macro to implement [Residual].
 mod traits;
 pub use traits::{
-    Residual,
-    Residual1,
-    Residual2,
-    Residual3,
-    Residual4,
-    Residual5,
-    Residual6,
-    ResidualSafe,
+    Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6, ResidualSafe,
 };
 
 mod prior;
@@ -23,3 +16,5 @@ mod between;
 pub use between::BetweenResidual;
 
 mod macros;
+
+mod combined_imu;

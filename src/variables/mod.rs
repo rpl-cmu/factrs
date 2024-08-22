@@ -68,13 +68,10 @@ pub use se3::SE3;
 
 mod vector;
 pub use vector::{
-    VectorVar,
-    VectorVar1,
-    VectorVar2,
-    VectorVar3,
-    VectorVar4,
-    VectorVar5,
-    VectorVar6,
+    VectorVar, VectorVar1, VectorVar2, VectorVar3, VectorVar4, VectorVar5, VectorVar6,
 };
 
 mod macros;
+
+mod imu_bias;
+pub use imu_bias::ImuBias;
