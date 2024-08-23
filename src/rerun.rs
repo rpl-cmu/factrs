@@ -1,14 +1,7 @@
+use rerun::components::RotationQuat;
 use rerun::{
-    Arrows2D,
-    Arrows3D,
-    AsComponents,
-    Points2D,
-    Points3D,
-    Quaternion,
-    Rotation3D,
-    Transform3D,
-    Vec2D,
-    Vec3D,
+    Arrows2D, Arrows3D, AsComponents, Points2D, Points3D, Quaternion, Rotation3D, Transform3D,
+    Vec2D, Vec3D,
 };
 
 use crate::{
@@ -158,7 +151,7 @@ impl<'a> From<&'a SO3> for Rotation3D {
             so3.z() as f32,
             so3.w() as f32,
         ];
-        Rotation3D::Quaternion(Quaternion::from_xyzw(xyzw))
+        Rotation3D::Quaternion(RotationQuat(Quaternion::from_xyzw(xyzw)))
     }
 }
 
