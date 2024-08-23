@@ -2,7 +2,7 @@ use std::collections::hash_map::Iter as HashMapIter;
 
 use ahash::HashMap;
 
-use super::{Symbol, Values};
+use super::{Key, Symbol, Values};
 
 /// Location of a variable in a list
 ///
@@ -21,12 +21,12 @@ pub struct Idx {
 /// and len of each variable
 #[derive(Debug, Clone)]
 pub struct ValuesOrder {
-    map: HashMap<Symbol, Idx>,
+    map: HashMap<Key, Idx>,
     dim: usize,
 }
 
 impl ValuesOrder {
-    pub fn new(map: HashMap<Symbol, Idx>) -> Self {
+    pub fn new(map: HashMap<Key, Idx>) -> Self {
         let dim = map.values().map(|idx| idx.dim).sum();
         Self { map, dim }
     }
@@ -37,22 +37,22 @@ impl ValuesOrder {
                 let order = *idx;
                 *idx += val.dim();
                 Some((
-                    key.clone(),
+                    *key,
                     Idx {
                         idx: order,
                         dim: val.dim(),
                     },
                 ))
             })
-            .collect::<HashMap<Symbol, Idx>>();
+            .collect::<HashMap<Key, Idx>>();
 
         let dim = map.values().map(|idx| idx.dim).sum();
 
         Self { map, dim }
     }
 
-    pub fn get(&self, key: &Symbol) -> Option<&Idx> {
-        self.map.get(key)
+    pub fn get(&self, symbol: impl Symbol) -> Option<&Idx> {
+        self.map.get(&symbol.into())
     }
 
     pub fn dim(&self) -> usize {
@@ -67,7 +67,7 @@ impl ValuesOrder {
         self.map.is_empty()
     }
 
-    pub fn iter(&self) -> HashMapIter<Symbol, Idx> {
+    pub fn iter(&self) -> HashMapIter<Key, Idx> {
         self.map.iter()
     }
 }
@@ -76,7 +76,8 @@ impl ValuesOrder {
 mod test {
     use super::*;
     use crate::{
-        containers::{Values, X},
+        containers::Values,
+        symbols::X,
         variables::{Variable, VectorVar2, VectorVar3, VectorVar6},
     };
 
@@ -84,9 +85,9 @@ mod test {
     fn from_values() {
         // Create some form of values
         let mut v = Values::new();
-        v.insert(X(0), VectorVar2::identity());
-        v.insert(X(1), VectorVar6::identity());
-        v.insert(X(2), VectorVar3::identity());
+        v.insert_unchecked(X(0), VectorVar2::identity());
+        v.insert_unchecked(X(1), VectorVar6::identity());
+        v.insert_unchecked(X(2), VectorVar3::identity());
 
         // Create an order
         let order = ValuesOrder::from_values(&v);
@@ -94,8 +95,8 @@ mod test {
         // Verify the order
         assert_eq!(order.len(), 3);
         assert_eq!(order.dim(), 11);
-        assert_eq!(order.get(&X(0)).unwrap().dim, 2);
-        assert_eq!(order.get(&X(1)).unwrap().dim, 6);
-        assert_eq!(order.get(&X(2)).unwrap().dim, 3);
+        assert_eq!(order.get(X(0)).unwrap().dim, 2);
+        assert_eq!(order.get(X(1)).unwrap().dim, 6);
+        assert_eq!(order.get(X(2)).unwrap().dim, 3);
     }
 }

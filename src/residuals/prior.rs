@@ -1,7 +1,7 @@
 use super::{Residual, Residual1};
 #[allow(unused_imports)]
 use crate::{
-    containers::{Symbol, Values},
+    containers::{Key, Values},
     linalg::{
         AllocatorBuffer,
         Const,
@@ -88,10 +88,10 @@ where
     type DimIn = <Self as Residual1>::DimIn;
     type DimOut = <Self as Residual1>::DimOut;
     type NumVars = Const<1>;
-    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
+    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
         self.residual1_values(values, keys)
     }
-    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
+    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
         self.residual1_jacobian(values, keys)
     }
 }
@@ -103,8 +103,8 @@ mod test {
 
     use super::*;
     use crate::{
-        containers::X,
         linalg::{vectorx, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
+        symbols::X,
         variables::{VectorVar3, SE3, SO3},
     };
 
@@ -129,13 +129,15 @@ mod test {
 
         let x1 = P::identity();
         let mut values = Values::new();
-        values.insert(X(0), x1.clone());
-        let jac = prior_residual.residual1_jacobian(&values, &[X(0)]).diff;
+        values.insert_unchecked(X(0), x1.clone());
+        let jac = prior_residual
+            .residual1_jacobian(&values, &[X(0).into()])
+            .diff;
 
         let f = |v: P| {
             let mut vals = Values::new();
-            vals.insert(X(0), v.clone());
-            Residual1::residual1_values(&prior_residual, &vals, &[X(0)])
+            vals.insert_unchecked(X(0), v.clone());
+            Residual1::residual1_values(&prior_residual, &vals, &[X(0).into()])
         };
         let jac_n = NumericalDiff::<PWR>::jacobian_1(f, &x1).diff;
 

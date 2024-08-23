@@ -57,14 +57,17 @@ pub use levenberg_marquardt::LevenMarquardt;
 #[cfg(test)]
 pub mod test {
     use faer::assert_matrix_eq;
+    use nalgebra::{DefaultAllocator, DimNameAdd, DimNameSum, ToTypenum};
 
     use super::*;
     use crate::{
-        containers::{Factor, Graph, Values, X},
+        containers::{Graph, Values},
         dtype,
-        linalg::{Const, VectorX},
+        linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
+        prelude::FactorBuilder,
         residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
+        symbols::X,
         variables::VariableUmbrella,
     };
 
@@ -79,17 +82,17 @@ pub mod test {
         let p = T::exp(t.as_view());
 
         let mut values = Values::new();
-        values.insert(X(0), T::identity());
+        values.insert_unchecked(X(0), T::identity());
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(p.clone());
-        let factor = Factor::new_base(&[X(0)], res);
+        let factor = FactorBuilder::new1_unchecked(res, X(0)).build();
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
         values = opt.optimize(values).unwrap();
 
-        let out: &T = values.get_cast(&X(0)).unwrap();
+        let out: &T = values.get_unchecked(X(0)).unwrap();
         assert_matrix_eq!(
             out.ominus(&p),
             VectorX::zeros(T::DIM),
@@ -107,6 +110,11 @@ pub mod test {
         BetweenResidual<T>: ResidualSafe
             + Residual<DimIn = Const<DIM_DOUBLE>, DimOut = Const<DIM>, NumVars = Const<2>>,
         O: Optimizer<Input = Values> + GraphOptimizer,
+        Const<DIM>: ToTypenum,
+        AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,
+        DefaultAllocator: DualAllocator<DimNameSum<Const<DIM>, Const<DIM>>>,
+        DualVector<DimNameSum<Const<DIM>, Const<DIM>>>: Copy,
+        Const<DIM>: DimNameAdd<Const<DIM>>,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i as dtype) - (T::DIM as dtype)) / 10.0);
         let p1 = T::exp(t.as_view());
@@ -115,23 +123,23 @@ pub mod test {
         let p2 = T::exp(t.as_view());
 
         let mut values = Values::new();
-        values.insert(X(0), T::identity());
-        values.insert(X(1), T::identity());
+        values.insert_unchecked(X(0), T::identity());
+        values.insert_unchecked(X(1), T::identity());
 
         let mut graph = Graph::new();
         let res = PriorResidual::new(p1.clone());
-        let factor = Factor::new_base(&[X(0)], res);
+        let factor = FactorBuilder::new1_unchecked(res, X(0)).build();
         graph.add_factor(factor);
 
         let diff = p2.minus(&p1);
         let res = BetweenResidual::new(diff);
-        let factor = Factor::new_base(&[X(0), X(1)], res);
+        let factor = FactorBuilder::new2_unchecked(res, X(0), X(1)).build();
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
         values = opt.optimize(values).unwrap();
 
-        let out1: &T = values.get_cast(&X(0)).unwrap();
+        let out1: &T = values.get_unchecked(X(0)).unwrap();
         assert_matrix_eq!(
             out1.ominus(&p1),
             VectorX::zeros(T::DIM),
@@ -139,7 +147,7 @@ pub mod test {
             tol = 1e-6
         );
 
-        let out2: &T = values.get_cast(&X(1)).unwrap();
+        let out2: &T = values.get_unchecked(X(1)).unwrap();
         assert_matrix_eq!(
             out2.ominus(&p2),
             VectorX::zeros(T::DIM),

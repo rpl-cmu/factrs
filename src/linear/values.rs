@@ -1,7 +1,7 @@
 use std::collections::hash_map::Iter as HashMapIter;
 
 use crate::{
-    containers::{Idx, Symbol, Values, ValuesOrder},
+    containers::{Idx, Key, Symbol, Values, ValuesOrder},
     linalg::{VectorViewX, VectorX},
 };
 
@@ -69,7 +69,7 @@ impl LinearValues {
     }
 
     /// Retrieve a vector from the LinearValues
-    pub fn get(&self, key: &Symbol) -> Option<VectorViewX<'_>> {
+    pub fn get(&self, key: impl Symbol) -> Option<VectorViewX<'_>> {
         let idx = self.order.get(key)?;
         self.get_idx(idx).into()
     }
@@ -84,11 +84,11 @@ impl LinearValues {
 
 pub struct Iter<'a> {
     values: &'a LinearValues,
-    idx: HashMapIter<'a, Symbol, Idx>,
+    idx: HashMapIter<'a, Key, Idx>,
 }
 
 impl<'a> Iterator for Iter<'a> {
-    type Item = (&'a Symbol, VectorViewX<'a>);
+    type Item = (&'a Key, VectorViewX<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let n = self.idx.next()?;
@@ -100,17 +100,17 @@ impl<'a> Iterator for Iter<'a> {
 mod test {
     use super::*;
     use crate::{
-        containers::X,
         dtype,
+        symbols::X,
         variables::{Variable, VectorVar2, VectorVar3, VectorVar6},
     };
 
     fn make_order_vector() -> (ValuesOrder, VectorX) {
         // Create some form of values
         let mut v = Values::new();
-        v.insert(X(0), VectorVar2::identity());
-        v.insert(X(1), VectorVar6::identity());
-        v.insert(X(2), VectorVar3::identity());
+        v.insert_unchecked(X(0), VectorVar2::identity());
+        v.insert_unchecked(X(1), VectorVar6::identity());
+        v.insert_unchecked(X(2), VectorVar3::identity());
 
         // Create an order
         let order = ValuesOrder::from_values(&v);
@@ -126,10 +126,10 @@ mod test {
         let linear_values = LinearValues::from_order_and_vector(order, vector);
         assert!(linear_values.len() == 3);
         assert!(linear_values.dim() == 11);
-        assert!(linear_values.get(&X(0)).unwrap().len() == 2);
-        assert!(linear_values.get(&X(1)).unwrap().len() == 6);
-        assert!(linear_values.get(&X(2)).unwrap().len() == 3);
-        assert!(linear_values.get(&X(3)).is_none());
+        assert!(linear_values.get(X(0)).unwrap().len() == 2);
+        assert!(linear_values.get(X(1)).unwrap().len() == 6);
+        assert!(linear_values.get(X(2)).unwrap().len() == 3);
+        assert!(linear_values.get(X(3)).is_none());
     }
 
     #[test]

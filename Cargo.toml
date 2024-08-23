@@ -23,7 +23,7 @@ faer = { version = "0.19.0", default-features = false, features = [
 faer-ext = { version = "0.2.0", features = ["nalgebra"] }
 nalgebra = { version = "0.32.5", features = ["compare"] }
 num-dual = "0.9.1"
-matrixcompare-core = { version = "0.1" }
+matrixcompare = { version = "0.1" }
 
 # serialization
 serde = { version = "1.0.203", optional = true }
