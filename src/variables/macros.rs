@@ -5,15 +5,15 @@
 #[macro_export]
 macro_rules! assert_variable_eq {
     ($x:expr, $y:expr) => {
-        matrixcompare::assert_matrix_eq!($x.ominus(&$y), VectorX::zeros($x.dim()));
+        matrixcompare::assert_matrix_eq!($x.ominus(&$y), $crate::linalg::VectorX::zeros($x.dim()));
     };
     ($x:expr, $y:expr, comp = exact) => {
-        matrixcompare::assert_matrix_eq!($x.ominus(&$y), VectorX::zeros($x.dim()), comp = exact);
+        matrixcompare::assert_matrix_eq!($x.ominus(&$y), $crate::linalg::VectorX::zeros($x.dim()), comp = exact);
     };
     ($x:expr, $y:expr, comp = abs, tol = $tol:expr) => {
         matrixcompare::assert_matrix_eq!(
             $x.ominus(&$y),
-            VectorX::zeros($crate::variables::traits::Variable::dim(&$x)),
+            $crate::linalg::VectorX::zeros($crate::variables::traits::Variable::dim(&$x)),
             comp = abs,
             tol = $tol
         );
@@ -21,18 +21,18 @@ macro_rules! assert_variable_eq {
     ($x:expr, $y:expr, comp = ulp, tol = $tol:expr) => {
         matrixcompare::assert_matrix_eq!(
             $x.ominus(&$y),
-            VectorX::zeros($x.dim()),
+            $crate::linalg::VectorX::zeros($x.dim()),
             comp = ulp,
             tol = $tol
         );
     };
     ($x:expr, $y:expr, comp = float) => {
-        matrixcompare::assert_matrix_eq!($x.ominus(&$y), VectorX::zeros($x.dim()), comp = float);
+        matrixcompare::assert_matrix_eq!($x.ominus(&$y), $crate::linalg::VectorX::zeros($x.dim()), comp = float);
     };
     ($x:expr, $y:expr, comp = float, $($key:ident = $val:expr),+) => {
         matrixcompare::assert_matrix_eq!(
             $x.ominus(&$y),
-            VectorX::zeros($x.dim()),
+            $crate::linalg::VectorX::zeros($x.dim()),
             comp = float,
             $($key:ident = $val:expr),+
         );
@@ -51,7 +51,9 @@ macro_rules! test_variable {
     ($var:ident) => {
         // Return a misc element for our tests
         fn element<T: Variable>(scale: $crate::dtype) -> T {
-            let xi = VectorX::from_fn(T::DIM, |_, i| scale * ((i + 1) as $crate::dtype) / 10.0);
+            let xi = $crate::linalg::VectorX::from_fn(T::DIM, |_, i| {
+                scale * ((i + 1) as $crate::dtype) / 10.0
+            });
             T::exp(xi.as_view())
         }
 

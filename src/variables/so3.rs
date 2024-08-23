@@ -106,20 +106,22 @@ impl<D: Numeric> Variable<D> for SO3<D> {
 
     fn exp(xi: VectorViewX<D>) -> Self {
         let mut xyzw = Vector4::zeros();
+
         let theta = xi.norm();
 
+        xyzw.w = (theta * D::from(0.5)).cos();
+
         if theta < D::from(1e-3) {
-            xyzw.x = xi[0] * D::from(0.5);
-            xyzw.y = xi[1] * D::from(0.5);
-            xyzw.z = xi[2] * D::from(0.5);
-            xyzw.w = D::from(1.0);
+            let tmp = xyzw.w * D::from(0.5);
+            xyzw.x = xi[0] * tmp;
+            xyzw.y = xi[1] * tmp;
+            xyzw.z = xi[2] * tmp;
         } else {
-            let theta_half = theta / D::from(2.0);
-            let sin_theta = theta_half.sin();
-            xyzw.x = xi[0] * sin_theta / theta;
-            xyzw.y = xi[1] * sin_theta / theta;
-            xyzw.z = xi[2] * sin_theta / theta;
-            xyzw.w = theta_half.cos();
+            let omega = xi / theta;
+            let sin_theta_half = (D::from(1.0) - xyzw.w * xyzw.w).sqrt();
+            xyzw.x = omega[0] * sin_theta_half;
+            xyzw.y = omega[1] * sin_theta_half;
+            xyzw.z = omega[2] * sin_theta_half;
         }
 
         SO3 { xyzw }
