@@ -4,7 +4,7 @@ use std::{
     mem::size_of,
 };
 
-use crate::prelude::VariableUmbrella;
+use crate::variables::VariableUmbrella;
 
 // Char is stored in last CHR_BITS
 // Value is stored in the first IDX_BITS

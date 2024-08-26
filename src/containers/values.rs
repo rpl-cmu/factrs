@@ -2,11 +2,10 @@ use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterato
 
 use ahash::AHashMap;
 
-use super::{Key, Symbol, TypedSymbol};
+use super::{DefaultSymbol, Key, Symbol, TypedSymbol};
 use crate::{
     linear::LinearValues,
-    prelude::{DefaultSymbol, VariableUmbrella},
-    variables::VariableSafe,
+    variables::{VariableSafe, VariableUmbrella},
 };
 
 // Since we won't be passing dual numbers through any of this,

@@ -89,11 +89,11 @@ pub mod robust;
 pub mod utils;
 pub mod variables;
 
-/// Untagged symnbols if `unchecked` API is desired.
+/// Untagged symbols if `unchecked` API is desired.
 ///
 /// We strongly recommend using [assign_symbols](crate::assign_symbols) to
 /// create and tag symbols with the appropriate types. However, we provide a
-/// number of pre-defined symbols if desired. Note this objects can't be tagged
+/// number of pre-defined symbols if desired. Note these objects can't be tagged
 /// due to the orphan rules.
 pub mod symbols {
     crate::assign_symbols!(
@@ -101,23 +101,15 @@ pub mod symbols {
     );
 }
 
-/// Helper module to import common types
+/// Helper module to import common traits
 ///
-/// This module is meant to be glob imported to make it easier to use the
-/// library.
+/// This module is meant to be glob imported to make it easier to use the traits
+/// and functionality in the library.
 /// ```
-/// use factrs::prelude::*;
+/// use factrs::traits::*;
 /// ```
-pub mod prelude {
-    pub use crate::{
-        assign_symbols,
-        containers::*,
-        noise::*,
-        optimizers::*,
-        residuals::*,
-        robust::*,
-        variables::*,
-    };
+pub mod traits {
+    pub use crate::{linalg::DualConvert, residuals::Residual, variables::Variable};
 }
 
 #[cfg(feature = "rerun")]
