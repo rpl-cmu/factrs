@@ -20,6 +20,9 @@ tag_noise!(
     GaussianNoise<10>,
     GaussianNoise<11>,
     GaussianNoise<12>,
+    GaussianNoise<13>,
+    GaussianNoise<14>,
+    GaussianNoise<15>,
 );
 
 /// A Gaussian noise model.

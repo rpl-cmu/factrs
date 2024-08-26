@@ -67,6 +67,22 @@ impl<D: Numeric> SO3<D> {
     pub fn w(&self) -> D {
         self.xyzw[3]
     }
+
+    pub fn dexp(xi: VectorView3<D>) -> Matrix3<D> {
+        let theta2 = xi.norm_squared();
+
+        let (a, b) = if theta2 < D::from(1e-3) {
+            (D::from(0.5), D::from(1.0) / D::from(6.0))
+        } else {
+            let theta = theta2.sqrt();
+            let a = (D::from(1.0) - theta.cos()) / theta2;
+            let b = (theta - theta.sin()) / (theta * theta2);
+            (a, b)
+        };
+
+        let hat = SO3::hat(xi);
+        Matrix3::identity() + hat * a + hat * hat * b
+    }
 }
 
 impl<D: Numeric> Variable<D> for SO3<D> {

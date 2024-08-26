@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, ops};
 
 use nalgebra::Const;
 
@@ -124,6 +124,28 @@ impl<D: Numeric> fmt::Display for ImuBias<D> {
 impl<D: Numeric> fmt::Debug for ImuBias<D> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(self, f)
+    }
+}
+
+impl<D: Numeric> ops::Sub for ImuBias<D> {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self {
+        ImuBias {
+            gyro: self.gyro - rhs.gyro,
+            accel: self.accel - rhs.accel,
+        }
+    }
+}
+
+impl<'a, D: Numeric> ops::Sub for &'a ImuBias<D> {
+    type Output = ImuBias<D>;
+
+    fn sub(self, rhs: Self) -> ImuBias<D> {
+        ImuBias {
+            gyro: self.gyro - rhs.gyro,
+            accel: self.accel - rhs.accel,
+        }
     }
 }
 

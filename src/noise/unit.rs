@@ -17,6 +17,9 @@ tag_noise!(
     UnitNoise<10>,
     UnitNoise<11>,
     UnitNoise<12>,
+    UnitNoise<13>,
+    UnitNoise<14>,
+    UnitNoise<15>,
 );
 
 /// A unit noise model.

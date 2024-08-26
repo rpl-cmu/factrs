@@ -1,6 +1,6 @@
 use nalgebra::{allocator::Allocator, Const};
 
-use super::{Dim, RealField};
+use super::{Dim, Matrix, RealField};
 use crate::dtype;
 
 /// Wrapper for all properties needed for dual numbers
@@ -27,4 +27,17 @@ impl<
             + Allocator<dtype, N, N>,
     > DualAllocator<N> for T
 {
+}
+
+// TODO: Expand on this instead of including in Variable??
+pub trait DualConvert {
+    type Alias<D: Numeric>;
+    fn dual_convert<D: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<D>;
+}
+
+impl<const R: usize, const C: usize, T: Numeric> DualConvert for Matrix<R, C, T> {
+    type Alias<D: Numeric> = Matrix<R, C, D>;
+    fn dual_convert<D: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<D> {
+        other.map(|x| x.into())
+    }
 }

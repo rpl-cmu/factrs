@@ -22,4 +22,7 @@ pub use prior::PriorResidual;
 mod between;
 pub use between::BetweenResidual;
 
+mod imu_preint;
+pub use imu_preint::{ImuParams, ImuPreintegrationResidual, ImuPreintegrator};
+
 mod macros;
