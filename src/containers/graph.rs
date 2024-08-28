@@ -14,7 +14,14 @@ use crate::{containers::Factor, dtype, linear::LinearGraph};
 /// solved iteratively.
 ///
 /// ```
-/// # use factrs::prelude::*;
+/// # use factrs::{
+///    assign_symbols,
+///    containers::{Graph, FactorBuilder},
+///    residuals::PriorResidual,
+///    robust::GemanMcClure,
+///    traits::*,
+///    variables::SO2,
+/// };
 /// # assign_symbols!(X: SO2);
 /// # let factor = FactorBuilder::new1(PriorResidual::new(SO2::identity()), X(0)).build();
 /// let mut graph = Graph::new();

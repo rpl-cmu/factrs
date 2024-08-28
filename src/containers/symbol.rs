@@ -83,7 +83,7 @@ pub trait TypedSymbol<V: VariableUmbrella>: Symbol {}
 /// with the type they will be used with. This macro will create a new symbol
 /// and implement all the necessary traits for it to be used as a symbol.
 /// ```
-/// use factrs::prelude::*;
+/// use factrs::{assign_symbols, variables::{SO2, SE2}};
 /// assign_symbols!(X: SO2; Y: SE2);
 /// ```
 #[macro_export]

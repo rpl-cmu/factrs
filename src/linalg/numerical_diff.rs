@@ -17,7 +17,11 @@ use crate::{
 /// inputs and with vector-valued outputs.
 ///
 /// ```
-/// use factrs::{linalg::*, prelude::*};
+/// use factrs::{
+///     linalg::{vectorx, DiffResult, NumericalDiff, VectorX},
+///     traits::*,
+///     variables::SO2,
+/// };
 ///
 /// // We can also be generic over Numeric as in [ForwardProp] as well if desired
 /// fn f(x: SO2, y: SO2) -> VectorX {

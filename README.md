@@ -16,7 +16,16 @@ We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) (WIP
 ## Example
 
 ```rust
-use factrs::prelude::*;
+use factrs::{
+   assign_symbols,
+   containers::{FactorBuilder, Graph, Values},
+   noise::GaussianNoise,
+   optimizers::GaussNewton,
+   residuals::{BetweenResidual, PriorResidual},
+   robust::Huber,
+   traits::*,
+   variables::SO2,
+};
 
 // Assign symbols to variable types
 assign_symbols!(X: SO2);

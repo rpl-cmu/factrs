@@ -31,7 +31,15 @@ use crate::{
 /// [LinearFactor].
 ///
 ///  ```
-/// # use factrs::prelude::*;
+/// # use factrs::{
+///    assign_symbols,
+///    containers::FactorBuilder,
+///    noise::GaussianNoise,
+///    optimizers::GaussNewton,
+///    residuals::{PriorResidual},
+///    robust::GemanMcClure,
+///    variables::VectorVar3,
+/// };
 /// # assign_symbols!(X: VectorVar3);
 /// let prior = VectorVar3::new(1.0, 2.0, 3.0);
 /// let residual = PriorResidual::new(prior);

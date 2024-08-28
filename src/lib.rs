@@ -36,7 +36,16 @@
 //!
 //! # Example
 //! ```
-//! use factrs::prelude::*;
+//! use factrs::{
+//!    assign_symbols,
+//!    containers::{FactorBuilder, Graph, Values},
+//!    noise::GaussianNoise,
+//!    optimizers::GaussNewton,
+//!    residuals::{BetweenResidual, PriorResidual},
+//!    robust::Huber,
+//!    traits::*,
+//!    variables::SO2,
+//! };
 //!
 //! // Assign symbols to variable types
 //! assign_symbols!(X: SO2);
@@ -109,7 +118,12 @@ pub mod symbols {
 /// use factrs::traits::*;
 /// ```
 pub mod traits {
-    pub use crate::{linalg::DualConvert, residuals::Residual, variables::Variable};
+    pub use crate::{
+        linalg::{Diff, DualConvert},
+        optimizers::{GraphOptimizer, Optimizer},
+        residuals::Residual,
+        variables::Variable,
+    };
 }
 
 #[cfg(feature = "rerun")]
