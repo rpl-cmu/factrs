@@ -1,4 +1,5 @@
 use core::fmt;
+use std::ops;
 
 use nalgebra::Const;
 
@@ -7,12 +8,249 @@ use crate::{
     containers::{Factor, FactorBuilder, TypedSymbol},
     dtype,
     impl_residual,
-    linalg::{ForwardProp, Matrix, Matrix3, Vector, Vector3, VectorX},
+    linalg::{ForwardProp, Matrix, Matrix3, Numeric, Vector3, VectorX},
     noise::GaussianNoise,
     tag_residual,
     traits::*,
     variables::{ImuBias, MatrixLieGroup, VectorVar3, SE3, SO3},
 };
+// ------------------- Objects that perform most of work ------------------- //
+/// Struct to hold an Imu state
+///
+/// Specifically holds an Imu state to which an ImuDelta can be applied
+pub struct ImuState<D: Numeric = dtype> {
+    r: SO3<D>,
+    v: Vector3<D>,
+    p: Vector3<D>,
+    bias: ImuBias<D>,
+}
+
+impl<D: Numeric> ImuState<D> {
+    /// Propagate the state forward by the given delta
+    ///
+    /// This function takes an ImuDelta and applies it to the current state.
+    /// Identical to calling [ImuDelta::predict] with the current state.
+    pub fn propagate(&self, delta: ImuDelta<D>) -> ImuState<D> {
+        delta.predict(self)
+    }
+}
+
+/// Struct to hold the preintegrated Imu delta
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+pub struct ImuDelta<D: Numeric = dtype> {
+    dt: D,
+    xi_theta: Vector3<D>,
+    xi_vel: Vector3<D>,
+    xi_pos: Vector3<D>,
+    bias_init: ImuBias<D>,
+    h_bias_accel: Matrix<9, 3, D>,
+    h_bias_gyro: Matrix<9, 3, D>,
+    gravity: Vector3<D>,
+}
+
+impl<D: Numeric> ImuDelta<D> {
+    fn new(gravity: Vector3<D>, bias_init: ImuBias<D>) -> Self {
+        Self {
+            dt: D::from(0.0),
+            xi_theta: Vector3::zeros(),
+            xi_vel: Vector3::zeros(),
+            xi_pos: Vector3::zeros(),
+            bias_init,
+            h_bias_accel: Matrix::zeros(),
+            h_bias_gyro: Matrix::zeros(),
+            gravity,
+        }
+    }
+
+    fn remove_bias(&self, imu: &ImuMeasurement<D>) -> ImuMeasurement<D> {
+        imu - &self.bias_init
+    }
+
+    fn first_order_update(&self, bias_diff: &ImuBias<D>, idx: usize) -> Vector3<D> {
+        self.h_bias_accel.fixed_rows(idx) * bias_diff.accel()
+            + self.h_bias_gyro.fixed_rows(idx) * bias_diff.gyro()
+    }
+
+    pub fn predict(&self, x1: &ImuState<D>) -> ImuState<D> {
+        let ImuState { r, v, p, bias } = x1;
+
+        // Compute first-order updates to preint with bias
+        let bias_diff = bias - &self.bias_init;
+        let xi_theta = self.xi_theta + self.first_order_update(&bias_diff, 0);
+        let xi_v = self.xi_vel + self.first_order_update(&bias_diff, 3);
+        let xi_p = self.xi_pos + self.first_order_update(&bias_diff, 6);
+
+        // Estimate x2
+        // R2_meas = R1 * exp(xi_theta)
+        let r2_meas = r.compose(&SO3::exp(xi_theta.as_view()));
+        // v2_meas = v + g * dt + R1 * xi_v
+        let v2_meas = v + self.gravity * self.dt + r.apply(xi_v.as_view());
+        let v2_meas = v2_meas.into();
+        // p2_meas = p1 + v * dt + 0.5 * g * dt^2 + R1 * xi_p
+        let p2_meas = p
+            + v * self.dt
+            + self.gravity * self.dt * self.dt * D::from(0.5)
+            + r.apply(xi_p.as_view());
+        let p2_meas = p2_meas.into();
+        let b2_meas = bias.clone();
+
+        ImuState {
+            r: r2_meas,
+            v: v2_meas,
+            p: p2_meas,
+            bias: b2_meas,
+        }
+    }
+}
+
+// None of these methods should need to be dualized / "backpropagated"
+// Can just assume default dtype
+impl ImuDelta {
+    #[allow(non_snake_case)]
+    pub fn integrate(&mut self, imu: &ImuMeasurement) {
+        self.dt += imu.dt;
+        let accel_world = SO3::exp(self.xi_theta.as_view()).apply(imu.accel.as_view());
+        let H = SO3::dexp(self.xi_theta.as_view());
+        let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
+
+        self.xi_theta += Hinv * imu.gyro * imu.dt;
+        self.xi_vel += accel_world * imu.dt;
+        self.xi_pos += self.xi_vel * imu.dt + accel_world * (imu.dt * imu.dt * 0.5);
+    }
+
+    #[allow(non_snake_case)]
+    pub fn A(&self, imu: &ImuMeasurement) -> Matrix<15, 15> {
+        let H = SO3::dexp(self.xi_theta.as_view());
+        let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
+        let R = SO3::exp(self.xi_theta.as_view()).to_matrix();
+
+        let mut A = Matrix::<15, 15>::identity();
+
+        // First column (wrt theta)
+        let M = Matrix3::identity() - SO3::hat(imu.gyro.as_view()) * imu.dt / 2.0;
+        A.fixed_view_mut::<3, 3>(0, 0).copy_from(&M);
+        let mut M = -R * SO3::hat(imu.accel.as_view()) * H * imu.dt;
+        A.fixed_view_mut::<3, 3>(3, 0).copy_from(&M);
+        M *= imu.dt / 2.0;
+        A.fixed_view_mut::<3, 3>(6, 0).copy_from(&M);
+
+        // Second column (wrt vel)
+        let M = Matrix3::identity() * imu.dt;
+        A.fixed_view_mut::<3, 3>(0, 6).copy_from(&M);
+
+        // Third column (wrt pos)
+
+        // Fourth column (wrt gyro bias)
+        let M = -Hinv * imu.dt;
+        A.fixed_view_mut::<3, 3>(0, 9).copy_from(&M);
+
+        // Fifth column (wrt accel bias)
+        let mut M = -R * imu.dt;
+        A.fixed_view_mut::<3, 3>(6, 9).copy_from(&M);
+        M *= imu.dt / 2.0;
+        A.fixed_view_mut::<3, 3>(3, 9).copy_from(&M);
+
+        A
+    }
+
+    #[allow(non_snake_case)]
+    pub fn B_Q_BT(&self, imu: &ImuMeasurement, p: &ImuParams) -> Matrix<15, 15> {
+        let H = SO3::dexp(self.xi_theta.as_view());
+        let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
+        let R = SO3::exp(self.xi_theta.as_view()).to_matrix();
+
+        // Construct all partials
+        let H_theta_w = Hinv * imu.dt;
+        let H_theta_winit = -Hinv * self.dt;
+
+        let H_v_a = R * imu.dt;
+        let H_v_ainit = -R * self.dt;
+
+        let H_p_a = H_v_a * imu.dt / 2.0;
+        let H_p_int: Matrix3<dtype> = Matrix3::identity();
+        let H_p_ainit = H_v_ainit * self.dt / 2.0;
+
+        // Copy them into place
+        let mut B = Matrix::<15, 15>::zeros();
+        // First column (wrt theta)
+        let M = H_theta_w * p.cov_gyro_bias * H_theta_w.transpose()
+            + H_theta_winit * p.cov_winit * H_theta_winit.transpose();
+        B.fixed_view_mut::<3, 3>(0, 0).copy_from(&M);
+
+        // Second column (wrt vel)
+        let M = H_v_a * p.cov_accel * H_v_a.transpose()
+            + H_v_ainit * p.cov_ainit * H_v_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(3, 3).copy_from(&M);
+        let M = H_p_a * p.cov_accel * H_v_a.transpose()
+            + H_p_ainit * p.cov_ainit * H_v_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(6, 3).copy_from(&M);
+
+        // Third column (wrt pos)
+        let M = H_v_a * p.cov_accel * H_p_a.transpose()
+            + H_v_ainit * p.cov_ainit * H_p_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(3, 6).copy_from(&M);
+        let M = H_p_a * p.cov_accel * H_p_a.transpose()
+            + H_p_int * p.cov_integration * H_p_int.transpose()
+            + H_p_ainit * p.cov_ainit * H_p_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(6, 6).copy_from(&M);
+
+        // Fourth column (wrt gyro bias)
+        B.fixed_view_mut::<3, 3>(9, 9).copy_from(&p.cov_gyro_bias);
+
+        // Fifth column (wrt accel bias)
+        B.fixed_view_mut::<3, 3>(12, 12)
+            .copy_from(&p.cov_accel_bias);
+
+        B
+    }
+}
+
+impl<D: Numeric> DualConvert for ImuDelta<D> {
+    type Alias<DD: Numeric> = ImuDelta<DD>;
+    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
+        ImuDelta {
+            dt: other.dt.into(),
+            xi_theta: Vector3::<D>::dual_convert(&other.xi_theta),
+            xi_vel: Vector3::<D>::dual_convert(&other.xi_vel),
+            xi_pos: Vector3::<D>::dual_convert(&other.xi_pos),
+            bias_init: ImuBias::<D>::dual_convert(&other.bias_init),
+            h_bias_accel: Matrix::<9, 3, D>::dual_convert(&other.h_bias_accel),
+            h_bias_gyro: Matrix::<9, 3, D>::dual_convert(&other.h_bias_gyro),
+            gravity: Vector3::<D>::dual_convert(&other.gravity),
+        }
+    }
+}
+
+pub struct ImuMeasurement<D: Numeric = dtype> {
+    accel: Vector3<D>,
+    gyro: Vector3<D>,
+    dt: D,
+}
+
+impl<D: Numeric> ops::Sub<ImuBias<D>> for ImuMeasurement<D> {
+    type Output = Self;
+
+    fn sub(self, rhs: ImuBias<D>) -> Self {
+        ImuMeasurement {
+            gyro: self.gyro - rhs.gyro(),
+            accel: self.accel - rhs.accel(),
+            dt: self.dt,
+        }
+    }
+}
+
+impl<'a, D: Numeric> ops::Sub<&'a ImuBias<D>> for &'a ImuMeasurement<D> {
+    type Output = ImuMeasurement<D>;
+
+    fn sub(self, rhs: &'a ImuBias<D>) -> ImuMeasurement<D> {
+        ImuMeasurement {
+            gyro: self.gyro - rhs.gyro(),
+            accel: self.accel - rhs.accel(),
+            dt: self.dt,
+        }
+    }
+}
 
 // ----------------------- The actual residual object ----------------------- //
 tag_residual!(ImuPreintegrationResidual);
@@ -20,12 +258,7 @@ tag_residual!(ImuPreintegrationResidual);
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ImuPreintegrationResidual {
-    preint: Vector<9>,
-    gravity: Vector3,
-    dt: dtype,
-    bias_hat: ImuBias,
-    h_bias_accel: Matrix<9, 3>,
-    h_bias_gyro: Matrix<9, 3>,
+    delta: ImuDelta,
 }
 
 impl Residual6 for ImuPreintegrationResidual {
@@ -49,41 +282,29 @@ impl Residual6 for ImuPreintegrationResidual {
         b2: ImuBias<D>,
     ) -> VectorX<D> {
         // Add dual types to all of our fields
-        let preint = Vector::<9, dtype>::dual_convert::<D>(&self.preint);
-        let bias_hat = ImuBias::<dtype>::dual_convert::<D>(&self.bias_hat);
-        let g = Vector3::<dtype>::dual_convert::<D>(&self.gravity);
-        let dt = D::from(self.dt);
-        let h_bias_accel = Matrix::<9, 3, dtype>::dual_convert::<D>(&self.h_bias_accel);
-        let h_bias_gyro = Matrix::<9, 3, dtype>::dual_convert::<D>(&self.h_bias_gyro);
+        let delta = ImuDelta::<D>::dual_convert(&self.delta);
 
-        // Compute first-order updates to preint with bias
-        let bias_diff = &b1 - &bias_hat;
-        let preint = preint + h_bias_accel * bias_diff.accel() + h_bias_gyro * bias_diff.gyro();
+        // Pull out the measurements
+        let start = ImuState {
+            r: x1.rot().clone(),
+            v: v1.0,
+            p: x1.xyz().into_owned(),
+            bias: b1,
+        };
+        let ImuState {
+            r: r2_meas,
+            v: v2_meas,
+            p: p2_meas,
+            bias: b2_meas,
+        } = delta.predict(&start);
+        let p2_meas = VectorVar3::from(p2_meas);
+        let v2_meas = VectorVar3::from(v2_meas);
 
-        // Split preint into components
-        let xi_theta = preint.fixed_rows::<3>(0);
-        let xi_v = preint.fixed_rows::<3>(3).into_owned();
-        let xi_t = preint.fixed_rows::<3>(6).into_owned();
-
-        let x1_r = x1.rot();
-        let x1_t = x1.xyz();
-
-        // Estimate x2
-        // R2_meas = R1 * exp(xi_theta)
-        let r2_meas = x1_r.compose(&SO3::exp(xi_theta.as_view()));
-        // v2_meas = v1 + g * dt + R1 * xi_v
-        let v2_meas = v1.0 + g * dt + x1_r.apply(xi_v.as_view());
-        let v2_meas: VectorVar3<D> = v2_meas.into();
-        // p2_meas = p1 + v1 * dt + 0.5 * g * dt^2 + R1 * delta_t
-        let p2_meas = x1_t + v1.0 * dt + g * dt * dt * D::from(0.5) + x1_r.apply(xi_t.as_view());
-        let p2_meas: VectorVar3<D> = p2_meas.into();
-        let b2_meas = b1;
-
-        // Compute residual
+        // Compute residuals
         let p_2: VectorVar3<D> = x2.xyz().into_owned().into();
         let r_r = r2_meas.ominus(x2.rot());
-        let r_p = p2_meas.ominus(&p_2);
         let r_vel = v2_meas.ominus(&v2);
+        let r_p = p2_meas.ominus(&p_2);
         let r_bias = b2_meas.ominus(&b2);
 
         let mut residual = VectorX::zeros(15);
@@ -100,33 +321,40 @@ impl_residual!(6, ImuPreintegrationResidual);
 
 impl fmt::Display for ImuPreintegrationResidual {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ImuPreintegrationResidual(preint: {})", self.preint)
+        write!(
+            f,
+            "ImuPreintegrationResidual(theta: {}, v: {}, t: {})",
+            self.delta.xi_theta, self.delta.xi_vel, self.delta.xi_pos
+        )
     }
 }
 
 // ------------------------- The Preintegrator ------------------------- //
 #[derive(Clone, Debug)]
 pub struct ImuParams {
-    g: Vector3,
+    // TODO: Remove gravity from here?
+    gravity: Vector3,
     cov_accel: Matrix3,
     cov_gyro: Matrix3,
     cov_accel_bias: Matrix3,
     cov_gyro_bias: Matrix3,
     cov_integration: Matrix3,
-    cov_init: Matrix3,
+    cov_winit: Matrix3,
+    cov_ainit: Matrix3,
 }
 
 /// Implements reasonable parameters for ImuParams including positive gravity
 impl Default for ImuParams {
     fn default() -> Self {
         Self {
-            g: Vector3::new(0.0, 0.0, 9.81),
+            gravity: Vector3::new(0.0, 0.0, 9.81),
             cov_accel: Matrix3::identity() * 1e-5,
             cov_gyro: Matrix3::identity() * 1e-5,
             cov_accel_bias: Matrix3::identity() * 1e-6,
             cov_gyro_bias: Matrix3::identity() * 1e-6,
             cov_integration: Matrix3::identity() * 1e-7,
-            cov_init: Matrix3::identity() * 1e-7,
+            cov_winit: Matrix3::identity() * 1e-7,
+            cov_ainit: Matrix3::identity() * 1e-7,
         }
     }
 }
@@ -140,7 +368,7 @@ impl ImuParams {
     /// Create a new set of parameters with negative gravity
     pub fn negative() -> Self {
         let mut params = Self::default();
-        params.g = -params.g;
+        params.gravity = -params.gravity;
         params
     }
 
@@ -164,99 +392,62 @@ impl ImuParams {
         self.cov_integration = Matrix3::identity() * val;
     }
 
+    // TODO: Do I really need seperate values for this?
+    // In practice, I think every makes cov_winit = cov_ainit
+    // For now, the public interface assumes they are the same, but behind the
+    // scenes we're using both
     pub fn set_scalar_init(&mut self, val: dtype) {
-        self.cov_init = Matrix3::identity() * val;
+        self.cov_winit = Matrix3::identity() * val;
+        self.cov_ainit = Matrix3::identity() * val;
     }
 }
 
-pub struct ImuPreint {
-    delta_t: dtype,
-    delta_r: Vector3,
-    delta_v: Vector3,
-    delta_p: Vector3,
-    bias_hat: ImuBias,
-    h_bias_accel: Matrix<9, 3>,
-    h_bias_gyro: Matrix<9, 3>,
-    gravity: Vector3,
-}
-
+/// Performs Imu preintegration
 #[derive(Clone, Debug)]
 pub struct ImuPreintegrator {
     // Mutable state that will change as we integrate
-    // TODO: Combine these into a struct? I pass them all into the residual anyways
-    delta_t: dtype,
-    delta_r: Vector3,
-    delta_v: Vector3,
-    delta_p: Vector3,
-    bias_hat: ImuBias,
-    h_bias_accel: Matrix<9, 3>,
-    h_bias_gyro: Matrix<9, 3>,
+    delta: ImuDelta,
     cov: Matrix<15, 15>,
     // Constants
     params: ImuParams,
 }
 
 impl ImuPreintegrator {
-    pub fn new(params: ImuParams, bias_hat: ImuBias) -> Self {
+    pub fn new(params: ImuParams, bias_init: ImuBias) -> Self {
+        let delta = ImuDelta::new(params.gravity, bias_init);
         Self {
-            delta_t: 0.0,
-            delta_r: Vector3::zeros(),
-            delta_v: Vector3::zeros(),
-            delta_p: Vector3::zeros(),
-            bias_hat,
-            h_bias_accel: Matrix::zeros(),
-            h_bias_gyro: Matrix::zeros(),
+            delta,
             // init with small value to avoid singular matrix
-            cov: Matrix::zeros() * 1e-12,
+            cov: Matrix::zeros() * 1e-14,
             params,
         }
     }
 
     #[allow(non_snake_case)]
-    pub fn integrate(&mut self, dt: dtype, accel: Vector3, gyro: Vector3) {
-        // Update preint
-        self.delta_t += dt;
-        let accel = accel - self.bias_hat.accel();
-        let gyro = gyro - self.bias_hat.gyro();
-        let r_kaccel = SO3::exp(self.delta_r.as_view()).apply(accel.as_view());
-        let H = SO3::dexp(self.delta_r.as_view());
-        let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
+    pub fn integrate(&mut self, imu: ImuMeasurement) {
+        // Construct all matrices before integrating
+        let A = self.delta.A(&imu);
+        let B_Q_BT = self.delta.B_Q_BT(&imu, &self.params);
 
-        self.delta_r += Hinv * gyro * dt;
-        self.delta_v += r_kaccel * dt;
-        self.delta_p += self.delta_v * dt + 0.5 * r_kaccel * dt * dt;
-
-        // Update H
+        // Update preintegration
+        self.delta.integrate(&imu);
 
         // Update covariance
-        // TODO: Need to verify dimensions of all these
-        let R = SO3::exp(self.delta_r.as_view()).to_matrix();
-        let mut F = Matrix::<15, 15>::identity();
-        let A = Matrix3::identity() - SO3::hat(gyro.as_view()) * dt / 2.0;
-        F.fixed_view_mut::<3, 3>(0, 0).copy_from(&A);
-        let A = Hinv * dt;
-        F.fixed_view_mut::<3, 3>(0, 12).copy_from(&A);
-        let mut A = -R * SO3::hat(accel.as_view()) * Hinv * dt;
-        F.fixed_view_mut::<3, 3>(6, 0).copy_from(&A);
-        A *= dt / 2.0;
-        F.fixed_view_mut::<3, 3>(3, 0).copy_from(&A);
-        let A = Matrix3::identity() * dt;
-        F.fixed_view_mut::<3, 3>(3, 6).copy_from(&A);
-        let mut A = R * dt;
-        F.fixed_view_mut::<3, 3>(6, 9).copy_from(&A);
-        A *= dt / 2.0;
-        F.fixed_view_mut::<3, 3>(3, 9).copy_from(&A);
+        self.cov = A * self.cov * A.transpose() + B_Q_BT;
 
-        // TODO: Fill out this beast
-        let G_Q_Gt = Matrix::<15, 15>::identity();
-        self.cov = F * self.cov * F.transpose() + G_Q_Gt;
+        // Update H
+        let Amini = A.fixed_view::<9, 9>(0, 0);
+        // This should come from B, turns out it's identical as A
+        let Bgyro = A.fixed_view::<9, 3>(0, 9);
+        let Baccel = A.fixed_view::<9, 3>(0, 12);
+        self.delta.h_bias_gyro = Amini * self.delta.h_bias_gyro + Bgyro;
+        self.delta.h_bias_accel = Amini * self.delta.h_bias_accel + Baccel;
     }
 
     /// Build a corresponding factor
     ///
     /// This consumes the preintegrator and returns a
-    /// [factor](crate::factor::Factor) that can be inserted into a factor
-    /// graph.
+    /// [factor](crate::factor::Factor) with the proper noise model.
     pub fn build<X1, V1, B1, X2, V2, B2>(
         self,
         x1: X1,
@@ -276,22 +467,7 @@ impl ImuPreintegrator {
     {
         // Create noise from our covariance matrix
         let noise = GaussianNoise::from_matrix_cov(self.cov.as_view());
-
-        // Copy preint into a single vector
-        let mut preint: Vector<9, dtype> = Vector::zeros();
-        preint.fixed_rows_mut::<3>(0).copy_from(&self.delta_r);
-        preint.fixed_rows_mut::<3>(3).copy_from(&self.delta_v);
-        preint.fixed_rows_mut::<3>(6).copy_from(&self.delta_p);
-
-        let res = ImuPreintegrationResidual {
-            preint,
-            gravity: self.params.g,
-            dt: self.delta_t,
-            bias_hat: self.bias_hat,
-            h_bias_accel: self.h_bias_accel,
-            h_bias_gyro: self.h_bias_gyro,
-        };
-
+        let res = ImuPreintegrationResidual { delta: self.delta };
         FactorBuilder::new6(res, x1, v1, b1, x2, v2, b2)
             .noise(noise)
             .build()
