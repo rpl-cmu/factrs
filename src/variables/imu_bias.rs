@@ -6,6 +6,7 @@ use super::Variable;
 use crate::{
     dtype,
     linalg::{DualVector, Numeric, Vector3, VectorDim},
+    residuals::{Accel, Gyro},
     tag_variable,
 };
 
@@ -24,9 +25,11 @@ pub struct ImuBias<D: Numeric = dtype> {
 
 impl<D: Numeric> ImuBias<D> {
     /// Create a new IMU bias
-    // TODO: I would love to see a way to verify these aren't put in backwards
-    pub fn new(gyro: Vector3<D>, accel: Vector3<D>) -> Self {
-        ImuBias { gyro, accel }
+    pub fn new(gyro: Gyro<D>, accel: Accel<D>) -> Self {
+        ImuBias {
+            gyro: gyro.0,
+            accel: accel.0,
+        }
     }
 
     /// Get the gyro bias

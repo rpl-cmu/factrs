@@ -86,7 +86,6 @@ impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
     }
 }
 
-// TODO: New methods for each size
 macro_rules! impl_vector_new {
     ($($num:literal, [$($args:ident),*]);* $(;)?) => {$(
         impl<D: Numeric> VectorVar<$num, D> {

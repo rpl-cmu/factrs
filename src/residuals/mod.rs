@@ -23,6 +23,13 @@ mod between;
 pub use between::BetweenResidual;
 
 mod imu_preint;
-pub use imu_preint::{ImuParams, ImuPreintegrationResidual, ImuPreintegrator};
+pub use imu_preint::{
+    Accel,
+    Gravity,
+    Gyro,
+    ImuCovariance,
+    ImuPreintegrationResidual,
+    ImuPreintegrator,
+};
 
 mod macros;
