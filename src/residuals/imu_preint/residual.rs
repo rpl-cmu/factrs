@@ -90,7 +90,7 @@ impl ImuPreintegrator {
         Self {
             delta,
             // init with small value to avoid singular matrix
-            cov: Matrix::zeros() * 1e-14,
+            cov: Matrix::identity() * 1e-14,
             params,
         }
     }

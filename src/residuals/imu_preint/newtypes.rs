@@ -8,6 +8,8 @@ use crate::{
 ///
 /// This is a newtype for the gyro measurement ensure that the accel and gyro
 /// aren't mixed up.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Gyro<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Gyro<D> {
@@ -20,6 +22,8 @@ impl<D: Numeric> Gyro<D> {
 ///
 /// This is a newtype for the accel measurement ensure that the accel and gyro
 /// aren't mixed up.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Accel<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Accel<D> {
@@ -32,6 +36,8 @@ impl<D: Numeric> Accel<D> {
 ///
 /// This is a newtype for the gravity vector to ensure that it is not mixed up
 /// with other vectors and to provide some convenience methods.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Gravity<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Gravity<D> {

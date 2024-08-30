@@ -19,7 +19,7 @@ pub(crate) struct ImuDelta<D: Numeric = dtype> {
     bias_init: ImuBias<D>,
     h_bias_accel: Matrix<9, 3, D>,
     h_bias_gyro: Matrix<9, 3, D>,
-    gravity: Vector3<D>,
+    gravity: Gravity<D>,
 }
 
 impl<D: Numeric> ImuDelta<D> {
@@ -32,7 +32,7 @@ impl<D: Numeric> ImuDelta<D> {
             bias_init,
             h_bias_accel: Matrix::zeros(),
             h_bias_gyro: Matrix::zeros(),
-            gravity: gravity.0,
+            gravity,
         }
     }
 
@@ -59,12 +59,12 @@ impl<D: Numeric> ImuDelta<D> {
         let r2_meas = r.compose(&SO3::exp(xi_theta.as_view()));
 
         // v2_meas = v + g * dt + R1 * xi_v
-        let v2_meas = v + self.gravity * self.dt + r.apply(xi_v.as_view());
+        let v2_meas = v + self.gravity.0 * self.dt + r.apply(xi_v.as_view());
 
         // p2_meas = p1 + v * dt + 0.5 * g * dt^2 + R1 * xi_p
         let p2_meas = p
             + v * self.dt
-            + self.gravity * self.dt * self.dt * D::from(0.5)
+            + self.gravity.0 * self.dt * self.dt * D::from(0.5)
             + r.apply(xi_p.as_view());
 
         let b2_meas = bias.clone();
@@ -201,7 +201,7 @@ impl<D: Numeric> DualConvert for ImuDelta<D> {
             bias_init: ImuBias::<D>::dual_convert(&other.bias_init),
             h_bias_accel: Matrix::<9, 3, D>::dual_convert(&other.h_bias_accel),
             h_bias_gyro: Matrix::<9, 3, D>::dual_convert(&other.h_bias_gyro),
-            gravity: Vector3::<D>::dual_convert(&other.gravity),
+            gravity: Gravity(Vector3::<D>::dual_convert(&other.gravity.0)),
         }
     }
 }
