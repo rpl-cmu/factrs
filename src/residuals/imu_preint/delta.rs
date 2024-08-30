@@ -1,6 +1,6 @@
 use core::fmt;
 
-use super::{Accel, Gravity, Gyro, ImuCovariance, ImuState};
+use super::{AccelUnbiased, Gravity, GyroUnbiased, ImuCovariance, ImuState};
 use crate::{
     dtype,
     linalg::{Matrix, Matrix3, Numeric, Vector3},
@@ -76,13 +76,24 @@ impl<D: Numeric> ImuDelta<D> {
             bias: b2_meas,
         }
     }
-}
 
-// None of these methods should need to be dualized / "backpropagated"
-// Can just assume default dtype
-impl ImuDelta {
+    // TODO: Should this also propagate the H matrix?
+    // We'll have to construct A if we want to do that...
     #[allow(non_snake_case)]
-    pub(crate) fn propagate_H(&mut self, A: &Matrix<15, 15>) {
+    pub(crate) fn integrate(&mut self, gyro: &GyroUnbiased<D>, accel: &AccelUnbiased<D>, dt: D) {
+        self.dt += dt;
+        let accel_world = SO3::exp(self.xi_theta.as_view()).apply(accel.0.as_view());
+        let H = SO3::dexp(self.xi_theta.as_view());
+        let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
+
+        // Integrate (make sure integration occurs in the correct order)
+        self.xi_pos += self.xi_vel * dt + accel_world * (dt * dt * 0.5);
+        self.xi_vel += accel_world * dt;
+        self.xi_theta += Hinv * gyro.0 * dt;
+    }
+
+    #[allow(non_snake_case)]
+    pub(crate) fn propagate_H(&mut self, A: &Matrix<15, 15, D>) {
         let Amini = A.fixed_view::<9, 9>(0, 0);
         // This should come from B, turns out it's identical as A
         let Bgyro = A.fixed_view::<9, 3>(0, 9);
@@ -92,27 +103,25 @@ impl ImuDelta {
     }
 
     #[allow(non_snake_case)]
-    pub(crate) fn integrate(&mut self, gyro: &Gyro, accel: &Accel, dt: dtype) {
-        self.dt += dt;
-        let accel_world = SO3::exp(self.xi_theta.as_view()).apply(accel.0.as_view());
+    pub(crate) fn A(
+        &self,
+        gyro: &GyroUnbiased<D>,
+        accel: &AccelUnbiased<D>,
+        dt: D,
+    ) -> Matrix<15, 15, D> {
         let H = SO3::dexp(self.xi_theta.as_view());
         let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
+        let R: nalgebra::Matrix<
+            D,
+            nalgebra::Const<3>,
+            nalgebra::Const<3>,
+            nalgebra::ArrayStorage<D, 3, 3>,
+        > = SO3::exp(self.xi_theta.as_view()).to_matrix();
 
-        self.xi_theta += Hinv * gyro.0 * dt;
-        self.xi_vel += accel_world * dt;
-        self.xi_pos += self.xi_vel * dt + accel_world * (dt * dt * 0.5);
-    }
-
-    #[allow(non_snake_case)]
-    pub(crate) fn A(&self, gyro: &Gyro, accel: &Accel, dt: dtype) -> Matrix<15, 15> {
-        let H = SO3::dexp(self.xi_theta.as_view());
-        let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
-        let R = SO3::exp(self.xi_theta.as_view()).to_matrix();
-
-        let mut A = Matrix::<15, 15>::identity();
+        let mut A = Matrix::<15, 15, D>::identity();
 
         // First column (wrt theta)
-        let M = Matrix3::identity() - SO3::hat(gyro.0.as_view()) * dt / 2.0;
+        let M = Matrix3::<D>::identity() - SO3::hat(gyro.0.as_view()) * dt / D::from(2.0);
         A.fixed_view_mut::<3, 3>(0, 0).copy_from(&M);
         let mut M = -R * SO3::hat(accel.0.as_view()) * H * dt;
         A.fixed_view_mut::<3, 3>(3, 0).copy_from(&M);
@@ -120,8 +129,8 @@ impl ImuDelta {
         A.fixed_view_mut::<3, 3>(6, 0).copy_from(&M);
 
         // Second column (wrt vel)
-        let M = Matrix3::identity() * dt;
-        A.fixed_view_mut::<3, 3>(0, 6).copy_from(&M);
+        let M = Matrix3::<D>::identity() * dt;
+        A.fixed_view_mut::<3, 3>(6, 3).copy_from(&M);
 
         // Third column (wrt pos)
 
@@ -131,13 +140,16 @@ impl ImuDelta {
 
         // Fifth column (wrt accel bias)
         let mut M = -R * dt;
-        A.fixed_view_mut::<3, 3>(6, 9).copy_from(&M);
+        A.fixed_view_mut::<3, 3>(3, 12).copy_from(&M);
         M *= dt / 2.0;
-        A.fixed_view_mut::<3, 3>(3, 9).copy_from(&M);
+        A.fixed_view_mut::<3, 3>(6, 12).copy_from(&M);
 
         A
     }
+}
 
+// This functions will never need to be backpropped through
+impl ImuDelta {
     #[allow(non_snake_case)]
     pub(crate) fn B_Q_BT(&self, p: &ImuCovariance, dt: dtype) -> Matrix<15, 15> {
         let H = SO3::dexp(self.xi_theta.as_view());
@@ -213,5 +225,118 @@ impl<D: Numeric> fmt::Display for ImuDelta<D> {
             "ImuDelta(dt: {}, theta: {}, v: {}, p: {})",
             self.dt, self.xi_theta, self.xi_vel, self.xi_pos
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use matrixcompare::{assert_matrix_eq, assert_scalar_eq};
+    use nalgebra::Const;
+
+    use super::*;
+    use crate::{
+        linalg::{DualVector, ForwardProp, VectorX},
+        residuals::{Accel, Gyro},
+        traits::*,
+    };
+
+    // Helper function to integrate a constant gyro / accel for a given amount of
+    // time
+    fn integrate<D: Numeric>(
+        gyro: &Gyro<D>,
+        accel: &Accel<D>,
+        bias: &ImuBias<D>,
+        n: i32,
+        t: dtype,
+    ) -> ImuDelta<D> {
+        let mut delta = ImuDelta::new(Gravity::up(), bias.clone());
+        // Remove the bias
+        let accel = accel.remove_bias(bias);
+        let gyro = gyro.remove_bias(bias);
+        let dt = D::from(t / n as dtype);
+
+        for _ in 0..n {
+            // propagate H
+            let a = delta.A(&gyro, &accel, dt);
+            delta.propagate_H(&a);
+            // Integrate values
+            delta.integrate(&gyro, &accel, dt);
+        }
+
+        delta
+    }
+
+    // Test contast acceleration
+    #[test]
+    fn integrate_accel() {
+        let a = 5.0;
+        let t = 3.0;
+        let n = 100;
+
+        let accel = Accel(Vector3::new(a, 0.0, 0.0));
+        let gyro = Gyro(Vector3::zeros());
+
+        let delta = integrate(&gyro, &accel, &ImuBias::identity(), n, t);
+
+        println!("Delta: {}", delta);
+        assert_scalar_eq!(delta.dt, t, comp = abs, tol = 1e-5);
+        assert_matrix_eq!(delta.xi_vel, accel.0 * t, comp = abs, tol = 1e-5);
+        assert_matrix_eq!(delta.xi_pos, accel.0 * t * t / 2.0, comp = abs, tol = 1e-5);
+    }
+
+    // Test constant angular velocity
+    #[test]
+    fn integrate_gyro() {
+        let a = 5.0;
+        let t = 3.0;
+        let n = 100;
+
+        let accel = Accel(Vector3::zeros());
+        let gyro = Gyro(Vector3::new(0.0, 0.0, a));
+
+        let delta = integrate(&gyro, &accel, &ImuBias::identity(), n, t);
+
+        println!("Delta: {}", delta);
+        assert_scalar_eq!(delta.dt, t, comp = abs, tol = 1e-5);
+        assert_matrix_eq!(delta.xi_theta, gyro.0 * t, comp = abs, tol = 1e-5);
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn propagate_h_accel() {
+        let t = 1.0;
+        let n = 2;
+        let accel = Accel::new(1.0, 2.0, 3.0);
+        let gyro = Gyro::new(0.1, 0.2, 0.3);
+        let bias = ImuBias::new(Gyro::new(1.0, 2.0, 3.0), Accel::new(0.1, 0.2, 0.3));
+
+        // Compute the H matrix
+        let delta = integrate(&gyro, &accel, &bias, n, t);
+        let H_accel_got = delta.h_bias_accel;
+        let H_gyro_got = delta.h_bias_gyro;
+
+        // Compute the H matrix via forward prop
+        let integrate_diff = |bias: ImuBias<DualVector<Const<6>>>| {
+            let accel = Accel(accel.0.map(|a| a.into()));
+            let gyro = Gyro(gyro.0.map(|g| g.into()));
+            let delta = integrate(&gyro, &accel, &bias, n, t);
+            let mut preint = VectorX::zeros(9);
+            preint.fixed_rows_mut::<3>(0).copy_from(&delta.xi_theta);
+            preint.fixed_rows_mut::<3>(3).copy_from(&delta.xi_vel);
+            preint.fixed_rows_mut::<3>(6).copy_from(&delta.xi_pos);
+            preint
+        };
+        let H_exp = ForwardProp::<Const<6>>::jacobian_1(integrate_diff, &bias).diff;
+        let H_gyro_exp = H_exp.fixed_view::<9, 3>(0, 0);
+        let H_accel_exp = H_exp.fixed_view::<9, 3>(0, 3);
+
+        println!("H_accel_got: {:.4}", H_accel_got);
+        println!("H_accel_exp: {:.4}", H_accel_exp);
+        assert_matrix_eq!(H_accel_got, H_accel_exp, comp = abs, tol = 1e-5);
+
+        // TODO: Gyro still failing
+        println!("H_gyro_got: {:.4}", H_gyro_got);
+        println!("H_gyro_exp: {:.4}", H_gyro_exp);
+        assert_matrix_eq!(H_gyro_got, H_gyro_exp, comp = abs, tol = 1e-5);
     }
 }

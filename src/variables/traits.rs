@@ -89,6 +89,15 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
             y.inverse().compose(self).log()
         }
     }
+
+    fn ominus_right(&self, y: &Self) -> VectorX<D> {
+        y.inverse().compose(self).log()
+    }
+
+    fn ominus_left(&self, y: &Self) -> VectorX<D> {
+        self.compose(&y.inverse()).log()
+    }
+
     /// Subtract out portion from other variable.
     ///
     /// This can be seen as a "tip-to-tail" computation. IE it computes the

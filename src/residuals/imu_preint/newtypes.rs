@@ -4,7 +4,7 @@ use crate::{
     variables::{ImuBias, SO3},
 };
 
-/// Gyro measurement
+/// Raw gyro measurement
 ///
 /// This is a newtype for the gyro measurement ensure that the accel and gyro
 /// aren't mixed up.
@@ -13,12 +13,23 @@ use crate::{
 pub struct Gyro<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Gyro<D> {
-    pub fn remove_bias(&self, bias: &ImuBias<D>) -> Gyro<D> {
-        Gyro(self.0 - bias.gyro())
+    pub fn remove_bias(&self, bias: &ImuBias<D>) -> GyroUnbiased<D> {
+        GyroUnbiased(self.0 - bias.gyro())
+    }
+
+    pub fn zeros() -> Self {
+        Gyro(Vector3::zeros())
+    }
+
+    pub fn new(x: D, y: D, z: D) -> Self {
+        Gyro(Vector3::new(x, y, z))
     }
 }
 
-/// Accel measurement newtype
+/// Gyro measurement with bias removed
+pub struct GyroUnbiased<D: Numeric = dtype>(pub Vector3<D>);
+
+/// Raw accel measurement newtype
 ///
 /// This is a newtype for the accel measurement ensure that the accel and gyro
 /// aren't mixed up.
@@ -27,10 +38,21 @@ impl<D: Numeric> Gyro<D> {
 pub struct Accel<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Accel<D> {
-    pub fn remove_bias(&self, bias: &ImuBias<D>) -> Accel<D> {
-        Accel(self.0 - bias.accel())
+    pub fn remove_bias(&self, bias: &ImuBias<D>) -> AccelUnbiased<D> {
+        AccelUnbiased(self.0 - bias.accel())
+    }
+
+    pub fn zeros() -> Self {
+        Accel(Vector3::zeros())
+    }
+
+    pub fn new(x: D, y: D, z: D) -> Self {
+        Accel(Vector3::new(x, y, z))
     }
 }
+
+/// Accel measurement with bias removed
+pub struct AccelUnbiased<D: Numeric = dtype>(pub Vector3<D>);
 
 /// Gravity vector
 ///

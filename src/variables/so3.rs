@@ -68,6 +68,7 @@ impl<D: Numeric> SO3<D> {
         self.xyzw[3]
     }
 
+    // TODO: This needs significant testing
     pub fn dexp(xi: VectorView3<D>) -> Matrix3<D> {
         let theta2 = xi.norm_squared();
 

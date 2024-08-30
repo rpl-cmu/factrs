@@ -1,5 +1,5 @@
 mod newtypes;
-pub use newtypes::{Accel, Gravity, Gyro, ImuState};
+pub use newtypes::{Accel, AccelUnbiased, Gravity, Gyro, GyroUnbiased, ImuState};
 
 mod delta;
 

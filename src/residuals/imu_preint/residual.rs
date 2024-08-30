@@ -27,8 +27,7 @@ pub struct ImuCovariance {
     pub cov_ainit: Matrix3,
 }
 
-/// Implements reasonable parameters for ImuCovariance including positive
-/// gravity
+/// Implements reasonable parameters for ImuCovariance
 impl Default for ImuCovariance {
     fn default() -> Self {
         Self {
@@ -137,9 +136,10 @@ impl ImuPreintegrator {
         B2: TypedSymbol<ImuBias>,
     {
         // Create noise from our covariance matrix
-        // TODO: Does covariance need to be modified as preint will be modified?
         let noise = GaussianNoise::from_matrix_cov(self.cov.as_view());
+        // Create the residual
         let res = ImuPreintegrationResidual { delta: self.delta };
+        // Build the factor
         FactorBuilder::new6(res, x1, v1, b1, x2, v2, b2)
             .noise(noise)
             .build()
@@ -197,10 +197,13 @@ impl Residual6 for ImuPreintegrationResidual {
         let v2_meas: VectorVar3<D> = v2_meas.into();
 
         // Compute residuals
-        let r_r = r2_meas.ominus(x2.rot());
-        let r_vel = v2_meas.ominus(&v2);
-        let r_p = p2_meas.ominus(&p_2);
-        let r_bias = b2_meas.ominus(&b2);
+        // Because of how the noise is integrated,
+        // we have to use the right version of ominus here
+        // This won't matter so much for the vector elements (right = left for vectors)
+        let r_r = r2_meas.ominus_right(x2.rot());
+        let r_vel = v2_meas.ominus_right(&v2);
+        let r_p = p2_meas.ominus_right(&p_2);
+        let r_bias = b2_meas.ominus_right(&b2);
 
         let mut residual = VectorX::zeros(15);
         residual.fixed_rows_mut::<3>(0).copy_from(&r_r);

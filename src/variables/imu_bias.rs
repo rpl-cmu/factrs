@@ -12,6 +12,7 @@ use crate::{
 
 tag_variable!(ImuBias);
 
+// TODO: Use newtypes internally as well?
 /// IMU bias
 ///
 /// The IMU bias is a 6D vector containing the gyro and accel biases. It is
