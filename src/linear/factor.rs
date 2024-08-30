@@ -1,5 +1,5 @@
 use crate::{
-    containers::Symbol,
+    containers::Key,
     dtype,
     linalg::{MatrixBlock, VectorX},
     linear::LinearValues,
@@ -11,12 +11,12 @@ use crate::{
 /// consists of the relevant keys, a [MatrixBlock] A, and a [VectorX] b. Again,
 /// this *shouldn't* ever need to be used by hand.
 pub struct LinearFactor {
-    pub keys: Vec<Symbol>,
+    pub keys: Vec<Key>,
     pub a: MatrixBlock,
     pub b: VectorX,
 }
 impl LinearFactor {
-    pub fn new(keys: Vec<Symbol>, a: MatrixBlock, b: VectorX) -> Self {
+    pub fn new(keys: Vec<Key>, a: MatrixBlock, b: VectorX) -> Self {
         assert!(
             keys.len() == a.idx().len(),
             "Mismatch between keys and matrix blocks in LinearFactor::new"
@@ -40,7 +40,9 @@ impl LinearFactor {
             .map(|(idx, key)| {
                 self.a.mul(
                     idx,
-                    vector.get(key).expect("Missing key in LinearValues::error"),
+                    vector
+                        .get(*key)
+                        .expect("Missing key in LinearValues::error"),
                 )
             })
             .sum();

@@ -2,6 +2,7 @@ use factrs::{
     containers::{Graph, Values, X},
     factors::Factor,
     noise::GaussianNoise,
+    prelude::FactorBuilder,
     residuals::{BetweenResidual, PriorResidual},
     robust::{GemanMcClure, L2},
     variables::{SE2, SO2},
@@ -26,13 +27,13 @@ fn main() {
     let prior = PriorResidual::new(x);
     let bet = BetweenResidual::new(y);
 
-    let prior = Factor::new_full(
-        &[X(0)],
-        prior,
-        GaussianNoise::from_scalar_cov(0.1),
-        GemanMcClure::default(),
-    );
-    let bet = Factor::new_full(&[X(0), X(1)], bet, GaussianNoise::from_scalar_cov(10.0), L2);
+    let prior = FactorBuilder::new1(prior, X(0))
+        .noise(GaussianNoise::from_scalar_cov(0.1))
+        .robust(GemanMcClure::default())
+        .build();
+    let bet = FactorBuilder::new2(bet, X(0), X(1))
+        .noise(GaussianNoise::from_scalar_cov(10.0))
+        .build();
     let mut graph = Graph::new();
     graph.add_factor(prior);
     graph.add_factor(bet);

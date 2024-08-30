@@ -2,28 +2,34 @@ use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterato
 
 use ahash::AHashMap;
 
-use super::Symbol;
-use crate::{linear::LinearValues, variables::VariableSafe};
+use super::{Key, Symbol, TypedSymbol};
+use crate::{
+    linear::LinearValues,
+    prelude::{DefaultSymbol, VariableUmbrella},
+    variables::VariableSafe,
+};
 
 // Since we won't be passing dual numbers through any of this,
 // we can just use dtype rather than using generics with Numeric
 
 /// Structure to hold the Variables used in the graph.
 ///
-/// Values is essentially a thing wrapper around a Hashmap that maps [Symbol] ->
+/// Values is essentially a thin wrapper around a Hashmap that maps [Key] ->
 /// [VariableSafe]. If you'd like to define a custom variable to be used in
 /// Values, it must implement [Variable](crate::variables::Variable), and then
 /// will implement [VariableSafe] via a blanket implementation.
 /// ```
 /// # use factrs::prelude::*;
+/// # assign_symbols!(X: SO2);
 /// let x = SO2::from_theta(0.1);
 /// let mut values = Values::new();
 /// values.insert(X(0), x);
 /// ```
+
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
-    values: AHashMap<Symbol, Box<dyn VariableSafe>>,
+    values: AHashMap<Key, Box<dyn VariableSafe>>,
 }
 
 impl Values {
@@ -41,69 +47,102 @@ impl Values {
 
     /// Returns an [std::collections::hash_map::Entry] from the underlying
     /// HashMap.
-    pub fn entry(&mut self, key: Symbol) -> Entry<Symbol, Box<dyn VariableSafe>> {
-        self.values.entry(key)
+    pub fn entry(&mut self, key: impl Symbol) -> Entry<Key, Box<dyn VariableSafe>> {
+        self.values.entry(key.into())
     }
 
-    pub fn insert(
-        &mut self,
-        key: Symbol,
-        value: impl VariableSafe,
-    ) -> Option<Box<dyn VariableSafe>> {
-        self.values.insert(key, Box::new(value))
+    pub fn insert<S, V>(&mut self, symbol: S, value: V) -> Option<Box<dyn VariableSafe>>
+    where
+        S: TypedSymbol<V>,
+        V: VariableUmbrella,
+    {
+        self.values.insert(symbol.into(), Box::new(value))
     }
 
-    /// Returns a dynamic VariableSafe.
+    /// Unchecked verison of [Values::insert].
+    pub fn insert_unchecked<S, V>(&mut self, symbol: S, value: V) -> Option<Box<dyn VariableSafe>>
+    where
+        S: Symbol,
+        V: VariableUmbrella,
+    {
+        self.values.insert(symbol.into(), Box::new(value))
+    }
+
+    pub(crate) fn get_raw<S>(&self, symbol: S) -> Option<&dyn VariableSafe>
+    where
+        S: Symbol,
+    {
+        self.values.get(&symbol.into()).map(|f| f.as_ref())
+    }
+
+    /// Returns the underlying variable.
     ///
-    /// If the underlying value is desired, use [Values::get_cast]
-    pub fn get(&self, key: &Symbol) -> Option<&dyn VariableSafe> {
-        self.values.get(key).map(|f| f.as_ref())
-    }
-
-    // TODO: This should be some kind of error
-    /// Casts and returns the underlying variable.
-    ///
-    /// This will return the value if variable is in the graph, and if the cast
-    /// is successful. Returns None otherwise.
+    /// This will return the value if variable is in the graph. Requires a typed
+    /// symbol and as such is guaranteed to return the correct type. Returns
+    /// None if key isn't found.
     /// ```
     /// # use factrs::prelude::*;
+    /// # assign_symbols!(X: SO2);
     /// # let x = SO2::from_theta(0.1);
     /// # let mut values = Values::new();
     /// # values.insert(X(0), x);
-    /// let x_out = values.get_cast::<SO2>(&X(0));
+    /// let x_out = values.get(X(0));
     /// ```
-    pub fn get_cast<T: VariableSafe>(&self, key: &Symbol) -> Option<&T> {
+    pub fn get<S, V>(&self, symbol: S) -> Option<&V>
+    where
+        S: TypedSymbol<V>,
+        V: VariableUmbrella,
+    {
         self.values
-            .get(key)
-            .and_then(|value| value.downcast_ref::<T>())
+            .get(&symbol.into())
+            .and_then(|value| value.downcast_ref::<V>())
     }
 
-    // TODO: Does this still fail if one is missing?
-    // pub fn get_multiple<'a>(&self, keys: impl IntoIterator<Item = &'a Symbol>) ->
-    // Option<Vec<&V>> where
-    //     Symbol: 'a,
-    // {
-    //     keys.into_iter().map(|key| self.values.get(key)).collect()
-    // }
+    /// Returns the underlying variable, not checking the type.
+    pub fn get_unchecked<S, V>(&self, symbol: S) -> Option<&V>
+    where
+        S: Symbol,
+        V: VariableUmbrella,
+    {
+        self.values
+            .get(&symbol.into())
+            .and_then(|value| value.downcast_ref::<V>())
+    }
 
     /// Mutable version of [Values::get].
-    pub fn get_mut(&mut self, key: &Symbol) -> Option<&mut dyn VariableSafe> {
-        self.values.get_mut(key).map(|f| f.as_mut())
-    }
-
-    // TODO: This should be some kind of error
-    /// Mutable version of [Values::get_cast].
-    pub fn get_mut_cast<T: VariableSafe>(&mut self, key: &Symbol) -> Option<&mut T> {
+    pub fn get_mut<S, V>(&mut self, symbol: S) -> Option<&mut V>
+    where
+        S: TypedSymbol<V>,
+        V: VariableUmbrella,
+    {
         self.values
-            .get_mut(key)
-            .and_then(|value| value.downcast_mut::<T>())
+            .get_mut(&symbol.into())
+            .and_then(|value| value.downcast_mut::<V>())
     }
 
-    pub fn remove(&mut self, key: &Symbol) -> Option<Box<dyn VariableSafe>> {
-        self.values.remove(key)
+    /// Mutable version of [Values::get_unchecked].
+    pub fn get_unchecked_mut<S, V>(&mut self, symbol: S) -> Option<&mut V>
+    where
+        S: Symbol,
+        V: VariableUmbrella,
+    {
+        self.values
+            .get_mut(&symbol.into())
+            .and_then(|value| value.downcast_mut::<V>())
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&Symbol, &Box<dyn VariableSafe>)> {
+    pub fn remove<S, V>(&mut self, symbol: S) -> Option<V>
+    where
+        S: TypedSymbol<V>,
+        V: VariableUmbrella,
+    {
+        self.values
+            .remove(&symbol.into())
+            .and_then(|value| value.downcast::<V>().ok())
+            .map(|value| *value)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&Key, &Box<dyn VariableSafe>)> {
         self.values.iter()
     }
 
@@ -112,6 +151,7 @@ impl Values {
     ///
     /// ```
     /// # use factrs::prelude::*;
+    /// # assign_symbols!(X: SO2);
     /// # let mut values = Values::new();
     /// # (0..10).for_each(|i| {values.insert(X(0), SO2::identity());} );
     /// let mine: Vec<&SO2> = values.filter().collect();
@@ -138,18 +178,20 @@ impl Values {
     }
 }
 
+// TODO: Find a way to make this usable on custom symbols (not just
+// DefaultSymbol)
 impl fmt::Display for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
             writeln!(f, "{{")?;
             for (key, value) in self.values.iter() {
-                writeln!(f, "  {}: {:?},", key, value)?;
+                writeln!(f, "  {:?}: {:?},", DefaultSymbol::from(*key), value)?;
             }
             write!(f, "}}")
         } else {
             write!(f, "{{")?;
             for (key, value) in self.values.iter() {
-                write!(f, "{}: {:?}, ", key, value)?;
+                write!(f, "{:?}: {:?}, ", DefaultSymbol::from(*key), value)?;
             }
             write!(f, "}}")
         }
@@ -163,8 +205,8 @@ impl fmt::Debug for Values {
 }
 
 impl IntoIterator for Values {
-    type Item = (Symbol, Box<dyn VariableSafe>);
-    type IntoIter = std::collections::hash_map::IntoIter<Symbol, Box<dyn VariableSafe>>;
+    type Item = (Key, Box<dyn VariableSafe>);
+    type IntoIter = std::collections::hash_map::IntoIter<Key, Box<dyn VariableSafe>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.values.into_iter()

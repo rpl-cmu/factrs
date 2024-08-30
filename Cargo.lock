@@ -955,8 +955,8 @@ dependencies = [
  "faer",
  "faer-ext",
  "log",
- "matrixcompare",
- "matrixcompare-core",
+ "matrixcompare 0.1.4",
+ "matrixcompare 0.3.0",
  "nalgebra",
  "num-dual",
  "paste",
@@ -982,7 +982,7 @@ dependencies = [
  "gemm",
  "libm",
  "log",
- "matrixcompare",
+ "matrixcompare 0.3.0",
  "matrixcompare-core",
  "nano-gemm",
  "num-complex",
@@ -1580,6 +1580,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "matrixcompare"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8f075a9d74616240a7f32afac53bc2a04f4ec93b55b27e6e4add1eed85fffaf"
+dependencies = [
+ "matrixcompare-core",
+ "num-traits",
 ]
 
 [[package]]

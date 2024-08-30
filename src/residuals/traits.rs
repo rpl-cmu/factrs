@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
 use crate::{
-    containers::{Symbol, Values},
+    containers::{Key, Values},
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
     variables::{Variable, VariableUmbrella},
 };
@@ -27,9 +27,9 @@ pub trait Residual: Debug + Display {
         Self::DimOut::USIZE
     }
 
-    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
+    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX;
 
-    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
+    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
 }
 
 /// The object safe version of [Residual].
@@ -42,9 +42,9 @@ pub trait ResidualSafe: Debug + Display {
 
     fn dim_out(&self) -> usize;
 
-    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX;
+    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX;
 
-    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>;
+    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
 }
 
 impl<
@@ -60,11 +60,11 @@ impl<
         Residual::dim_out(self)
     }
 
-    fn residual(&self, values: &Values, keys: &[Symbol]) -> VectorX {
+    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
         Residual::residual(self, values, keys)
     }
 
-    fn residual_jacobian(&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX> {
+    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
         Residual::residual_jacobian(self, values, keys)
     }
 
@@ -105,8 +105,8 @@ macro_rules! residual_maker {
                 /// It is generic over the dtype to allow for differentiable types.
                 fn [<residual $num>]<D: Numeric>(&self, $($name: Alias<Self::$var, D>,)*) -> VectorX<D>;
 
-                #[doc=concat!("Wrapper that unpacks variables and calls [", stringify!([<residual $num>]), "](Self::", stringify!([<residual $num>]), ").")]
-                fn [<residual $num _values>](&self, values: &Values, keys: &[Symbol]) -> VectorX
+                #[doc="Wrapper that unpacks and calls [" [<residual $num>] "](Self::" [<residual $num>] ")."]
+                fn [<residual $num _values>](&self, values: &Values, keys: &[Key]) -> VectorX
                 where
                     $(
                         Self::$var: 'static,
@@ -114,7 +114,7 @@ macro_rules! residual_maker {
                  {
                     // Unwrap everything
                     $(
-                        let $name: &Self::$var = values.get_cast(&keys[$idx]).unwrap_or_else(|| {
+                        let $name: &Self::$var = values.get_unchecked(keys[$idx]).unwrap_or_else(|| {
                             panic!("Key not found in values: {:?} with type {}", keys[$idx], std::any::type_name::<Self::$var>())
                         });
                     )*
@@ -122,8 +122,8 @@ macro_rules! residual_maker {
                 }
 
 
-                #[doc=concat!("Wrapper that unpacks variables and computes jacobians using [", stringify!([<residual $num>]), "](Self::", stringify!([<residual $num>]), ").")]
-                fn [<residual $num _jacobian>](&self, values: &Values, keys: &[Symbol]) -> DiffResult<VectorX, MatrixX>
+                #[doc="Wrapper that unpacks variables and computes jacobians using [" [<residual $num>] "](Self::" [<residual $num>] ")."]
+                fn [<residual $num _jacobian>](&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>
                 where
                     $(
                         Self::$var: 'static,
@@ -131,7 +131,7 @@ macro_rules! residual_maker {
                 {
                     // Unwrap everything
                     $(
-                        let $name: &Self::$var = values.get_cast(&keys[$idx]).unwrap_or_else(|| {
+                        let $name: &Self::$var = values.get_unchecked(keys[$idx]).unwrap_or_else(|| {
                             panic!("Key not found in values: {:?} with type {}", keys[$idx], std::any::type_name::<Self::$var>())
                         });
                     )*
