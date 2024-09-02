@@ -68,8 +68,6 @@ impl<D: Numeric> SO3<D> {
         self.xyzw[3]
     }
 
-    // TODO: This needs significant testing
-    // TODO: find reference for this
     pub fn dexp(xi: VectorView3<D>) -> Matrix3<D> {
         let theta2 = xi.norm_squared();
 
@@ -83,10 +81,9 @@ impl<D: Numeric> SO3<D> {
         };
 
         let hat = SO3::hat(xi);
-        println!("xi: {}", xi);
-        println!("hat: {}", hat);
-        // TODO: gtsam says minus here for -hat a, but ethan eade says plus
-        // Everything in ImuDelta works with a minus
+        // gtsam says minus here for -hat a, but ethan eade says plus
+        // Empirically (via our test & jac in ImuDelta), minus is correct
+        // Need to find reference to confirm
         Matrix3::identity() - hat * a + hat * hat * b
     }
 }
@@ -342,15 +339,28 @@ impl<D: Numeric> fmt::Debug for SO3<D> {
 
 #[cfg(test)]
 mod tests {
+    use matrixcompare::assert_matrix_eq;
+
     use super::*;
-    use crate::{test_lie, test_variable};
+    use crate::{linalg::NumericalDiff, test_lie, test_variable, variables::VectorVar3};
 
     test_variable!(SO3);
 
     test_lie!(SO3);
 
-    // #[test]
-    // fn dexp() {
-    //     fn exp()
-    // }
+    #[test]
+    fn dexp() {
+        let xi = Vector3::new(0.1, 0.2, 0.3);
+        let got = SO3::dexp(xi.as_view());
+
+        let exp = NumericalDiff::<6>::jacobian_variable_1(
+            |x: VectorVar3| SO3::exp(Vector3::from(x).as_view()),
+            &VectorVar3::from(xi),
+        )
+        .diff;
+
+        println!("got: {}", got);
+        println!("exp: {}", exp);
+        assert_matrix_eq!(got, exp, comp = abs, tol = 1e-6);
+    }
 }
