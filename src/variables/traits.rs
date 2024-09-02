@@ -66,10 +66,18 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     fn oplus(&self, xi: VectorViewX<D>) -> Self {
         if cfg!(feature = "left") {
-            Self::exp(xi).compose(self)
+            self.oplus_left(xi)
         } else {
-            self.compose(&Self::exp(xi))
+            self.oplus_right(xi)
         }
+    }
+
+    fn oplus_right(&self, xi: VectorViewX<D>) -> Self {
+        self.compose(&Self::exp(xi))
+    }
+
+    fn oplus_left(&self, xi: VectorViewX<D>) -> Self {
+        Self::exp(xi).compose(self)
     }
 
     /// Compares two group elements in the tangent space
@@ -84,9 +92,9 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     fn ominus(&self, y: &Self) -> VectorX<D> {
         if cfg!(feature = "left") {
-            self.compose(&y.inverse()).log()
+            self.ominus_left(y)
         } else {
-            y.inverse().compose(self).log()
+            self.ominus_right(y)
         }
     }
 

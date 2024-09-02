@@ -12,7 +12,7 @@ use crate::{
     residuals::Residual6,
     tag_residual,
     traits::*,
-    variables::{ImuBias, VectorVar3, SE3},
+    variables::{ImuBias, MatrixLieGroup, VectorVar3, SE3, SO3},
 };
 // ------------------------- Covariances ------------------------- //
 
@@ -94,6 +94,59 @@ impl ImuPreintegrator {
         }
     }
 
+    // TODO: Test (make sure dts are all correct)
+    #[allow(non_snake_case)]
+    fn B_Q_BT(&self, dt: dtype) -> Matrix<15, 15> {
+        let p = &self.params;
+        let H = SO3::dexp(self.delta.xi_theta.as_view());
+        let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
+        let R = SO3::exp(self.delta.xi_theta.as_view()).to_matrix();
+
+        // Construct all partials
+        let H_theta_w = Hinv * dt;
+        let H_theta_winit = -Hinv * dt;
+
+        let H_v_a = R * dt;
+        let H_v_ainit = -R * dt;
+
+        let H_p_a = H_v_a * dt / 2.0;
+        let H_p_int: Matrix3<dtype> = Matrix3::identity();
+        let H_p_ainit = H_v_ainit * dt / 2.0;
+
+        // Copy them into place
+        let mut B = Matrix::<15, 15>::zeros();
+        // First column (wrt theta)
+        let M = H_theta_w * p.cov_gyro_bias * H_theta_w.transpose()
+            + H_theta_winit * p.cov_winit * H_theta_winit.transpose();
+        B.fixed_view_mut::<3, 3>(0, 0).copy_from(&M);
+
+        // Second column (wrt vel)
+        let M = H_v_a * p.cov_accel * H_v_a.transpose()
+            + H_v_ainit * p.cov_ainit * H_v_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(3, 3).copy_from(&M);
+        let M = H_p_a * p.cov_accel * H_v_a.transpose()
+            + H_p_ainit * p.cov_ainit * H_v_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(6, 3).copy_from(&M);
+
+        // Third column (wrt pos)
+        let M = H_v_a * p.cov_accel * H_p_a.transpose()
+            + H_v_ainit * p.cov_ainit * H_p_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(3, 6).copy_from(&M);
+        let M = H_p_a * p.cov_accel * H_p_a.transpose()
+            + H_p_int * p.cov_integration * H_p_int.transpose()
+            + H_p_ainit * p.cov_ainit * H_p_ainit.transpose();
+        B.fixed_view_mut::<3, 3>(6, 6).copy_from(&M);
+
+        // Fourth column (wrt gyro bias)
+        B.fixed_view_mut::<3, 3>(9, 9).copy_from(&p.cov_gyro_bias);
+
+        // Fifth column (wrt accel bias)
+        B.fixed_view_mut::<3, 3>(12, 12)
+            .copy_from(&p.cov_accel_bias);
+
+        B
+    }
+
     #[allow(non_snake_case)]
     pub fn integrate(&mut self, gyro: Gyro, accel: Accel, dt: dtype) {
         // Remove bias estimate
@@ -101,17 +154,13 @@ impl ImuPreintegrator {
         let accel = accel.remove_bias(self.delta.bias_init());
 
         // Construct all matrices before integrating
-        let A = self.delta.A(&gyro, &accel, dt);
-        let B_Q_BT = self.delta.B_Q_BT(&self.params, dt);
+        let B_Q_BT = self.B_Q_BT(dt);
 
         // Update preintegration
-        self.delta.integrate(&gyro, &accel, dt);
+        let A = self.delta.integrate(&gyro, &accel, dt);
 
         // Update covariance
         self.cov = A * self.cov * A.transpose() + B_Q_BT;
-
-        // Update H for bias updates
-        self.delta.propagate_H(&A);
     }
 
     /// Build a corresponding factor
