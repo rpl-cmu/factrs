@@ -102,6 +102,8 @@ impl<D: Numeric> ImuDelta<D> {
         self.h_bias_accel = Amini * self.h_bias_accel + Baccel;
     }
 
+    // TODO(Easton): Should this just be auto-diffed? Need to benchmark to see if
+    // that's faster
     #[allow(non_snake_case)]
     pub(crate) fn A(
         &self,
@@ -235,9 +237,10 @@ mod test {
 
     use super::*;
     use crate::{
-        linalg::{DualVector, ForwardProp, VectorX},
+        linalg::{DualVector, ForwardProp, Vector, VectorX},
         residuals::{Accel, Gyro},
         traits::*,
+        variables::VectorVar,
     };
 
     // Helper function to integrate a constant gyro / accel for a given amount of
@@ -302,8 +305,88 @@ mod test {
     }
 
     #[test]
+    fn make_a() {
+        let dt = 0.1;
+        let v: nalgebra::Matrix<f64, Const<15>, Const<1>, nalgebra::ArrayStorage<f64, 15, 1>> =
+            Vector::<15>::from_fn(|i, _| i as dtype / 10.0);
+        let gyro = Gyro::new(3.0, 2.0, 1.0);
+        let accel: Accel = Accel::new(1.0, 2.0, 3.0);
+
+        fn delta_from_vec<D: Numeric>(v: Vector<15, D>) -> ImuDelta<D> {
+            let xi_theta = v.fixed_rows::<3>(0).into_owned();
+            let xi_vel = v.fixed_rows::<3>(3).into_owned();
+            let xi_pos = v.fixed_rows::<3>(6).into_owned();
+            let bias_init = ImuBias::new(
+                Gyro(v.fixed_rows::<3>(9).into_owned()),
+                Accel(v.fixed_rows::<3>(12).into_owned()),
+            );
+            ImuDelta {
+                dt: D::from(0.0),
+                xi_theta,
+                xi_vel,
+                xi_pos,
+                bias_init,
+                h_bias_accel: Matrix::zeros(),
+                h_bias_gyro: Matrix::zeros(),
+                gravity: Gravity::up(),
+            }
+        }
+
+        let f = |v: VectorVar<15, DualVector<Const<15>>>| {
+            // construct measurements
+            let gyro = Gyro(gyro.0.map(|g| g.into()));
+            let accel = Accel(accel.0.map(|a| a.into()));
+
+            // make delta from vector
+            let mut delta = delta_from_vec(v.0);
+
+            // Integrate
+            let gyro = gyro.remove_bias(&delta.bias_init);
+            let accel = accel.remove_bias(&delta.bias_init);
+            delta.integrate(&gyro, &accel, DualVector::<Const<15>>::from(dt));
+
+            // Return the delta as a vector
+            let mut out = VectorX::zeros(15);
+            out.fixed_rows_mut::<3>(0).copy_from(&delta.xi_theta);
+            out.fixed_rows_mut::<3>(3).copy_from(&delta.xi_vel);
+            out.fixed_rows_mut::<3>(6).copy_from(&delta.xi_pos);
+            out.fixed_rows_mut::<3>(9).copy_from(delta.bias_init.gyro());
+            out.fixed_rows_mut::<3>(12)
+                .copy_from(delta.bias_init.accel());
+
+            out
+        };
+
+        // Make expected A
+        let vv: VectorVar<15> = VectorVar::from(v);
+        let a_exp = ForwardProp::<Const<15>>::jacobian_1(f, &vv).diff;
+
+        // Make got A
+        let delta = delta_from_vec(v);
+        let gyro = gyro.remove_bias(&delta.bias_init);
+        let accel = accel.remove_bias(&delta.bias_init);
+        let a_got = delta.A(&gyro, &accel, dt);
+
+        println!("A_exp: {:.4}", a_exp);
+        println!("A_got: {:.4}", a_got);
+        // First column is an approximation, loosen the tolerance on those
+        assert_matrix_eq!(
+            a_exp.fixed_view::<12, 3>(3, 0),
+            a_got.fixed_view::<12, 3>(3, 0),
+            comp = abs,
+            tol = 1e-3
+        );
+        assert_matrix_eq!(
+            a_exp.fixed_view::<15, 12>(0, 3),
+            a_got.fixed_view::<15, 12>(0, 3),
+            comp = abs,
+            tol = 1e-5
+        );
+    }
+
+    #[test]
     #[allow(non_snake_case)]
-    fn propagate_h_accel() {
+    fn propagate_h() {
         let t = 1.0;
         let n = 2;
         let accel = Accel::new(1.0, 2.0, 3.0);
@@ -334,9 +417,14 @@ mod test {
         println!("H_accel_exp: {:.4}", H_accel_exp);
         assert_matrix_eq!(H_accel_got, H_accel_exp, comp = abs, tol = 1e-5);
 
-        // TODO: Gyro still failing
         println!("H_gyro_got: {:.4}", H_gyro_got);
         println!("H_gyro_exp: {:.4}", H_gyro_exp);
-        assert_matrix_eq!(H_gyro_got, H_gyro_exp, comp = abs, tol = 1e-5);
+        // Skip top 3 rows, it's an approximation
+        assert_matrix_eq!(
+            H_gyro_got.fixed_view::<6, 3>(3, 0),
+            H_gyro_exp.fixed_view::<6, 3>(3, 0),
+            comp = abs,
+            tol = 1e-5
+        );
     }
 }

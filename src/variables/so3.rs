@@ -69,10 +69,11 @@ impl<D: Numeric> SO3<D> {
     }
 
     // TODO: This needs significant testing
+    // TODO: find reference for this
     pub fn dexp(xi: VectorView3<D>) -> Matrix3<D> {
         let theta2 = xi.norm_squared();
 
-        let (a, b) = if theta2 < D::from(1e-3) {
+        let (a, b) = if theta2 < D::from(1e-6) {
             (D::from(0.5), D::from(1.0) / D::from(6.0))
         } else {
             let theta = theta2.sqrt();
@@ -82,7 +83,11 @@ impl<D: Numeric> SO3<D> {
         };
 
         let hat = SO3::hat(xi);
-        Matrix3::identity() + hat * a + hat * hat * b
+        println!("xi: {}", xi);
+        println!("hat: {}", hat);
+        // TODO: gtsam says minus here for -hat a, but ethan eade says plus
+        // Everything in ImuDelta works with a minus
+        Matrix3::identity() - hat * a + hat * hat * b
     }
 }
 
@@ -343,4 +348,9 @@ mod tests {
     test_variable!(SO3);
 
     test_lie!(SO3);
+
+    // #[test]
+    // fn dexp() {
+    //     fn exp()
+    // }
 }
