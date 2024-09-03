@@ -33,6 +33,14 @@ impl<D: Numeric> ImuBias<D> {
         }
     }
 
+    /// Create an IMU bias of zeros (same as identity)
+    pub fn zeros() -> Self {
+        ImuBias {
+            gyro: Vector3::zeros(),
+            accel: Vector3::zeros(),
+        }
+    }
+
     /// Get the gyro bias
     pub fn gyro(&self) -> &Vector3<D> {
         &self.gyro

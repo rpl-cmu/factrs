@@ -22,14 +22,7 @@ pub use prior::PriorResidual;
 mod between;
 pub use between::BetweenResidual;
 
-mod imu_preint;
-pub use imu_preint::{
-    Accel,
-    Gravity,
-    Gyro,
-    ImuCovariance,
-    ImuPreintegrationResidual,
-    ImuPreintegrator,
-};
+pub mod imu_preint;
+pub use imu_preint::{Accel, Gravity, Gyro, ImuCovariance, ImuPreintegrator};
 
 mod macros;

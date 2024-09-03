@@ -1,7 +1,10 @@
+#![doc = include_str!("README.md")]
+
 mod newtypes;
-pub use newtypes::{Accel, AccelUnbiased, Gravity, Gyro, GyroUnbiased, ImuState};
+pub(crate) use newtypes::ImuState;
+pub use newtypes::{Accel, AccelUnbiased, Gravity, Gyro, GyroUnbiased};
 
 mod delta;
 
 mod residual;
-pub use residual::{ImuCovariance, ImuPreintegrationResidual, ImuPreintegrator};
+pub use residual::{ImuCovariance, ImuPreintegrator};

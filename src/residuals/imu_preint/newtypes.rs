@@ -13,6 +13,7 @@ use crate::{
 pub struct Gyro<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Gyro<D> {
+    /// Remove the bias from the gyro measurement
     pub fn remove_bias(&self, bias: &ImuBias<D>) -> GyroUnbiased<D> {
         GyroUnbiased(self.0 - bias.gyro())
     }
@@ -38,6 +39,7 @@ pub struct GyroUnbiased<D: Numeric = dtype>(pub Vector3<D>);
 pub struct Accel<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Accel<D> {
+    /// Remove the bias from the accel measurement
     pub fn remove_bias(&self, bias: &ImuBias<D>) -> AccelUnbiased<D> {
         AccelUnbiased(self.0 - bias.accel())
     }
@@ -63,10 +65,12 @@ pub struct AccelUnbiased<D: Numeric = dtype>(pub Vector3<D>);
 pub struct Gravity<D: Numeric = dtype>(pub Vector3<D>);
 
 impl<D: Numeric> Gravity<D> {
+    /// Helper to get the gravity vector pointing up, i.e. [0, 0, 9.81]
     pub fn up() -> Self {
         Gravity(Vector3::new(D::from(0.0), D::from(0.0), D::from(9.81)))
     }
 
+    /// Helper to get the gravity vector pointing down, i.e. [0, 0, -9.81]
     pub fn down() -> Self {
         Gravity(Vector3::new(D::from(0.0), D::from(0.0), D::from(-9.81)))
     }

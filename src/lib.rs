@@ -100,7 +100,7 @@ pub mod variables;
 
 /// Untagged symbols if `unchecked` API is desired.
 ///
-/// We strongly recommend using [assign_symbols](crate::assign_symbols) to
+/// We strongly recommend using [assign_symbols] to
 /// create and tag symbols with the appropriate types. However, we provide a
 /// number of pre-defined symbols if desired. Note these objects can't be tagged
 /// due to the orphan rules.

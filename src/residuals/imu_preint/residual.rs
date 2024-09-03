@@ -4,7 +4,7 @@ use nalgebra::Const;
 
 use super::{delta::ImuDelta, Accel, Gravity, Gyro, ImuState};
 use crate::{
-    containers::{Factor, FactorBuilder, TypedSymbol},
+    containers::{Factor, FactorBuilder, Symbol, TypedSymbol},
     dtype,
     impl_residual,
     linalg::{ForwardProp, Matrix, Matrix3, VectorX},
@@ -16,6 +16,13 @@ use crate::{
 };
 // ------------------------- Covariances ------------------------- //
 
+/// Covariance parameters for the IMU preintegration
+///
+/// Trys to come with semi-resonable defaults for the covariance parameters
+/// ```
+/// use factrs::residuals::ImuCovariance;
+/// let cov = ImuCovariance::default();
+/// ```
 #[derive(Clone, Debug)]
 pub struct ImuCovariance {
     pub cov_accel: Matrix3,
@@ -43,22 +50,27 @@ impl Default for ImuCovariance {
 }
 
 impl ImuCovariance {
+    /// Set $\epsilon_a$ covariance to a diagonal
     pub fn set_scalar_accel(&mut self, val: dtype) {
         self.cov_accel = Matrix3::identity() * val;
     }
 
+    /// Set $\epsilon_\omega$ covariance to a diagonal
     pub fn set_scalar_gyro(&mut self, val: dtype) {
         self.cov_gyro = Matrix3::identity() * val;
     }
 
+    /// Set $\epsilon_{a^b}$ covariance to a diagonal
     pub fn set_scalar_accel_bias(&mut self, val: dtype) {
         self.cov_accel_bias = Matrix3::identity() * val;
     }
 
+    /// Set $\epsilon_{\omega^b}$ covariance to a diagonal
     pub fn set_scalar_gyro_bias(&mut self, val: dtype) {
         self.cov_gyro_bias = Matrix3::identity() * val;
     }
 
+    /// Set $\epsilon_{int}$ covariance to a diagonal
     pub fn set_scalar_integration(&mut self, val: dtype) {
         self.cov_integration = Matrix3::identity() * val;
     }
@@ -66,6 +78,7 @@ impl ImuCovariance {
     // In practice, I think everyone makes cov_winit = cov_ainit
     // For now, the public interface assumes they are the same, but behind the
     // scenes we're using both
+    /// Set $\epsilon_{init}$ covariance to a diagonal
     pub fn set_scalar_init(&mut self, val: dtype) {
         self.cov_winit = Matrix3::identity() * val;
         self.cov_ainit = Matrix3::identity() * val;
@@ -74,6 +87,31 @@ impl ImuCovariance {
 
 // ------------------------- The Preintegrator ------------------------- //
 /// Performs Imu preintegration
+///
+/// This is the main entrypoint for the IMU preintegration functionality. See
+/// [IMU Preintegration module](crate::residuals::imu_preint) for more details
+/// on the theory.
+/// ```
+/// use factrs::residuals::{ImuPreintegrator, Accel, Gravity, Gyro, ImuCovariance};
+/// use factrs::variables::{SE3, VectorVar3, ImuBias};
+/// use factrs::assign_symbols;
+///
+/// assign_symbols!(X: SE3; V: VectorVar3; B: ImuBias);
+///
+/// let mut preint =
+///     ImuPreintegrator::new(ImuCovariance::default(), ImuBias::zeros(), Gravity::up());
+///
+/// let accel = Accel::new(0.1, 0.2, 9.81);
+/// let gyro = Gyro::new(0.1, 0.2, 0.3);
+/// let dt = 0.01;
+/// // Integrate measurements for 100 steps
+/// for _ in 0..100 {
+///    preint.integrate(&gyro, &accel, dt);
+/// }
+///
+/// // Build the factor
+/// let factor = preint.build(X(0), V(0), B(0), X(1), V(1), B(1));
+/// ```
 #[derive(Clone, Debug)]
 pub struct ImuPreintegrator {
     // Mutable state that will change as we integrate
@@ -84,6 +122,9 @@ pub struct ImuPreintegrator {
 }
 
 impl ImuPreintegrator {
+    /// Construct a new ImuPreintegrator
+    ///
+    /// Requires the covariance parameters, initial bias, and gravity vector
     pub fn new(params: ImuCovariance, bias_init: ImuBias, gravity: Gravity) -> Self {
         let delta = ImuDelta::new(gravity, bias_init);
         Self {
@@ -147,8 +188,17 @@ impl ImuPreintegrator {
         B
     }
 
+    /// Integrate a single IMU measurement
+    /// ```
+    /// # use factrs::residuals::imu_preint::*;
+    /// # use factrs::variables::ImuBias;
+    /// # let mut preint = ImuPreintegrator::new(ImuCovariance::default(), ImuBias::zeros(), Gravity::up());
+    /// let gyro = Gyro::new(0.1, 0.2, 0.3);
+    /// let accel = Accel::new(0.1, 0.2, 0.3);
+    /// preint.integrate(&gyro, &accel, 0.01);
+    /// ```
     #[allow(non_snake_case)]
-    pub fn integrate(&mut self, gyro: Gyro, accel: Accel, dt: dtype) {
+    pub fn integrate(&mut self, gyro: &Gyro, accel: &Accel, dt: dtype) {
         // Remove bias estimate
         let gyro = gyro.remove_bias(self.delta.bias_init());
         let accel = accel.remove_bias(self.delta.bias_init());
@@ -166,7 +216,17 @@ impl ImuPreintegrator {
     /// Build a corresponding factor
     ///
     /// This consumes the preintegrator and returns a
-    /// [factor](crate::factor::Factor) with the proper noise model.
+    /// [factor](crate::containers::Factor) with the proper noise model.
+    /// Requires properly typed symbols, likely created via
+    /// [assign_symbols](crate::assign_symbols).
+    /// ```
+    /// # use factrs::residuals::imu_preint::*;
+    /// # use factrs::variables::*;
+    /// # use factrs::assign_symbols;
+    /// # assign_symbols!(X: SE3; V: VectorVar3; B: ImuBias);
+    /// # let preint = ImuPreintegrator::new(ImuCovariance::default(), ImuBias::zeros(), Gravity::up());
+    /// let factor = preint.build(X(0), V(0), B(0), X(1), V(1), B(1));
+    /// ```
     pub fn build<X1, V1, B1, X2, V2, B2>(
         self,
         x1: X1,
@@ -190,6 +250,37 @@ impl ImuPreintegrator {
         let res = ImuPreintegrationResidual { delta: self.delta };
         // Build the factor
         FactorBuilder::new6(res, x1, v1, b1, x2, v2, b2)
+            .noise(noise)
+            .build()
+    }
+
+    /// Build a corresponding factor, with unchecked symbols
+    ///
+    /// Same as [build](ImuPreintegrator::build), but without the symbol type
+    /// checking
+    pub fn build_unchecked<X1, V1, B1, X2, V2, B2>(
+        self,
+        x1: X1,
+        v1: V1,
+        b1: B1,
+        x2: X2,
+        v2: V2,
+        b2: B2,
+    ) -> Factor
+    where
+        X1: Symbol,
+        V1: Symbol,
+        B1: Symbol,
+        X2: Symbol,
+        V2: Symbol,
+        B2: Symbol,
+    {
+        // Create noise from our covariance matrix
+        let noise = GaussianNoise::from_matrix_cov(self.cov.as_view());
+        // Create the residual
+        let res = ImuPreintegrationResidual { delta: self.delta };
+        // Build the factor
+        FactorBuilder::new6_unchecked(res, x1, v1, b1, x2, v2, b2)
             .noise(noise)
             .build()
     }
