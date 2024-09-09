@@ -56,7 +56,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
 
     /// Adds value from the tangent space to the group element
     ///
-    /// By default this uses the "right" version as found in Micro Lie Theory
+    /// By default this uses the "right" version [^@solaMicroLieTheory2021]
     /// $$
     /// x \oplus \xi = x \cdot \exp(\xi)
     /// $$
@@ -64,6 +64,8 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     /// x \oplus \xi = \exp(\xi) \cdot x
     /// $$
+    ///
+    /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
     fn oplus(&self, xi: VectorViewX<D>) -> Self {
         if cfg!(feature = "left") {
             Self::exp(xi).compose(self)
@@ -74,7 +76,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
 
     /// Compares two group elements in the tangent space
     ///
-    /// By default this uses the "right" version as found in Micro Lie Theory
+    /// By default this uses the "right" version [^@solaMicroLieTheory2021]
     /// $$
     /// x \ominus y = \log(y^{-1} \cdot x)
     /// $$
@@ -82,6 +84,8 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     /// x \ominus y = \log(x \cdot y^{-1})
     /// $$
+    ///
+    /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
     fn ominus(&self, y: &Self) -> VectorX<D> {
         if cfg!(feature = "left") {
             self.compose(&y.inverse()).log()
