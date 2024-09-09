@@ -2,8 +2,9 @@
 //!
 //! This module contains the definition of the variables that can be optimized
 //! using the optimization algorithms. We model each variable as a Lie group
-//! $\mathcal{G}$, even if it is trivially so. Because of this, each type $X \in
-//! \mathcal{G}$ must satisfy the following properties,
+//! $\mathcal{G}$ [^@solaMicroLieTheory2021], even if it is trivially so.
+//! Because of this, each type $X \in \mathcal{G}$ must satisfy the following
+//! properties,
 //!
 //! Identity
 //! $$
@@ -30,8 +31,7 @@
 //! X \in \mathcal{G} \implies \log(X) \in \mathfrak{g}
 //! $$
 //! Finally, for optimization purposes, we adopt $\oplus$ and $\ominus$
-//! operators as defined in "Micro Lie Theory" by Joan Solà. By default this
-//! results in,
+//! operators [^@solaMicroLieTheory2021],
 //!
 //! $$
 //! x \oplus \xi = x \cdot \exp(\xi) \\\\
@@ -51,6 +51,8 @@
 //! [Variable] and call the [tag_variable](crate::tag_variable) macro if using
 //! serde. We also recommend using the [test_variable](crate::test_variable)
 //! macro to ensure these properties are satisfied.
+//!
+//! [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
 mod traits;
 pub use traits::{MatrixLieGroup, Variable, VariableSafe, VariableUmbrella};
 
