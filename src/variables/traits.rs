@@ -111,7 +111,7 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// This can be seen as a "tip-to-tail" computation. IE it computes the
     /// transformation between two poses. I like to think of it as "taking away"
     /// the portion subtracted out, for example given a chain of poses $a, b,
-    /// c$,
+    /// c$, the following "removes" the portion from $a$ to $b$.
     ///
     /// $$
     /// {}_a T_c \boxminus {}_a T_b = ({}_a T_b)^{-1} {}_a T_c = {}_b T_c
