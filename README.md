@@ -1,6 +1,8 @@
 # factrs
 
-factrs is a nonlinear least squares optimization library over factor graphs, specifically geared for sensor fusion in robotics. It aims to be fast, easy to use, and safe. The factrs API takes heavy inspiration from the [gtsam library](https://gtsam.org/).
+factrs is a nonlinear least squares optimization library over factor graphs written in Rust.
+
+It is specifically geared toward sensor fusion in robotics. It aims to be fast, easy to use, and safe. The factrs API takes heavy inspiration from the [gtsam library](https://gtsam.org/).
 
 Currently, it supports the following features
 - Gauss-Newton & Levenberg-Marquadt Optimizers
@@ -12,7 +14,7 @@ Currently, it supports the following features
 - Serialization of graphs & variables via optional serde support
 - Easy conversion to rerun types for straightforward visualization
 
-We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) (WIP) for more info.
+We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) for more info.
 
 # Example
 

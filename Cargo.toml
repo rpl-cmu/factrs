@@ -6,14 +6,8 @@ license = "MIT"
 description = "Factor graph optimization for robotics"
 readme = "README.md"
 authors = ["Easton Potokar", "Taylor Pool"]
-repository = "https://github.com/contagon/factrs"
-keywords = [
-    "factor graph",
-    "optimization",
-    "robotics",
-    "state estimation",
-    "SLAM",
-]
+repository = "https://github.com/rpl-cmu/factrs"
+keywords = ["nonlinear", "optimization", "robotics", "estimation", "SLAM"]
 categories = ["science::robotics", "mathematics"]
 
 [package.metadata.docs.rs]
