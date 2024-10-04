@@ -1,5 +1,9 @@
 # factrs
 
+[![crates.io](https://img.shields.io/crates/v/factrs.svg)](https://crates.io/crates/factrs)
+[![ci](https://github.com/rpl-cmu/factrs/actions/workflows/rust.yml/badge.svg)](https://github.com/rpl-cmu/factrs/actions/workflows/rust.yml)
+[![docs.rs](https://docs.rs/factrs/badge.svg)](https://docs.rs/factrs)
+
 factrs is a nonlinear least squares optimization library over factor graphs written in Rust.
 
 It is specifically geared toward sensor fusion in robotics. It aims to be fast, easy to use, and safe. The factrs API takes heavy inspiration from the [gtsam library](https://gtsam.org/).
