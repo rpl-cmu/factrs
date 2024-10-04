@@ -2,9 +2,22 @@
 name = "factrs"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Factor graph optimization for robotics"
+readme = "README.md"
+authors = ["Easton Potokar", "Taylor Pool"]
+repository = "https://github.com/contagon/factrs"
+keywords = [
+    "factor graph",
+    "optimization",
+    "robotics",
+    "state estimation",
+    "SLAM",
+]
+categories = ["science::robotics", "mathematics"]
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", "katex-header.html"]
+rustdoc-args = ["--html-in-header", "assets/katex-header.html"]
 
 [dependencies]
 # base
@@ -36,7 +49,7 @@ rerun = { version = "0.18", optional = true, default-features = false, features 
 ] }
 
 [features]
-# Run everything with f32 instead of the defaul f64
+# Run everything with f32 instead of the default f64
 f32 = []
 
 # Use left instead of right for lie group updates

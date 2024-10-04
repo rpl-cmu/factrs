@@ -1,6 +1,6 @@
-# fact.rs
+# factrs
 
-fact.rs is a nonlinear least squares optimization library over factor graphs, specifically geared for sensor fusion in robotics. It aims to be fast, easy to use, and safe. The fact.rs API takes heavy inspiration from the [gtsam library](https://gtsam.org/).
+factrs is a nonlinear least squares optimization library over factor graphs, specifically geared for sensor fusion in robotics. It aims to be fast, easy to use, and safe. The factrs API takes heavy inspiration from the [gtsam library](https://gtsam.org/).
 
 Currently, it supports the following features
 - Gauss-Newton & Levenberg-Marquadt Optimizers
@@ -9,11 +9,11 @@ Currently, it supports the following features
 - Automatic differentiation via dual numbers
 - First class support for robust kernels
 - Serialization of graphs & variables via optional serde support
-- Easy conversion to rerun types for simple visualization
+- Easy conversion to rerun types for straightforward visualization
 
 We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) (WIP) for more info.
 
-## Example
+# Example
 
 ```rust
 use factrs::{
@@ -58,16 +58,14 @@ let mut opt: GaussNewton = GaussNewton::new(graph);
 let result = opt.optimize(values);
 ```
 
-## TODO
-- [ ] IMU Preintegration
-- [ ] Sparse solvers via the Bayes Tree
-- [ ] iSAM2 implementation
-- [ ] Other optimization routines (GNC, Dogleg)
-- [ ] Python wrapper
-- [ ] Prettify/expand README
+# Installation
+Simply add via cargo as you do any rust dependency,
+```bash
+cargo add factrs
+```
 
-## Contributions
+# Contributions
 
-Contributions are more than welcome! Feel free to open an issue or a pull request with any ideas, bugs, thoughts, etc you might have. 
+Contributions are more than welcome! Feel free to open an issue or a pull request with any ideas, bugs, features, etc you might have or want. 
 
-We feel rust and robotics are a good match and watch to see rust tooling catch-up to it's C++ counterparts.
+We feel rust and robotics are a good match and want to see rust robotics libraries catch-up to their C++ counterparts.
