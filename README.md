@@ -6,6 +6,7 @@ Currently, it supports the following features
 - Gauss-Newton & Levenberg-Marquadt Optimizers
 - Common Lie Groups supported (SO2, SO3, SE2, SE3) with optimization in Lie
   Algebras
+- Pose graph optimization and IMU preintegration
 - Automatic differentiation via dual numbers
 - First class support for robust kernels
 - Serialization of graphs & variables via optional serde support
