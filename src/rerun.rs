@@ -1,4 +1,5 @@
 use rerun::{
+    components::RotationQuat,
     Arrows2D,
     Arrows3D,
     AsComponents,
@@ -158,7 +159,7 @@ impl<'a> From<&'a SO3> for Rotation3D {
             so3.z() as f32,
             so3.w() as f32,
         ];
-        Rotation3D::Quaternion(Quaternion::from_xyzw(xyzw))
+        Rotation3D::Quaternion(RotationQuat(Quaternion::from_xyzw(xyzw)))
     }
 }
 

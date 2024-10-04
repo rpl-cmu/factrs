@@ -67,6 +67,25 @@ impl<D: Numeric> SO3<D> {
     pub fn w(&self) -> D {
         self.xyzw[3]
     }
+
+    pub fn dexp(xi: VectorView3<D>) -> Matrix3<D> {
+        let theta2 = xi.norm_squared();
+
+        let (a, b) = if theta2 < D::from(1e-6) {
+            (D::from(0.5), D::from(1.0) / D::from(6.0))
+        } else {
+            let theta = theta2.sqrt();
+            let a = (D::from(1.0) - theta.cos()) / theta2;
+            let b = (theta - theta.sin()) / (theta * theta2);
+            (a, b)
+        };
+
+        let hat = SO3::hat(xi);
+        // gtsam says minus here for -hat a, but ethan eade says plus
+        // Empirically (via our test & jac in ImuDelta), minus is correct
+        // Need to find reference to confirm
+        Matrix3::identity() - hat * a + hat * hat * b
+    }
 }
 
 impl<D: Numeric> Variable<D> for SO3<D> {
@@ -106,20 +125,22 @@ impl<D: Numeric> Variable<D> for SO3<D> {
 
     fn exp(xi: VectorViewX<D>) -> Self {
         let mut xyzw = Vector4::zeros();
+
         let theta = xi.norm();
 
+        xyzw.w = (theta * D::from(0.5)).cos();
+
         if theta < D::from(1e-3) {
-            xyzw.x = xi[0] * D::from(0.5);
-            xyzw.y = xi[1] * D::from(0.5);
-            xyzw.z = xi[2] * D::from(0.5);
-            xyzw.w = D::from(1.0);
+            let tmp = xyzw.w * D::from(0.5);
+            xyzw.x = xi[0] * tmp;
+            xyzw.y = xi[1] * tmp;
+            xyzw.z = xi[2] * tmp;
         } else {
-            let theta_half = theta / D::from(2.0);
-            let sin_theta = theta_half.sin();
-            xyzw.x = xi[0] * sin_theta / theta;
-            xyzw.y = xi[1] * sin_theta / theta;
-            xyzw.z = xi[2] * sin_theta / theta;
-            xyzw.w = theta_half.cos();
+            let omega = xi / theta;
+            let sin_theta_half = (D::from(1.0) - xyzw.w * xyzw.w).sqrt();
+            xyzw.x = omega[0] * sin_theta_half;
+            xyzw.y = omega[1] * sin_theta_half;
+            xyzw.z = omega[2] * sin_theta_half;
         }
 
         SO3 { xyzw }
@@ -318,10 +339,28 @@ impl<D: Numeric> fmt::Debug for SO3<D> {
 
 #[cfg(test)]
 mod tests {
+    use matrixcompare::assert_matrix_eq;
+
     use super::*;
-    use crate::{test_lie, test_variable};
+    use crate::{linalg::NumericalDiff, test_lie, test_variable, variables::VectorVar3};
 
     test_variable!(SO3);
 
     test_lie!(SO3);
+
+    #[test]
+    fn dexp() {
+        let xi = Vector3::new(0.1, 0.2, 0.3);
+        let got = SO3::dexp(xi.as_view());
+
+        let exp = NumericalDiff::<6>::jacobian_variable_1(
+            |x: VectorVar3| SO3::exp(Vector3::from(x).as_view()),
+            &VectorVar3::from(xi),
+        )
+        .diff;
+
+        println!("got: {}", got);
+        println!("exp: {}", exp);
+        assert_matrix_eq!(got, exp, comp = abs, tol = 1e-6);
+    }
 }

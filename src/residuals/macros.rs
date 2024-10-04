@@ -9,17 +9,17 @@ macro_rules! impl_residual {
     ($num:expr, $name:ident $(< $T:ident : $Trait:ident >)? ) => {
         use paste::paste;
         paste!{
-            impl$(<$T: $Trait + 'static>)? Residual for $name $(< $T >)?
+            impl$(<$T: $Trait + 'static>)? $crate::residuals::Residual for $name $(< $T >)?
             {
                 type DimIn = <Self as [<Residual $num>]>::DimIn;
                 type DimOut = <Self as [<Residual $num>]>::DimOut;
                 type NumVars = $crate::linalg::Const<$num>;
 
-                fn residual(&self, values: &Values, keys: &[$crate::containers::Symbol]) -> VectorX {
+                fn residual(&self, values: &$crate::containers::Values, keys: &[$crate::containers::Key]) -> $crate::linalg::VectorX {
                     self.[<residual $num _values>](values, keys)
                 }
 
-                fn residual_jacobian(&self, values: &Values, keys: &[$crate::containers::Symbol]) -> DiffResult<VectorX, MatrixX>
+                fn residual_jacobian(&self, values: &$crate::containers::Values, keys: &[$crate::containers::Key]) -> $crate::linalg::DiffResult<$crate::linalg::VectorX, $crate::linalg::MatrixX>
                 {
                     self.[<residual $num _jacobian>](values, keys)
                 }

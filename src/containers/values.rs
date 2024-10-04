@@ -2,11 +2,10 @@ use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterato
 
 use ahash::AHashMap;
 
-use super::{Key, Symbol, TypedSymbol};
+use super::{DefaultSymbol, Key, Symbol, TypedSymbol};
 use crate::{
     linear::LinearValues,
-    prelude::{DefaultSymbol, VariableUmbrella},
-    variables::VariableSafe,
+    variables::{VariableSafe, VariableUmbrella},
 };
 
 // Since we won't be passing dual numbers through any of this,
@@ -19,7 +18,11 @@ use crate::{
 /// Values, it must implement [Variable](crate::variables::Variable), and then
 /// will implement [VariableSafe] via a blanket implementation.
 /// ```
-/// # use factrs::prelude::*;
+/// # use factrs::{
+///    assign_symbols,
+///    containers::Values,
+///    variables::SO2,
+/// };
 /// # assign_symbols!(X: SO2);
 /// let x = SO2::from_theta(0.1);
 /// let mut values = Values::new();
@@ -81,7 +84,11 @@ impl Values {
     /// symbol and as such is guaranteed to return the correct type. Returns
     /// None if key isn't found.
     /// ```
-    /// # use factrs::prelude::*;
+    /// # use factrs::{
+    ///    assign_symbols,
+    ///    containers::Values,
+    ///    variables::SO2,
+    /// };
     /// # assign_symbols!(X: SO2);
     /// # let x = SO2::from_theta(0.1);
     /// # let mut values = Values::new();
@@ -150,7 +157,12 @@ impl Values {
     /// the values.
     ///
     /// ```
-    /// # use factrs::prelude::*;
+    /// # use factrs::{
+    ///    assign_symbols,
+    ///    containers::Values,
+    ///    traits::*,
+    ///    variables::SO2,
+    /// };
     /// # assign_symbols!(X: SO2);
     /// # let mut values = Values::new();
     /// # (0..10).for_each(|i| {values.insert(X(0), SO2::identity());} );

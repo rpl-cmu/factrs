@@ -11,7 +11,7 @@
 use crate::dtype;
 
 mod dual;
-pub use dual::{DualAllocator, DualScalar, DualVector, Numeric};
+pub use dual::{DualAllocator, DualConvert, DualScalar, DualVector, Numeric};
 // Dual numbers
 pub use num_dual::Derivative;
 

@@ -23,7 +23,11 @@ use crate::{
 /// inputs and with vector-valued outputs.
 ///
 /// ```
-/// use factrs::{linalg::*, prelude::*};
+/// use factrs::{
+///     linalg::{vectorx, Const, DiffResult, ForwardProp, Numeric, VectorX},
+///     traits::*,
+///     variables::SO2,
+/// };
 ///
 /// fn f<D: Numeric>(x: SO2<D>, y: SO2<D>) -> VectorX<D> {
 ///     x.ominus(&y)

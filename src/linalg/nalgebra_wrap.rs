@@ -5,6 +5,7 @@ pub use nalgebra::{
     allocator::Allocator,
     dmatrix as matrixx,
     dvector as vectorx,
+    ComplexField,
     Const,
     DefaultAllocator,
     Dim,
@@ -113,7 +114,7 @@ pub type VectorView5<'a, D = dtype> = na::VectorView<'a, D, Const<5>>;
 pub type VectorView6<'a, D = dtype> = na::VectorView<'a, D, Const<6>>;
 
 // Generic, taking in sizes with Const
-pub type VectorDim<N> = OVector<dtype, N>;
+pub type VectorDim<N, D = dtype> = OVector<D, N>;
 pub type MatrixDim<R, C = Const<1>, D = dtype> =
     na::Matrix<D, R, C, <na::DefaultAllocator as Allocator<D, R, C>>::Buffer>;
 pub type MatrixViewDim<'a, R, C = Const<1>, D = dtype> = na::MatrixView<'a, D, R, C>;

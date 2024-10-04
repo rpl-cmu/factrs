@@ -1,8 +1,7 @@
 use factrs::{
-    containers::{Graph, Values, X},
+    containers::{FactorBuilder, Graph, Values, X},
     factors::Factor,
     noise::GaussianNoise,
-    prelude::FactorBuilder,
     residuals::{BetweenResidual, PriorResidual},
     robust::{GemanMcClure, L2},
     variables::{SE2, SO2},

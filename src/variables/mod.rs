@@ -79,4 +79,7 @@ pub use vector::{
     VectorVar6,
 };
 
+mod imu_bias;
+pub use imu_bias::ImuBias;
+
 mod macros;

@@ -68,10 +68,18 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
     fn oplus(&self, xi: VectorViewX<D>) -> Self {
         if cfg!(feature = "left") {
-            Self::exp(xi).compose(self)
+            self.oplus_left(xi)
         } else {
-            self.compose(&Self::exp(xi))
+            self.oplus_right(xi)
         }
+    }
+
+    fn oplus_right(&self, xi: VectorViewX<D>) -> Self {
+        self.compose(&Self::exp(xi))
+    }
+
+    fn oplus_left(&self, xi: VectorViewX<D>) -> Self {
+        Self::exp(xi).compose(self)
     }
 
     /// Compares two group elements in the tangent space
@@ -88,17 +96,26 @@ pub trait Variable<D: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
     fn ominus(&self, y: &Self) -> VectorX<D> {
         if cfg!(feature = "left") {
-            self.compose(&y.inverse()).log()
+            self.ominus_left(y)
         } else {
-            y.inverse().compose(self).log()
+            self.ominus_right(y)
         }
     }
+
+    fn ominus_right(&self, y: &Self) -> VectorX<D> {
+        y.inverse().compose(self).log()
+    }
+
+    fn ominus_left(&self, y: &Self) -> VectorX<D> {
+        self.compose(&y.inverse()).log()
+    }
+
     /// Subtract out portion from other variable.
     ///
     /// This can be seen as a "tip-to-tail" computation. IE it computes the
     /// transformation between two poses. I like to think of it as "taking away"
     /// the portion subtracted out, for example given a chain of poses $a, b,
-    /// c$,
+    /// c$, the following "removes" the portion from $a$ to $b$.
     ///
     /// $$
     /// {}_a T_c \boxminus {}_a T_b = ({}_a T_b)^{-1} {}_a T_c = {}_b T_c

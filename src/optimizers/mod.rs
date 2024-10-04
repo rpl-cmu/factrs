@@ -61,11 +61,10 @@ pub mod test {
 
     use super::*;
     use crate::{
-        containers::{Graph, Values},
+        containers::{FactorBuilder, Graph, Values},
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
-        prelude::FactorBuilder,
         residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
         symbols::X,
         variables::VariableUmbrella,
