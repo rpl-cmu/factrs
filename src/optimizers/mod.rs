@@ -36,13 +36,7 @@
 //! simple tests over a few different variable types to ensure correctness.
 mod traits;
 pub use traits::{
-    GraphOptimizer,
-    OptError,
-    OptObserver,
-    OptObserverVec,
-    OptParams,
-    OptResult,
-    Optimizer,
+    GraphOptimizer, OptError, OptObserver, OptObserverVec, OptParams, OptResult, Optimizer,
 };
 
 mod macros;
@@ -61,14 +55,13 @@ pub mod test {
 
     use super::*;
     use crate::{
-        containers::{Graph, Values},
+        containers::{FactorBuilder, Graph, Values},
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
-        prelude::FactorBuilder,
         residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
         symbols::X,
-        variables::VariableUmbrella,
+        variables::{Variable, VariableUmbrella},
     };
 
     pub fn optimize_prior<O, T, const DIM: usize>()
@@ -94,7 +87,7 @@ pub mod test {
 
         let out: &T = values.get_unchecked(X(0)).unwrap();
         assert_matrix_eq!(
-            out.ominus(&p),
+            Variable::ominus(out, &p),
             VectorX::zeros(T::DIM),
             comp = abs,
             tol = 1e-6
@@ -105,10 +98,8 @@ pub mod test {
     where
         T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>>,
         UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>:
-            ResidualSafe + Residual<DimIn = Const<DIM>, DimOut = Const<DIM>, NumVars = Const<1>>,
-        BetweenResidual<T>: ResidualSafe
-            + Residual<DimIn = Const<DIM_DOUBLE>, DimOut = Const<DIM>, NumVars = Const<2>>,
+        PriorResidual<T>: ResidualSafe + Residual,
+        BetweenResidual<T>: ResidualSafe + Residual,
         O: Optimizer<Input = Values> + GraphOptimizer,
         Const<DIM>: ToTypenum,
         AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,
@@ -141,7 +132,7 @@ pub mod test {
 
         let out1: &T = values.get_unchecked(X(0)).unwrap();
         assert_matrix_eq!(
-            out1.ominus(&p1),
+            Variable::ominus(out1, &p1),
             VectorX::zeros(T::DIM),
             comp = abs,
             tol = 1e-6
@@ -149,7 +140,7 @@ pub mod test {
 
         let out2: &T = values.get_unchecked(X(1)).unwrap();
         assert_matrix_eq!(
-            out2.ominus(&p2),
+            Variable::ominus(out2, &p2),
             VectorX::zeros(T::DIM),
             comp = abs,
             tol = 1e-6

@@ -1,7 +1,7 @@
 use crate::{
     containers::Key,
     dtype,
-    linalg::{MatrixBlock, VectorX},
+    linalg::{MatrixBlock, MatrixViewX, VectorX},
     linear::LinearValues,
 };
 
@@ -10,6 +10,8 @@ use crate::{
 /// This is the linear equivalent of [Factor](crate::containers::Factor). It
 /// consists of the relevant keys, a [MatrixBlock] A, and a [VectorX] b. Again,
 /// this *shouldn't* ever need to be used by hand.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LinearFactor {
     pub keys: Vec<Key>,
     pub a: MatrixBlock,
@@ -28,11 +30,19 @@ impl LinearFactor {
         Self { keys, a, b }
     }
 
+    pub fn dim_in(&self) -> usize {
+        self.a.mat().ncols()
+    }
+
     pub fn dim_out(&self) -> usize {
         self.b.len()
     }
 
-    pub fn error(&self, vector: &LinearValues) -> dtype {
+    pub fn jacobian(&self) -> MatrixViewX {
+        self.a.mat()
+    }
+
+    pub fn residual(&self, vector: &LinearValues) -> VectorX {
         let ax: VectorX = self
             .keys
             .iter()
@@ -42,10 +52,14 @@ impl LinearFactor {
                     idx,
                     vector
                         .get(*key)
-                        .expect("Missing key in LinearValues::error"),
+                        .expect("Missing key in LinearValues::residual"),
                 )
             })
             .sum();
-        (ax - &self.b).norm_squared() / 2.0
+        ax - &self.b
+    }
+
+    pub fn error(&self, vector: &LinearValues) -> dtype {
+        self.residual(vector).norm_squared() / 2.0
     }
 }

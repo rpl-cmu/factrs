@@ -22,4 +22,7 @@ pub use prior::PriorResidual;
 mod between;
 pub use between::BetweenResidual;
 
+mod linear;
+pub use linear::LinearResidual;
+
 mod macros;

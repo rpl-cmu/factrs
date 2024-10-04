@@ -26,6 +26,7 @@ pub use nalgebra_wrap::*;
 /// when linearizing a factor graph, where the Jacobian is a block
 /// matrix with each block corresponding to a different variable.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MatrixBlock {
     mat: MatrixX,
     idx: Vec<usize>,

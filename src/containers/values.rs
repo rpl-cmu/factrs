@@ -1,12 +1,11 @@
-use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator};
+use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator, ops::Deref};
 
 use ahash::AHashMap;
 
-use super::{Key, Symbol, TypedSymbol};
+use super::{DefaultSymbol, Key, Symbol, TypedSymbol};
 use crate::{
     linear::LinearValues,
-    prelude::{DefaultSymbol, VariableUmbrella},
-    variables::VariableSafe,
+    variables::{VariableSafe, VariableUmbrella},
 };
 
 // Since we won't be passing dual numbers through any of this,
@@ -142,6 +141,24 @@ impl Values {
             .map(|value| *value)
     }
 
+    pub fn remove_unchecked<S, V>(&mut self, symbol: S) -> Option<V>
+    where
+        S: Symbol,
+        V: VariableUmbrella,
+    {
+        self.values
+            .remove(&symbol.into())
+            .and_then(|value| value.downcast::<V>().ok())
+            .map(|value| *value)
+    }
+
+    pub fn remove_raw<S>(&mut self, symbol: S) -> Option<Box<dyn VariableSafe>>
+    where
+        S: Symbol,
+    {
+        self.values.remove(&symbol.into())
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (&Key, &Box<dyn VariableSafe>)> {
         self.values.iter()
     }
@@ -175,6 +192,24 @@ impl Values {
                 v.oplus_mut(value);
             }
         }
+    }
+
+    /// Compute difference between two [Values] objects.
+    ///
+    /// This is essentially a wrapper around the [VariableSafe::ominus] method.
+    /// Be careful with this method, as it will panic if the keys in the two
+    /// [Values] objects don't match.
+    pub fn ominus(&self, other: &Self) -> LinearValues {
+        // TODO: More error checking here
+        let mut delta = LinearValues::zero_from_values(self);
+        for (key, y) in other.iter() {
+            if let Some(x) = self.values.get(key) {
+                let diff = x.ominus(y.deref());
+                delta.set(*key, diff.as_view());
+            }
+        }
+
+        delta
     }
 }
 

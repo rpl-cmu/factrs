@@ -50,6 +50,20 @@ pub struct Factor {
 }
 
 impl Factor {
+    pub(crate) fn new_unchecked(
+        keys: Vec<Key>,
+        residual: Box<dyn ResidualSafe>,
+        noise: Box<dyn NoiseModelSafe>,
+        robust: Box<dyn RobustCostSafe>,
+    ) -> Self {
+        Self {
+            keys,
+            residual,
+            noise,
+            robust,
+        }
+    }
+
     /// Compute the error of the factor given a set of values.
     pub fn error(&self, values: &Values) -> dtype {
         let r = self.residual.residual(values, &self.keys);

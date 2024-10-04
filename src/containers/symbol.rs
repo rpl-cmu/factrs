@@ -4,7 +4,7 @@ use std::{
     mem::size_of,
 };
 
-use crate::prelude::VariableUmbrella;
+use crate::variables::VariableUmbrella;
 
 // Char is stored in last CHR_BITS
 // Value is stored in the first IDX_BITS
@@ -28,8 +28,9 @@ pub struct Key(pub u64);
 impl Symbol for Key {}
 
 /// This provides a custom conversion two and from a u64 key.
-pub trait Symbol: fmt::Debug + Into<Key> {}
+pub trait Symbol: fmt::Debug + Into<Key> + Copy {}
 
+#[derive(Clone, Copy)]
 pub struct DefaultSymbol {
     chr: char,
     idx: u64,

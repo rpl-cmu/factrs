@@ -1,7 +1,18 @@
-use faer::sparse::SymbolicSparseColMat;
+use faer::{
+    solvers::{Cholesky, SolverCore},
+    sparse::SymbolicSparseColMat,
+};
+use faer_ext::IntoNalgebra;
 
-use super::{Idx, Values, ValuesOrder};
-use crate::{containers::Factor, dtype, linear::LinearGraph};
+use super::{Idx, Symbol, TypedSymbol, Values, ValuesOrder};
+use crate::{
+    containers::Factor,
+    dtype,
+    linalg::{DiffResult, MatrixBlock},
+    linear::{LinearFactor, LinearGraph},
+    residuals::LinearResidual,
+    variables::VariableUmbrella,
+};
 
 /// Structure to represent a nonlinear factor graph
 ///
@@ -87,6 +98,66 @@ impl Graph {
             sparsity_pattern,
             sparsity_order,
         }
+    }
+
+    #[allow(non_snake_case)]
+    pub fn marginalize<K, V>(self, sym: impl Symbol, values: Values) -> (Self, Values) {
+        // TODO: order should only use subset of keys from to_marg
+        let order = ValuesOrder::from_values_skip(sym, &values);
+        let key = sym.into();
+        let factors = self.factors;
+
+        // Find all factors that contain the key
+        let (to_marg, factors): (Vec<_>, Vec<_>) =
+            factors.into_iter().partition(|f| f.keys().contains(&key));
+
+        // Create a new graph with just the key in it
+        let linear_graph = Graph { factors: to_marg }.linearize(&values);
+        let DiffResult {
+            diff: jac,
+            value: r,
+        } = linear_graph.residual_jacobian_dense(&order);
+
+        // TODO: Double check I can do this with just a subset of the values
+        // Find schur complement pieces
+        let key_dim = order.get(key).unwrap().dim;
+        let dim = order.dim();
+        let jtj = jac.as_ref().transpose() * jac.as_ref();
+        let jtr = jac.as_ref().transpose() * r.as_ref();
+        let A = jtj.submatrix(0, 0, dim - key_dim, dim - key_dim);
+        let B = jtj.submatrix(0, dim - key_dim, dim - key_dim, key_dim);
+        let C = jtj.submatrix(dim - key_dim, 0, key_dim, dim - key_dim);
+        let Cinv = Cholesky::try_new(C, faer::Side::Upper).unwrap().inverse();
+        let w = jtr.submatrix(0, 0, dim - key_dim, 1);
+        let z = jtr.submatrix(dim - key_dim, 0, key_dim, 1);
+
+        // Compute the new values
+        let jtj = A - B * &Cinv * B.transpose();
+        let jtr = w - B * Cinv * z;
+        let j = Cholesky::try_new(jtj.as_ref(), faer::Side::Upper)
+            .unwrap()
+            .compute_l();
+        let jtinv = Cholesky::try_new(j.as_ref().transpose(), faer::Side::Lower)
+            .unwrap()
+            .inverse();
+        let r = jtinv * jtr;
+
+        // Create the factor
+        let a = j.as_ref().into_nalgebra().clone_owned();
+        let a = MatrixBlock::new(a, todo!());
+        let b = r.as_ref().into_nalgebra().column(0).clone_owned();
+        let prior = LinearFactor {
+            keys: todo!(),
+            a,
+            b,
+        };
+        let prior = LinearResidual::new(prior, todo!()).into_factor();
+        factors.push(prior);
+
+        // Finally, remove the key from the values
+        values.remove_raw(sym);
+
+        (Graph { factors }, values)
     }
 }
 

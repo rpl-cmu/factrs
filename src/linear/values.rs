@@ -74,6 +74,16 @@ impl LinearValues {
         self.get_idx(idx).into()
     }
 
+    /// Set a vector in the LinearValues
+    pub fn set(&mut self, key: impl Symbol, value: VectorViewX) {
+        let idx = self.order.get(key).expect("Key not found in LinearValues");
+        assert!(
+            idx.dim == value.len(),
+            "Dimension mismatch when setting LinearValues"
+        );
+        self.values.rows_mut(idx.idx, idx.dim).copy_from(&value);
+    }
+
     pub fn iter(&self) -> Iter<'_> {
         Iter {
             values: self,

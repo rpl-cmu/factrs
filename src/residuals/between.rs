@@ -95,10 +95,12 @@ where
     P: VariableUmbrella + 'static,
     P::Dim: DimNameAdd<P::Dim>,
 {
-    type DimOut = <Self as Residual2>::DimOut;
-    type DimIn = <Self as Residual2>::DimIn;
-    type NumVars = Const<2>;
-
+    fn dim_in(&self) -> usize {
+        P::DIM + P::DIM
+    }
+    fn dim_out(&self) -> usize {
+        P::DIM
+    }
     fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
         self.residual2_values(values, keys)
     }

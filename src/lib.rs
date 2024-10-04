@@ -108,17 +108,17 @@ pub mod symbols {
 /// ```
 /// use factrs::prelude::*;
 /// ```
-pub mod prelude {
-    pub use crate::{
-        assign_symbols,
-        containers::*,
-        noise::*,
-        optimizers::*,
-        residuals::*,
-        robust::*,
-        variables::*,
-    };
-}
+// pub mod prelude {
+//     pub use crate::{
+//         assign_symbols,
+//         containers::*,
+//         noise::*,
+//         optimizers::*,
+//         residuals::*,
+//         robust::*,
+//         variables::*,
+//     };
+// }
 
 #[cfg(feature = "rerun")]
 pub mod rerun;

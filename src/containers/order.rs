@@ -30,6 +30,7 @@ impl ValuesOrder {
         let dim = map.values().map(|idx| idx.dim).sum();
         Self { map, dim }
     }
+
     pub fn from_values(values: &Values) -> Self {
         let map = values
             .iter()
@@ -45,6 +46,41 @@ impl ValuesOrder {
                 ))
             })
             .collect::<HashMap<Key, Idx>>();
+
+        let dim = map.values().map(|idx| idx.dim).sum();
+
+        Self { map, dim }
+    }
+
+    pub fn from_values_skip(k: impl Symbol, values: &Values) -> Self {
+        let dim_key = values.get_raw(k).unwrap().dim();
+        let k = k.into();
+
+        // Assign an idx to each variable
+        let mut map = values
+            .iter()
+            .filter(|(key, _)| *key != &k)
+            .scan(dim_key, |idx, (key, val)| {
+                let order = *idx;
+                *idx += val.dim();
+                Some((
+                    *key,
+                    Idx {
+                        idx: order,
+                        dim: val.dim(),
+                    },
+                ))
+            })
+            .collect::<HashMap<Key, Idx>>();
+
+        // Insert the key at the beginning
+        map.insert(
+            k,
+            Idx {
+                idx: 0,
+                dim: dim_key,
+            },
+        );
 
         let dim = map.values().map(|idx| idx.dim).sum();
 

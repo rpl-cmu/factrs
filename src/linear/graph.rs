@@ -45,11 +45,11 @@ impl LinearGraph {
 
         let _ = self.factors.iter().fold(0, |row, f| {
             f.keys.iter().for_each(|key| {
+                let Idx {
+                    idx: col,
+                    dim: col_dim,
+                } = order.get(*key).unwrap();
                 (0..f.dim_out()).for_each(|i| {
-                    let Idx {
-                        idx: col,
-                        dim: col_dim,
-                    } = order.get(*key).unwrap();
                     (0..*col_dim).for_each(|j| {
                         indices.push((row + i, col + j));
                     });
@@ -66,6 +66,42 @@ impl LinearGraph {
             order,
             sparsity_pattern,
             sparsity_order,
+        }
+    }
+
+    pub fn residual_jacobian_dense(
+        &self,
+        order: &ValuesOrder,
+    ) -> DiffResult<faer::Mat<dtype>, faer::Mat<dtype>> {
+        // Create the residual vector
+        let total_rows = self.factors.iter().map(|f| f.dim_out()).sum();
+        let mut r = faer::Mat::zeros(total_rows, 1);
+        let _ = self.factors.iter().fold(0, |row, f| {
+            r.subrows_mut(row, f.dim_out())
+                .copy_from(&f.b.view_range(.., ..).into_faer());
+            row + f.dim_out()
+        });
+
+        // Create the jacobian matrix
+        let total_columns: usize = self.factors.iter().map(|f| f.dim_in()).sum();
+        let mut jac = faer::Mat::zeros(total_rows, total_columns);
+        let _ = self.factors.iter().fold(0, |row, f| {
+            // Iterate over keys
+            f.keys.iter().enumerate().for_each(|(key_idx, key)| {
+                let Idx {
+                    idx: col,
+                    dim: col_dim,
+                } = order.get(*key).unwrap();
+                // Iterate over rows, then column elements
+                jac.submatrix_mut(row, *col, f.dim_out(), *col_dim)
+                    .copy_from(&f.a.get_block(key_idx).into_faer());
+            });
+            row + f.dim_out()
+        });
+
+        DiffResult {
+            value: r,
+            diff: jac,
         }
     }
 
@@ -126,8 +162,7 @@ mod test {
         symbols::X,
     };
 
-    #[test]
-    fn residual_jacobian() {
+    fn make_graph() -> (LinearGraph, ValuesOrder) {
         // Make a linear graph
         let mut graph = LinearGraph::new();
 
@@ -157,6 +192,13 @@ mod test {
         map.insert(X(2).into(), Idx { idx: 4, dim: 3 });
         let order = ValuesOrder::new(map);
 
+        (graph, order)
+    }
+
+    #[test]
+    fn residual_jacobian_sparse() {
+        let (graph, order) = make_graph();
+
         // Compute the residual and jacobian
         let graph_order = graph.sparsity_pattern(order);
         let DiffResult { value, diff } = graph.residual_jacobian(&graph_order);
@@ -167,12 +209,58 @@ mod test {
         println!("Diff: {}", diff);
 
         // Check the residual
-        assert_matrix_eq!(b1, value.rows(0, 2), comp = float);
-        assert_matrix_eq!(b2, value.rows(2, 3), comp = float);
+        assert_matrix_eq!(graph.factors[0].b, value.rows(0, 2), comp = float);
+        assert_matrix_eq!(graph.factors[1].b, value.rows(2, 3), comp = float);
 
         // Check the jacobian
-        assert_matrix_eq!(block1.get_block(0), diff.view((0, 2), (2, 2)), comp = float);
-        assert_matrix_eq!(block2.get_block(0), diff.view((2, 0), (3, 2)), comp = float);
-        assert_matrix_eq!(block2.get_block(1), diff.view((2, 4), (3, 3)), comp = float);
+        assert_matrix_eq!(
+            graph.factors[0].a.get_block(0),
+            diff.view((0, 2), (2, 2)),
+            comp = float
+        );
+        assert_matrix_eq!(
+            graph.factors[1].a.get_block(0),
+            diff.view((2, 0), (3, 2)),
+            comp = float
+        );
+        assert_matrix_eq!(
+            graph.factors[1].a.get_block(1),
+            diff.view((2, 4), (3, 3)),
+            comp = float
+        );
+    }
+
+    #[test]
+    fn residual_jacobian_dense() {
+        let (graph, order) = make_graph();
+
+        // Compute the residual and jacobian
+        let DiffResult { value, diff } = graph.residual_jacobian_dense(&order);
+        let value = value.as_ref().into_nalgebra().clone_owned();
+        let diff = diff.as_ref().into_nalgebra().clone_owned();
+
+        println!("Value: {}", value);
+        println!("Diff: {}", diff);
+
+        // Check the residual
+        assert_matrix_eq!(graph.factors[0].b, value.rows(0, 2), comp = float);
+        assert_matrix_eq!(graph.factors[1].b, value.rows(2, 3), comp = float);
+
+        // Check the jacobian
+        assert_matrix_eq!(
+            graph.factors[0].a.get_block(0),
+            diff.view((0, 2), (2, 2)),
+            comp = float
+        );
+        assert_matrix_eq!(
+            graph.factors[1].a.get_block(0),
+            diff.view((2, 0), (3, 2)),
+            comp = float
+        );
+        assert_matrix_eq!(
+            graph.factors[1].a.get_block(1),
+            diff.view((2, 4), (3, 3)),
+            comp = float
+        );
     }
 }

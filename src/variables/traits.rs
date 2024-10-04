@@ -159,6 +159,8 @@ pub trait VariableSafe: Debug + Display + Downcast {
     fn dim(&self) -> usize;
 
     fn oplus_mut(&mut self, delta: VectorViewX);
+
+    fn ominus(&self, y: &dyn VariableSafe) -> VectorX;
 }
 
 impl<
@@ -176,6 +178,11 @@ impl<
 
     fn oplus_mut(&mut self, delta: VectorViewX) {
         *self = self.oplus(delta);
+    }
+
+    fn ominus(&self, y: &dyn VariableSafe) -> VectorX {
+        let y = y.downcast_ref::<T>().unwrap();
+        self.ominus(y)
     }
 
     #[doc(hidden)]
