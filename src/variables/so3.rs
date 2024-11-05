@@ -4,23 +4,9 @@ use super::VectorVar4;
 use crate::{
     dtype,
     linalg::{
-        vectorx,
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        Derivative,
-        DimName,
-        DualAllocator,
-        DualVector,
-        Matrix3,
-        MatrixView,
-        Numeric,
-        Vector3,
-        Vector4,
-        VectorDim,
-        VectorView3,
-        VectorViewX,
-        VectorX,
+        vectorx, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
+        DualVector, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorDim, VectorView3,
+        VectorViewX, VectorX,
     },
     tag_variable,
     variables::{MatrixLieGroup, Variable},
@@ -35,47 +21,47 @@ tag_variable!(SO3);
 /// log/exp maps.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SO3<D: Numeric = dtype> {
-    pub xyzw: Vector4<D>,
+pub struct SO3<T: Numeric = dtype> {
+    pub xyzw: Vector4<T>,
 }
 
-impl<D: Numeric> SO3<D> {
+impl<T: Numeric> SO3<T> {
     /// Create a new SO3 from a Vector4
-    pub fn from_vec(xyzw: Vector4<D>) -> Self {
+    pub fn from_vec(xyzw: Vector4<T>) -> Self {
         SO3 { xyzw }
     }
 
     /// Create a new SO3 from x, y, z, w
-    pub fn from_xyzw(x: D, y: D, z: D, w: D) -> Self {
+    pub fn from_xyzw(x: T, y: T, z: T, w: T) -> Self {
         SO3 {
-            xyzw: Vector4::<D>::new(x, y, z, w),
+            xyzw: Vector4::<T>::new(x, y, z, w),
         }
     }
 
-    pub fn x(&self) -> D {
+    pub fn x(&self) -> T {
         self.xyzw[0]
     }
 
-    pub fn y(&self) -> D {
+    pub fn y(&self) -> T {
         self.xyzw[1]
     }
 
-    pub fn z(&self) -> D {
+    pub fn z(&self) -> T {
         self.xyzw[2]
     }
 
-    pub fn w(&self) -> D {
+    pub fn w(&self) -> T {
         self.xyzw[3]
     }
 
-    pub fn dexp(xi: VectorView3<D>) -> Matrix3<D> {
+    pub fn dexp(xi: VectorView3<T>) -> Matrix3<T> {
         let theta2 = xi.norm_squared();
 
-        let (a, b) = if theta2 < D::from(1e-6) {
-            (D::from(0.5), D::from(1.0) / D::from(6.0))
+        let (a, b) = if theta2 < T::from(1e-6) {
+            (T::from(0.5), T::from(1.0) / T::from(6.0))
         } else {
             let theta = theta2.sqrt();
-            let a = (D::from(1.0) - theta.cos()) / theta2;
+            let a = (T::from(1.0) - theta.cos()) / theta2;
             let b = (theta - theta.sin()) / (theta * theta2);
             (a, b)
         };
@@ -88,9 +74,9 @@ impl<D: Numeric> SO3<D> {
     }
 }
 
-impl<D: Numeric> Variable<D> for SO3<D> {
+impl<T: Numeric> Variable<T> for SO3<T> {
     type Dim = Const<3>;
-    type Alias<DD: Numeric> = SO3<DD>;
+    type Alias<TT: Numeric> = SO3<TT>;
 
     fn identity() -> Self {
         SO3 { xyzw: Vector4::w() }
@@ -123,21 +109,21 @@ impl<D: Numeric> Variable<D> for SO3<D> {
         SO3 { xyzw }
     }
 
-    fn exp(xi: VectorViewX<D>) -> Self {
+    fn exp(xi: VectorViewX<T>) -> Self {
         let mut xyzw = Vector4::zeros();
 
         let theta = xi.norm();
 
-        xyzw.w = (theta * D::from(0.5)).cos();
+        xyzw.w = (theta * T::from(0.5)).cos();
 
-        if theta < D::from(1e-3) {
-            let tmp = xyzw.w * D::from(0.5);
+        if theta < T::from(1e-3) {
+            let tmp = xyzw.w * T::from(0.5);
             xyzw.x = xi[0] * tmp;
             xyzw.y = xi[1] * tmp;
             xyzw.z = xi[2] * tmp;
         } else {
             let omega = xi / theta;
-            let sin_theta_half = (D::from(1.0) - xyzw.w * xyzw.w).sqrt();
+            let sin_theta_half = (T::from(1.0) - xyzw.w * xyzw.w).sqrt();
             xyzw.x = omega[0] * sin_theta_half;
             xyzw.y = omega[1] * sin_theta_half;
             xyzw.z = omega[2] * sin_theta_half;
@@ -146,20 +132,20 @@ impl<D: Numeric> Variable<D> for SO3<D> {
         SO3 { xyzw }
     }
 
-    fn log(&self) -> VectorX<D> {
+    fn log(&self) -> VectorX<T> {
         let xi = vectorx![self.xyzw.x, self.xyzw.y, self.xyzw.z];
         // Abs value in case we had a negative quaternion
         let w = self.xyzw.w.abs();
 
         let norm_v = xi.norm();
-        if norm_v < D::from(1e-3) {
-            xi * D::from(2.0)
+        if norm_v < T::from(1e-3) {
+            xi * T::from(2.0)
         } else {
-            xi * norm_v.atan2(w) * D::from(2.0) / norm_v
+            xi * norm_v.atan2(w) * T::from(2.0) / norm_v
         }
     }
 
-    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
+    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
         SO3 {
             xyzw: VectorVar4::<dtype>::dual_convert(&other.xyzw.into()).into(),
         }
@@ -192,12 +178,12 @@ impl<D: Numeric> Variable<D> for SO3<D> {
     }
 }
 
-impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
+impl<T: Numeric> MatrixLieGroup<T> for SO3<T> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<3>;
 
-    fn adjoint(&self) -> Matrix3<D> {
+    fn adjoint(&self) -> Matrix3<T> {
         let q0 = self.xyzw.w;
         let q1 = self.xyzw.x;
         let q2 = self.xyzw.y;
@@ -206,20 +192,20 @@ impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
         // Same as to_matrix function of SO3 -> Just avoiding copying from Matrix3 to
         // MatrixD
         let mut mat = Matrix3::zeros();
-        mat[(0, 0)] = D::from(1.0) - (q2 * q2 + q3 * q3) * 2.0;
+        mat[(0, 0)] = T::from(1.0) - (q2 * q2 + q3 * q3) * 2.0;
         mat[(0, 1)] = (q1 * q2 - q0 * q3) * 2.0;
         mat[(0, 2)] = (q1 * q3 + q0 * q2) * 2.0;
         mat[(1, 0)] = (q1 * q2 + q0 * q3) * 2.0;
-        mat[(1, 1)] = D::from(1.0) - (q1 * q1 + q3 * q3) * 2.0;
+        mat[(1, 1)] = T::from(1.0) - (q1 * q1 + q3 * q3) * 2.0;
         mat[(1, 2)] = (q2 * q3 - q0 * q1) * 2.0;
         mat[(2, 0)] = (q1 * q3 - q0 * q2) * 2.0;
         mat[(2, 1)] = (q2 * q3 + q0 * q1) * 2.0;
-        mat[(2, 2)] = D::from(1.0) - (q1 * q1 + q2 * q2) * 2.0;
+        mat[(2, 2)] = T::from(1.0) - (q1 * q1 + q2 * q2) * 2.0;
 
         mat
     }
 
-    fn hat(xi: VectorView3<D>) -> Matrix3<D> {
+    fn hat(xi: VectorView3<T>) -> Matrix3<T> {
         let mut xi_hat = Matrix3::zeros();
         xi_hat[(0, 1)] = -xi[2];
         xi_hat[(0, 2)] = xi[1];
@@ -231,24 +217,24 @@ impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
         xi_hat
     }
 
-    fn vee(xi: MatrixView<3, 3, D>) -> Vector3<D> {
+    fn vee(xi: MatrixView<3, 3, T>) -> Vector3<T> {
         Vector3::new(xi[(2, 1)], xi[(0, 2)], xi[(1, 0)])
     }
 
-    fn hat_swap(xi: VectorView3<D>) -> Matrix3<D> {
+    fn hat_swap(xi: VectorView3<T>) -> Matrix3<T> {
         -Self::hat(xi)
     }
 
-    fn from_matrix(mat: MatrixView<3, 3, D>) -> Self {
+    fn from_matrix(mat: MatrixView<3, 3, T>) -> Self {
         let trace = mat[(0, 0)] + mat[(1, 1)] + mat[(2, 2)];
         let mut xyzw = Vector4::zeros();
-        let zero = D::from(0.0);
-        let quarter = D::from(0.25);
-        let one = D::from(1.0);
-        let two = D::from(2.0);
+        let zero = T::from(0.0);
+        let quarter = T::from(0.25);
+        let one = T::from(1.0);
+        let two = T::from(2.0);
 
         if trace > zero {
-            let s = D::from(0.5) / (trace + 1.0).sqrt();
+            let s = T::from(0.5) / (trace + 1.0).sqrt();
             xyzw[3] = quarter / s;
             xyzw[0] = (mat[(2, 1)] - mat[(1, 2)]) * s;
             xyzw[1] = (mat[(0, 2)] - mat[(2, 0)]) * s;
@@ -276,27 +262,27 @@ impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
         SO3 { xyzw }
     }
 
-    fn to_matrix(&self) -> Matrix3<D> {
+    fn to_matrix(&self) -> Matrix3<T> {
         let q0 = self.xyzw[3];
         let q1 = self.xyzw[0];
         let q2 = self.xyzw[1];
         let q3 = self.xyzw[2];
 
         let mut mat = Matrix3::zeros();
-        mat[(0, 0)] = D::from(1.0) - (q2 * q2 + q3 * q3) * 2.0;
+        mat[(0, 0)] = T::from(1.0) - (q2 * q2 + q3 * q3) * 2.0;
         mat[(0, 1)] = (q1 * q2 - q0 * q3) * 2.0;
         mat[(0, 2)] = (q1 * q3 + q0 * q2) * 2.0;
         mat[(1, 0)] = (q1 * q2 + q0 * q3) * 2.0;
-        mat[(1, 1)] = D::from(1.0) - (q1 * q1 + q3 * q3) * 2.0;
+        mat[(1, 1)] = T::from(1.0) - (q1 * q1 + q3 * q3) * 2.0;
         mat[(1, 2)] = (q2 * q3 - q0 * q1) * 2.0;
         mat[(2, 0)] = (q1 * q3 - q0 * q2) * 2.0;
         mat[(2, 1)] = (q2 * q3 + q0 * q1) * 2.0;
-        mat[(2, 2)] = D::from(1.0) - (q1 * q1 + q2 * q2) * 2.0;
+        mat[(2, 2)] = T::from(1.0) - (q1 * q1 + q2 * q2) * 2.0;
 
         mat
     }
 
-    fn apply(&self, v: VectorView3<D>) -> Vector3<D> {
+    fn apply(&self, v: VectorView3<T>) -> Vector3<T> {
         let qv = Self::from_xyzw(v[0], v[1], v[2], (0.0).into());
         let inv = self.inverse();
 
@@ -305,23 +291,23 @@ impl<D: Numeric> MatrixLieGroup<D> for SO3<D> {
     }
 }
 
-impl<D: Numeric> ops::Mul for SO3<D> {
-    type Output = SO3<D>;
+impl<T: Numeric> ops::Mul for SO3<T> {
+    type Output = SO3<T>;
 
     fn mul(self, other: Self) -> Self::Output {
         self.compose(&other)
     }
 }
 
-impl<D: Numeric> ops::Mul for &SO3<D> {
-    type Output = SO3<D>;
+impl<T: Numeric> ops::Mul for &SO3<T> {
+    type Output = SO3<T>;
 
     fn mul(self, other: Self) -> Self::Output {
         self.compose(other)
     }
 }
 
-impl<D: Numeric> fmt::Display for SO3<D> {
+impl<T: Numeric> fmt::Display for SO3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -331,7 +317,7 @@ impl<D: Numeric> fmt::Display for SO3<D> {
     }
 }
 
-impl<D: Numeric> fmt::Debug for SO3<D> {
+impl<T: Numeric> fmt::Debug for SO3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }

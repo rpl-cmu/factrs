@@ -65,8 +65,8 @@ where
     type DimOut = P::Dim;
     type DimIn = DimNameSum<P::Dim, P::Dim>;
 
-    fn residual2<D: Numeric>(&self, v1: P::Alias<D>, v2: P::Alias<D>) -> VectorX<D> {
-        let delta = P::dual_convert::<D>(&self.delta);
+    fn residual2<T: Numeric>(&self, v1: P::Alias<T>, v2: P::Alias<T>) -> VectorX<T> {
+        let delta = P::dual_convert::<T>(&self.delta);
         v1.compose(&delta).ominus(&v2)
     }
 }

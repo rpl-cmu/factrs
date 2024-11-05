@@ -4,24 +4,9 @@ use super::VectorVar2;
 use crate::{
     dtype,
     linalg::{
-        vectorx,
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        DimName,
-        DualAllocator,
-        DualVector,
-        Matrix2,
-        Matrix2x3,
-        Matrix3,
-        MatrixView,
-        Numeric,
-        Vector2,
-        Vector3,
-        VectorView2,
-        VectorView3,
-        VectorViewX,
-        VectorX,
+        vectorx, AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector,
+        Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric, Vector2, Vector3, VectorView2,
+        VectorView3, VectorViewX, VectorX,
     },
     tag_variable,
     variables::{MatrixLieGroup, Variable, SO2},
@@ -34,44 +19,44 @@ tag_variable!(SE2);
 /// Implementation of SE(2) for 2D transformations.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SE2<D: Numeric = dtype> {
-    rot: SO2<D>,
-    xy: Vector2<D>,
+pub struct SE2<T: Numeric = dtype> {
+    rot: SO2<T>,
+    xy: Vector2<T>,
 }
 
-impl<D: Numeric> SE2<D> {
+impl<T: Numeric> SE2<T> {
     /// Create a new SE2 from an angle, x, and y coordinates
-    pub fn new(theta: D, x: D, y: D) -> Self {
+    pub fn new(theta: T, x: T, y: T) -> Self {
         SE2 {
             rot: SO2::from_theta(theta),
             xy: Vector2::new(x, y),
         }
     }
 
-    pub fn xy(&self) -> VectorView2<D> {
+    pub fn xy(&self) -> VectorView2<T> {
         self.xy.as_view()
     }
 
-    pub fn x(&self) -> D {
+    pub fn x(&self) -> T {
         self.xy[0]
     }
 
-    pub fn y(&self) -> D {
+    pub fn y(&self) -> T {
         self.xy[1]
     }
 
-    pub fn rot(&self) -> &SO2<D> {
+    pub fn rot(&self) -> &SO2<T> {
         &self.rot
     }
 
-    pub fn theta(&self) -> D {
+    pub fn theta(&self) -> T {
         self.rot.log()[0]
     }
 }
 
-impl<D: Numeric> Variable<D> for SE2<D> {
+impl<T: Numeric> Variable<T> for SE2<T> {
     type Dim = Const<3>;
-    type Alias<DD: Numeric> = SE2<DD>;
+    type Alias<TT: Numeric> = SE2<TT>;
 
     fn identity() -> Self {
         SE2 {
@@ -97,23 +82,23 @@ impl<D: Numeric> Variable<D> for SE2<D> {
 
     #[allow(non_snake_case)]
     #[allow(clippy::needless_borrow)]
-    fn exp(xi: VectorViewX<D>) -> Self {
+    fn exp(xi: VectorViewX<T>) -> Self {
         let theta = xi[0];
         let xy = Vector2::new(xi[1], xi[2]);
 
-        let rot = SO2::<D>::exp(xi.rows(0, 1));
+        let rot = SO2::<T>::exp(xi.rows(0, 1));
 
         let xy = if cfg!(feature = "fake_exp") {
             xy
         } else {
             let A;
             let B;
-            if theta < D::from(1e-5) {
-                A = D::from(1.0);
-                B = D::from(0.0);
+            if theta < T::from(1e-5) {
+                A = T::from(1.0);
+                B = T::from(0.0);
             } else {
                 A = theta.sin() / theta;
-                B = (D::from(1.0) - theta.cos()) / theta;
+                B = (T::from(1.0) - theta.cos()) / theta;
             };
             let V = Matrix2::new(A, -B, B, A);
             V * xy
@@ -124,7 +109,7 @@ impl<D: Numeric> Variable<D> for SE2<D> {
 
     #[allow(non_snake_case)]
     #[allow(clippy::needless_borrow)]
-    fn log(&self) -> VectorX<D> {
+    fn log(&self) -> VectorX<T> {
         let theta = self.rot.log()[0];
 
         let xy = if cfg!(feature = "fake_exp") {
@@ -132,12 +117,12 @@ impl<D: Numeric> Variable<D> for SE2<D> {
         } else {
             let A;
             let B;
-            if theta < D::from(1e-5) {
-                A = D::from(1.0);
-                B = D::from(0.0);
+            if theta < T::from(1e-5) {
+                A = T::from(1.0);
+                B = T::from(0.0);
             } else {
                 A = theta.sin() / theta;
-                B = (D::from(1.0) - theta.cos()) / theta;
+                B = (T::from(1.0) - theta.cos()) / theta;
             };
             let V = Matrix2::new(A, -B, B, A);
 
@@ -148,10 +133,10 @@ impl<D: Numeric> Variable<D> for SE2<D> {
         vectorx![theta, xy[0], xy[1]]
     }
 
-    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
+    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
         SE2 {
-            rot: SO2::<D>::dual_convert(&other.rot),
-            xy: VectorVar2::<D>::dual_convert(&other.xy.into()).into(),
+            rot: SO2::<T>::dual_convert(&other.rot),
+            xy: VectorVar2::<T>::dual_convert(&other.xy.into()).into(),
         }
     }
 
@@ -168,13 +153,13 @@ impl<D: Numeric> Variable<D> for SE2<D> {
     }
 }
 
-impl<D: Numeric> MatrixLieGroup<D> for SE2<D> {
+impl<T: Numeric> MatrixLieGroup<T> for SE2<T> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<2>;
 
-    fn adjoint(&self) -> Matrix3<D> {
-        let mut mat = Matrix3::<D>::zeros();
+    fn adjoint(&self) -> Matrix3<T> {
+        let mut mat = Matrix3::<T>::zeros();
 
         let r_mat = self.rot.to_matrix();
 
@@ -185,8 +170,8 @@ impl<D: Numeric> MatrixLieGroup<D> for SE2<D> {
         mat
     }
 
-    fn hat(xi: VectorView3<D>) -> Matrix3<D> {
-        let mut mat = Matrix3::<D>::zeros();
+    fn hat(xi: VectorView3<T>) -> Matrix3<T> {
+        let mut mat = Matrix3::<T>::zeros();
         mat[(0, 1)] = -xi[0];
         mat[(1, 0)] = xi[0];
 
@@ -196,16 +181,16 @@ impl<D: Numeric> MatrixLieGroup<D> for SE2<D> {
         mat
     }
 
-    fn vee(xi: MatrixView<3, 3, D>) -> Vector3<D> {
+    fn vee(xi: MatrixView<3, 3, T>) -> Vector3<T> {
         Vector3::new(xi[(1, 0)], xi[(0, 1)], xi[(0, 2)])
     }
 
-    fn apply(&self, v: VectorView2<D>) -> Vector2<D> {
+    fn apply(&self, v: VectorView2<T>) -> Vector2<T> {
         self.rot.apply(v) + self.xy
     }
 
-    fn hat_swap(xi: VectorView2<D>) -> Matrix2x3<D> {
-        let mut mat = Matrix2x3::<D>::zeros();
+    fn hat_swap(xi: VectorView2<T>) -> Matrix2x3<T> {
+        let mut mat = Matrix2x3::<T>::zeros();
         mat.fixed_view_mut::<2, 1>(0, 0)
             .copy_from(&SO2::hat_swap(xi.as_view()));
 
@@ -214,15 +199,15 @@ impl<D: Numeric> MatrixLieGroup<D> for SE2<D> {
         mat
     }
 
-    fn to_matrix(&self) -> Matrix3<D> {
-        let mut mat = Matrix3::<D>::identity();
+    fn to_matrix(&self) -> Matrix3<T> {
+        let mut mat = Matrix3::<T>::identity();
         mat.fixed_view_mut::<2, 2>(0, 0)
             .copy_from(&self.rot.to_matrix());
         mat.fixed_view_mut::<2, 1>(0, 2).copy_from(&self.xy);
         mat
     }
 
-    fn from_matrix(mat: MatrixView<3, 3, D>) -> Self {
+    fn from_matrix(mat: MatrixView<3, 3, T>) -> Self {
         let rot = mat.fixed_view::<2, 2>(0, 0).clone_owned();
         let rot = SO2::from_matrix(rot.as_view());
 
@@ -232,23 +217,23 @@ impl<D: Numeric> MatrixLieGroup<D> for SE2<D> {
     }
 }
 
-impl<D: Numeric> ops::Mul for SE2<D> {
-    type Output = SE2<D>;
+impl<T: Numeric> ops::Mul for SE2<T> {
+    type Output = SE2<T>;
 
     fn mul(self, other: Self) -> Self::Output {
         self.compose(&other)
     }
 }
 
-impl<D: Numeric> ops::Mul for &SE2<D> {
-    type Output = SE2<D>;
+impl<T: Numeric> ops::Mul for &SE2<T> {
+    type Output = SE2<T>;
 
     fn mul(self, other: Self) -> Self::Output {
         self.compose(other)
     }
 }
 
-impl<D: Numeric> fmt::Display for SE2<D> {
+impl<T: Numeric> fmt::Display for SE2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -260,7 +245,7 @@ impl<D: Numeric> fmt::Display for SE2<D> {
     }
 }
 
-impl<D: Numeric> fmt::Debug for SE2<D> {
+impl<T: Numeric> fmt::Debug for SE2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,

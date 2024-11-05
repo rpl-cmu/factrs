@@ -6,7 +6,7 @@ use crate::{
     variables::{Variable, VariableUmbrella},
 };
 
-type Alias<V, D> = <V as Variable>::Alias<D>;
+type Alias<V, T> = <V as Variable>::Alias<T>;
 
 // ------------------ Base Residual Trait & Helpers ------------------ //
 /// Base trait for residuals
@@ -48,9 +48,9 @@ pub trait ResidualSafe: Debug + Display {
 }
 
 impl<
-        #[cfg(not(feature = "serde"))] T: Residual,
-        #[cfg(feature = "serde")] T: Residual + crate::serde::Tagged,
-    > ResidualSafe for T
+        #[cfg(not(feature = "serde"))] R: Residual,
+        #[cfg(feature = "serde")] R: Residual + crate::serde::Tagged,
+    > ResidualSafe for R
 {
     fn dim_in(&self) -> usize {
         Residual::dim_in(self)
@@ -103,7 +103,7 @@ macro_rules! residual_maker {
                 ///
                 /// If implementing your own residual, this is the only method you need to implement.
                 /// It is generic over the dtype to allow for differentiable types.
-                fn [<residual $num>]<D: Numeric>(&self, $($name: Alias<Self::$var, D>,)*) -> VectorX<D>;
+                fn [<residual $num>]<T: Numeric>(&self, $($name: Alias<Self::$var, T>,)*) -> VectorX<T>;
 
                 #[doc="Wrapper that unpacks and calls [" [<residual $num>] "](Self::" [<residual $num>] ")."]
                 fn [<residual $num _values>](&self, values: &Values, keys: &[Key]) -> VectorX

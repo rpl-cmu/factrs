@@ -6,17 +6,8 @@ use std::{
 use crate::{
     dtype,
     linalg::{
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        DimName,
-        DualAllocator,
-        DualVector,
-        Numeric,
-        Vector,
-        VectorDim,
-        VectorViewX,
-        VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Numeric,
+        Vector, VectorDim, VectorViewX, VectorX,
     },
     tag_variable,
     variables::Variable,
@@ -40,11 +31,11 @@ tag_variable!(
 /// 3 - Impl Into\<Rerun types\>
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct VectorVar<const N: usize, D: Numeric = dtype>(pub Vector<N, D>);
+pub struct VectorVar<const N: usize, T: Numeric = dtype>(pub Vector<N, T>);
 
-impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
+impl<const N: usize, T: Numeric> Variable<T> for VectorVar<N, T> {
     type Dim = Const<N>;
-    type Alias<DD: Numeric> = VectorVar<N, DD>;
+    type Alias<TT: Numeric> = VectorVar<N, TT>;
 
     fn identity() -> Self {
         VectorVar(Vector::zeros())
@@ -58,15 +49,15 @@ impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
         VectorVar(self.0 + other.0)
     }
 
-    fn exp(delta: VectorViewX<D>) -> Self {
+    fn exp(delta: VectorViewX<T>) -> Self {
         VectorVar(Vector::from_iterator(delta.iter().cloned()))
     }
 
-    fn log(&self) -> VectorX<D> {
+    fn log(&self) -> VectorX<T> {
         VectorX::from_iterator(Self::DIM, self.0.iter().cloned())
     }
 
-    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
+    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
         VectorVar(other.0.map(|x| x.into()))
     }
 
@@ -88,9 +79,9 @@ impl<const N: usize, D: Numeric> Variable<D> for VectorVar<N, D> {
 
 macro_rules! impl_vector_new {
     ($($num:literal, [$($args:ident),*]);* $(;)?) => {$(
-        impl<D: Numeric> VectorVar<$num, D> {
-            pub fn new($($args: D),*) -> Self {
-                VectorVar(Vector::<$num, D>::new($($args),*))
+        impl<T: Numeric> VectorVar<$num, T> {
+            pub fn new($($args: T),*) -> Self {
+                VectorVar(Vector::<$num, T>::new($($args),*))
             }
         }
     )*};
@@ -105,19 +96,19 @@ impl_vector_new!(
     6, [x, y, z, w, a, b];
 );
 
-impl<const N: usize, D: Numeric> From<Vector<N, D>> for VectorVar<N, D> {
-    fn from(v: Vector<N, D>) -> Self {
+impl<const N: usize, T: Numeric> From<Vector<N, T>> for VectorVar<N, T> {
+    fn from(v: Vector<N, T>) -> Self {
         VectorVar(v)
     }
 }
 
-impl<const N: usize, D: Numeric> From<VectorVar<N, D>> for Vector<N, D> {
-    fn from(v: VectorVar<N, D>) -> Self {
+impl<const N: usize, T: Numeric> From<VectorVar<N, T>> for Vector<N, T> {
+    fn from(v: VectorVar<N, T>) -> Self {
         v.0
     }
 }
 
-impl<const N: usize, D: Numeric> Display for VectorVar<N, D> {
+impl<const N: usize, T: Numeric> Display for VectorVar<N, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Vector{}(", N)?;
         for (i, x) in self.0.iter().enumerate() {
@@ -130,14 +121,14 @@ impl<const N: usize, D: Numeric> Display for VectorVar<N, D> {
     }
 }
 
-impl<const N: usize, D: Numeric> Debug for VectorVar<N, D> {
+impl<const N: usize, T: Numeric> Debug for VectorVar<N, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Display::fmt(self, f)
     }
 }
 
-impl<const N: usize, D: Numeric> Index<usize> for VectorVar<N, D> {
-    type Output = D;
+impl<const N: usize, T: Numeric> Index<usize> for VectorVar<N, T> {
+    type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
@@ -145,17 +136,17 @@ impl<const N: usize, D: Numeric> Index<usize> for VectorVar<N, D> {
 }
 
 /// 1D Vector Variable
-pub type VectorVar1<D = dtype> = VectorVar<1, D>;
+pub type VectorVar1<T = dtype> = VectorVar<1, T>;
 /// 2D Vector Variable
-pub type VectorVar2<D = dtype> = VectorVar<2, D>;
+pub type VectorVar2<T = dtype> = VectorVar<2, T>;
 /// 3D Vector Variable
-pub type VectorVar3<D = dtype> = VectorVar<3, D>;
+pub type VectorVar3<T = dtype> = VectorVar<3, T>;
 /// 4D Vector Variable
-pub type VectorVar4<D = dtype> = VectorVar<4, D>;
+pub type VectorVar4<T = dtype> = VectorVar<4, T>;
 /// 5D Vector Variable
-pub type VectorVar5<D = dtype> = VectorVar<5, D>;
+pub type VectorVar5<T = dtype> = VectorVar<5, T>;
 /// 6D Vector Variable
-pub type VectorVar6<D = dtype> = VectorVar<6, D>;
+pub type VectorVar6<T = dtype> = VectorVar<6, T>;
 
 #[cfg(test)]
 mod tests {

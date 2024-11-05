@@ -2,9 +2,7 @@ use paste::paste;
 
 use super::{
     dual::{DualAllocator, DualVector},
-    AllocatorBuffer,
-    Diff,
-    MatrixDim,
+    AllocatorBuffer, Diff, MatrixDim,
 };
 use crate::{
     dtype,
@@ -29,7 +27,7 @@ use crate::{
 ///     variables::SO2,
 /// };
 ///
-/// fn f<D: Numeric>(x: SO2<D>, y: SO2<D>) -> VectorX<D> {
+/// fn f<T: Numeric>(x: SO2<T>, y: SO2<T>) -> VectorX<T> {
 ///     x.ominus(&y)
 /// }
 ///
@@ -48,12 +46,12 @@ macro_rules! forward_maker {
     ($num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::D>,)*) -> VectorX<Self::D>>
+            fn [<jacobian_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>{
                 // Prepare variables
                 let mut curr_dim = 0;
                 $(
-                    let $name: $var::Alias<Self::D> = $var::dual($name, curr_dim);
+                    let $name: $var::Alias<Self::T> = $var::dual($name, curr_dim);
                     curr_dim += $name.dim();
                 )*
 
@@ -85,7 +83,7 @@ where
     DefaultAllocator: DualAllocator<N>,
     DualVector<N>: Copy,
 {
-    type D = DualVector<N>;
+    type T = DualVector<N>;
 
     forward_maker!(1, (v1: V1));
     forward_maker!(2, (v1: V1), (v2: V2));

@@ -10,11 +10,11 @@ use crate::{
 /// aren't mixed up.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct Gyro<D: Numeric = dtype>(pub Vector3<D>);
+pub struct Gyro<T: Numeric = dtype>(pub Vector3<T>);
 
-impl<D: Numeric> Gyro<D> {
+impl<T: Numeric> Gyro<T> {
     /// Remove the bias from the gyro measurement
-    pub fn remove_bias(&self, bias: &ImuBias<D>) -> GyroUnbiased<D> {
+    pub fn remove_bias(&self, bias: &ImuBias<T>) -> GyroUnbiased<T> {
         GyroUnbiased(self.0 - bias.gyro())
     }
 
@@ -22,13 +22,13 @@ impl<D: Numeric> Gyro<D> {
         Gyro(Vector3::zeros())
     }
 
-    pub fn new(x: D, y: D, z: D) -> Self {
+    pub fn new(x: T, y: T, z: T) -> Self {
         Gyro(Vector3::new(x, y, z))
     }
 }
 
 /// Gyro measurement with bias removed
-pub struct GyroUnbiased<D: Numeric = dtype>(pub Vector3<D>);
+pub struct GyroUnbiased<T: Numeric = dtype>(pub Vector3<T>);
 
 /// Raw accel measurement newtype
 ///
@@ -36,11 +36,11 @@ pub struct GyroUnbiased<D: Numeric = dtype>(pub Vector3<D>);
 /// aren't mixed up.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct Accel<D: Numeric = dtype>(pub Vector3<D>);
+pub struct Accel<T: Numeric = dtype>(pub Vector3<T>);
 
-impl<D: Numeric> Accel<D> {
+impl<T: Numeric> Accel<T> {
     /// Remove the bias from the accel measurement
-    pub fn remove_bias(&self, bias: &ImuBias<D>) -> AccelUnbiased<D> {
+    pub fn remove_bias(&self, bias: &ImuBias<T>) -> AccelUnbiased<T> {
         AccelUnbiased(self.0 - bias.accel())
     }
 
@@ -48,13 +48,13 @@ impl<D: Numeric> Accel<D> {
         Accel(Vector3::zeros())
     }
 
-    pub fn new(x: D, y: D, z: D) -> Self {
+    pub fn new(x: T, y: T, z: T) -> Self {
         Accel(Vector3::new(x, y, z))
     }
 }
 
 /// Accel measurement with bias removed
-pub struct AccelUnbiased<D: Numeric = dtype>(pub Vector3<D>);
+pub struct AccelUnbiased<T: Numeric = dtype>(pub Vector3<T>);
 
 /// Gravity vector
 ///
@@ -62,26 +62,26 @@ pub struct AccelUnbiased<D: Numeric = dtype>(pub Vector3<D>);
 /// with other vectors and to provide some convenience methods.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct Gravity<D: Numeric = dtype>(pub Vector3<D>);
+pub struct Gravity<T: Numeric = dtype>(pub Vector3<T>);
 
-impl<D: Numeric> Gravity<D> {
+impl<T: Numeric> Gravity<T> {
     /// Helper to get the gravity vector pointing up, i.e. [0, 0, 9.81]
     pub fn up() -> Self {
-        Gravity(Vector3::new(D::from(0.0), D::from(0.0), D::from(9.81)))
+        Gravity(Vector3::new(T::from(0.0), T::from(0.0), T::from(9.81)))
     }
 
     /// Helper to get the gravity vector pointing down, i.e. [0, 0, -9.81]
     pub fn down() -> Self {
-        Gravity(Vector3::new(D::from(0.0), D::from(0.0), D::from(-9.81)))
+        Gravity(Vector3::new(T::from(0.0), T::from(0.0), T::from(-9.81)))
     }
 }
 
 /// Struct to hold an Imu state
 ///
 /// Specifically holds an Imu state to which an ImuDelta can be applied
-pub struct ImuState<D: Numeric = dtype> {
-    pub r: SO3<D>,
-    pub v: Vector3<D>,
-    pub p: Vector3<D>,
-    pub bias: ImuBias<D>,
+pub struct ImuState<T: Numeric = dtype> {
+    pub r: SO3<T>,
+    pub v: Vector3<T>,
+    pub p: Vector3<T>,
+    pub bias: ImuBias<T>,
 }

@@ -11,21 +11,21 @@ use crate::{
 /// Struct to hold the preintegrated Imu delta
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub(crate) struct ImuDelta<D: Numeric = dtype> {
-    pub(crate) dt: D,
-    pub(crate) xi_theta: Vector3<D>,
-    pub(crate) xi_vel: Vector3<D>,
-    pub(crate) xi_pos: Vector3<D>,
-    bias_init: ImuBias<D>,
-    h_bias_accel: Matrix<9, 3, D>,
-    h_bias_gyro: Matrix<9, 3, D>,
-    gravity: Gravity<D>,
+pub(crate) struct ImuDelta<T: Numeric = dtype> {
+    pub(crate) dt: T,
+    pub(crate) xi_theta: Vector3<T>,
+    pub(crate) xi_vel: Vector3<T>,
+    pub(crate) xi_pos: Vector3<T>,
+    bias_init: ImuBias<T>,
+    h_bias_accel: Matrix<9, 3, T>,
+    h_bias_gyro: Matrix<9, 3, T>,
+    gravity: Gravity<T>,
 }
 
-impl<D: Numeric> ImuDelta<D> {
-    pub(crate) fn new(gravity: Gravity<D>, bias_init: ImuBias<D>) -> Self {
+impl<T: Numeric> ImuDelta<T> {
+    pub(crate) fn new(gravity: Gravity<T>, bias_init: ImuBias<T>) -> Self {
         Self {
-            dt: D::from(0.0),
+            dt: T::from(0.0),
             xi_theta: Vector3::zeros(),
             xi_vel: Vector3::zeros(),
             xi_pos: Vector3::zeros(),
@@ -36,16 +36,16 @@ impl<D: Numeric> ImuDelta<D> {
         }
     }
 
-    pub fn bias_init(&self) -> &ImuBias<D> {
+    pub fn bias_init(&self) -> &ImuBias<T> {
         &self.bias_init
     }
 
-    pub(crate) fn first_order_update(&self, bias_diff: &ImuBias<D>, idx: usize) -> Vector3<D> {
+    pub(crate) fn first_order_update(&self, bias_diff: &ImuBias<T>, idx: usize) -> Vector3<T> {
         self.h_bias_accel.fixed_rows(idx) * bias_diff.accel()
             + self.h_bias_gyro.fixed_rows(idx) * bias_diff.gyro()
     }
 
-    pub(crate) fn predict(&self, x1: &ImuState<D>) -> ImuState<D> {
+    pub(crate) fn predict(&self, x1: &ImuState<T>) -> ImuState<T> {
         let ImuState { r, v, p, bias } = x1;
 
         // Compute first-order updates to preint with bias
@@ -64,7 +64,7 @@ impl<D: Numeric> ImuDelta<D> {
         // p2_meas = p1 + v * dt + 0.5 * g * dt^2 + R1 * xi_p
         let p2_meas = p
             + v * self.dt
-            + self.gravity.0 * self.dt * self.dt * D::from(0.5)
+            + self.gravity.0 * self.dt * self.dt * T::from(0.5)
             + r.apply(xi_p.as_view());
 
         let b2_meas = bias.clone();
@@ -80,10 +80,10 @@ impl<D: Numeric> ImuDelta<D> {
     #[allow(non_snake_case)]
     pub(crate) fn integrate(
         &mut self,
-        gyro: &GyroUnbiased<D>,
-        accel: &AccelUnbiased<D>,
-        dt: D,
-    ) -> Matrix<15, 15, D> {
+        gyro: &GyroUnbiased<T>,
+        accel: &AccelUnbiased<T>,
+        dt: T,
+    ) -> Matrix<15, 15, T> {
         // Construct jacobian
         let A = self.A(gyro, accel, dt);
 
@@ -105,7 +105,7 @@ impl<D: Numeric> ImuDelta<D> {
     }
 
     #[allow(non_snake_case)]
-    fn propagate_H(&mut self, A: &Matrix<15, 15, D>) {
+    fn propagate_H(&mut self, A: &Matrix<15, 15, T>) {
         let Amini = A.fixed_view::<9, 9>(0, 0);
         // This should come from B, turns out it's identical as A
         let Bgyro = A.fixed_view::<9, 3>(0, 9);
@@ -117,20 +117,20 @@ impl<D: Numeric> ImuDelta<D> {
     // TODO(Easton): Should this just be auto-diffed? Need to benchmark to see if
     // that's faster
     #[allow(non_snake_case)]
-    fn A(&self, gyro: &GyroUnbiased<D>, accel: &AccelUnbiased<D>, dt: D) -> Matrix<15, 15, D> {
+    fn A(&self, gyro: &GyroUnbiased<T>, accel: &AccelUnbiased<T>, dt: T) -> Matrix<15, 15, T> {
         let H = SO3::dexp(self.xi_theta.as_view());
         let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
         let R: nalgebra::Matrix<
-            D,
+            T,
             nalgebra::Const<3>,
             nalgebra::Const<3>,
-            nalgebra::ArrayStorage<D, 3, 3>,
+            nalgebra::ArrayStorage<T, 3, 3>,
         > = SO3::exp(self.xi_theta.as_view()).to_matrix();
 
-        let mut A = Matrix::<15, 15, D>::identity();
+        let mut A = Matrix::<15, 15, T>::identity();
 
         // First column (wrt theta)
-        let M = Matrix3::<D>::identity() - SO3::hat(gyro.0.as_view()) * dt / D::from(2.0);
+        let M = Matrix3::<T>::identity() - SO3::hat(gyro.0.as_view()) * dt / T::from(2.0);
         A.fixed_view_mut::<3, 3>(0, 0).copy_from(&M);
         let mut M = -R * SO3::hat(accel.0.as_view()) * H * dt;
         A.fixed_view_mut::<3, 3>(3, 0).copy_from(&M);
@@ -138,7 +138,7 @@ impl<D: Numeric> ImuDelta<D> {
         A.fixed_view_mut::<3, 3>(6, 0).copy_from(&M);
 
         // Second column (wrt vel)
-        let M = Matrix3::<D>::identity() * dt;
+        let M = Matrix3::<T>::identity() * dt;
         A.fixed_view_mut::<3, 3>(6, 3).copy_from(&M);
 
         // Third column (wrt pos)
@@ -157,23 +157,23 @@ impl<D: Numeric> ImuDelta<D> {
     }
 }
 
-impl<D: Numeric> DualConvert for ImuDelta<D> {
-    type Alias<DD: Numeric> = ImuDelta<DD>;
-    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
+impl<T: Numeric> DualConvert for ImuDelta<T> {
+    type Alias<TT: Numeric> = ImuDelta<TT>;
+    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
         ImuDelta {
             dt: other.dt.into(),
-            xi_theta: Vector3::<D>::dual_convert(&other.xi_theta),
-            xi_vel: Vector3::<D>::dual_convert(&other.xi_vel),
-            xi_pos: Vector3::<D>::dual_convert(&other.xi_pos),
-            bias_init: ImuBias::<D>::dual_convert(&other.bias_init),
-            h_bias_accel: Matrix::<9, 3, D>::dual_convert(&other.h_bias_accel),
-            h_bias_gyro: Matrix::<9, 3, D>::dual_convert(&other.h_bias_gyro),
-            gravity: Gravity(Vector3::<D>::dual_convert(&other.gravity.0)),
+            xi_theta: Vector3::<T>::dual_convert(&other.xi_theta),
+            xi_vel: Vector3::<T>::dual_convert(&other.xi_vel),
+            xi_pos: Vector3::<T>::dual_convert(&other.xi_pos),
+            bias_init: ImuBias::<T>::dual_convert(&other.bias_init),
+            h_bias_accel: Matrix::<9, 3, T>::dual_convert(&other.h_bias_accel),
+            h_bias_gyro: Matrix::<9, 3, T>::dual_convert(&other.h_bias_gyro),
+            gravity: Gravity(Vector3::<T>::dual_convert(&other.gravity.0)),
         }
     }
 }
 
-impl<D: Numeric> fmt::Display for ImuDelta<D> {
+impl<T: Numeric> fmt::Display for ImuDelta<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -198,18 +198,18 @@ mod test {
 
     // Helper function to integrate a constant gyro / accel for a given amount of
     // time
-    fn integrate<D: Numeric>(
-        gyro: &Gyro<D>,
-        accel: &Accel<D>,
-        bias: &ImuBias<D>,
+    fn integrate<T: Numeric>(
+        gyro: &Gyro<T>,
+        accel: &Accel<T>,
+        bias: &ImuBias<T>,
         n: i32,
         t: dtype,
-    ) -> ImuDelta<D> {
+    ) -> ImuDelta<T> {
         let mut delta = ImuDelta::new(Gravity::up(), bias.clone());
         // Remove the bias
         let accel = accel.remove_bias(bias);
         let gyro = gyro.remove_bias(bias);
-        let dt = D::from(t / n as dtype);
+        let dt = T::from(t / n as dtype);
 
         for _ in 0..n {
             delta.integrate(&gyro, &accel, dt);
@@ -261,7 +261,7 @@ mod test {
         let gyro = Gyro::new(3.0, 2.0, 1.0);
         let accel: Accel = Accel::new(1.0, 2.0, 3.0);
 
-        fn delta_from_vec<D: Numeric>(v: Vector<15, D>) -> ImuDelta<D> {
+        fn delta_from_vec<T: Numeric>(v: Vector<15, T>) -> ImuDelta<T> {
             let xi_theta = v.fixed_rows::<3>(0).into_owned();
             let xi_vel = v.fixed_rows::<3>(3).into_owned();
             let xi_pos = v.fixed_rows::<3>(6).into_owned();
@@ -270,7 +270,7 @@ mod test {
                 Accel(v.fixed_rows::<3>(12).into_owned()),
             );
             ImuDelta {
-                dt: D::from(0.0),
+                dt: T::from(0.0),
                 xi_theta,
                 xi_vel,
                 xi_pos,

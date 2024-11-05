@@ -84,7 +84,7 @@ macro_rules! numerical_maker {
 }
 
 impl<const PWR: i32> Diff for NumericalDiff<PWR> {
-    type D = dtype;
+    type T = dtype;
 
     numerical_maker!(1, (0, v1, V1));
     numerical_maker!(2, (0, v1, V1), (1, v2, V2));
