@@ -1,3 +1,5 @@
+use core::fmt;
+
 use super::NoiseModel;
 use crate::{
     linalg::{Const, MatrixX, VectorX},
@@ -26,7 +28,7 @@ tag_noise!(
 ///
 /// Represents a noise model that does not modify the input, or equal weighting
 /// in a [factor](crate::containers::Factor).
-#[derive(Clone, Debug, derive_more::Display)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UnitNoise<const N: usize>;
 
@@ -39,5 +41,11 @@ impl<const N: usize> NoiseModel for UnitNoise<N> {
 
     fn whiten_mat(&self, m: MatrixX) -> MatrixX {
         m
+    }
+}
+
+impl<const N: usize> fmt::Display for UnitNoise<N> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

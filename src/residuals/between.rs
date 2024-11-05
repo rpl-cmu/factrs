@@ -1,3 +1,5 @@
+use core::fmt;
+
 use nalgebra::{DimNameAdd, DimNameSum};
 
 use super::{Residual, Residual2};
@@ -5,31 +7,13 @@ use super::{Residual, Residual2};
 use crate::{
     containers::{Key, Values},
     linalg::{
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        DiffResult,
-        DualAllocator,
-        DualVector,
-        ForwardProp,
-        MatrixX,
-        Numeric,
-        VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, DualVector,
+        ForwardProp, MatrixX, Numeric, VectorX,
     },
     tag_residual,
     variables::{
-        Variable,
-        VariableUmbrella,
-        VectorVar1,
-        VectorVar2,
-        VectorVar3,
-        VectorVar4,
-        VectorVar5,
-        VectorVar6,
-        SE2,
-        SE3,
-        SO2,
-        SO3,
+        Variable, VariableUmbrella, VectorVar1, VectorVar2, VectorVar3, VectorVar4, VectorVar5,
+        VectorVar6, SE2, SE3, SO2, SO3,
     },
 };
 
@@ -56,7 +40,7 @@ tag_residual!(
 /// $$
 ///
 /// where $z$ is the measured value.
-#[derive(Clone, Debug, derive_more::Display)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct BetweenResidual<P: Variable> {
     delta: P,
@@ -105,5 +89,11 @@ where
 
     fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
         self.residual2_jacobian(values, keys)
+    }
+}
+
+impl<P: Variable> fmt::Display for BetweenResidual<P> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

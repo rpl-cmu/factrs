@@ -2,22 +2,14 @@
 // Misc imports
 use nalgebra::{self as na, OVector};
 pub use nalgebra::{
-    allocator::Allocator,
-    dmatrix as matrixx,
-    dvector as vectorx,
-    ComplexField,
-    Const,
-    DefaultAllocator,
-    Dim,
-    DimName,
-    Dyn,
-    RealField,
+    allocator::Allocator, dmatrix as matrixx, dvector as vectorx, ComplexField, Const,
+    DefaultAllocator, Dim, DimName, Dyn, RealField,
 };
 
 use crate::dtype;
 
 // Make it easier to bind the buffer type
-pub type AllocatorBuffer<N> = <DefaultAllocator as Allocator<dtype, N>>::Buffer;
+pub type AllocatorBuffer<N> = <DefaultAllocator as Allocator<N>>::Buffer<dtype>;
 
 // ------------------------- Vector/Matrix Aliases ------------------------- //
 // Vectors
@@ -99,7 +91,7 @@ pub type Matrix<const R: usize, const C: usize = 1, D = dtype> = na::Matrix<
     D,
     Const<R>,
     Const<C>,
-    <na::DefaultAllocator as Allocator<D, Const<R>, Const<C>>>::Buffer,
+    <na::DefaultAllocator as Allocator<Const<R>, Const<C>>>::Buffer<D>,
 >;
 pub type MatrixView<'a, const R: usize, const C: usize = 1, D = dtype> =
     na::MatrixView<'a, D, Const<R>, Const<C>>;
@@ -116,5 +108,5 @@ pub type VectorView6<'a, D = dtype> = na::VectorView<'a, D, Const<6>>;
 // Generic, taking in sizes with Const
 pub type VectorDim<N, D = dtype> = OVector<D, N>;
 pub type MatrixDim<R, C = Const<1>, D = dtype> =
-    na::Matrix<D, R, C, <na::DefaultAllocator as Allocator<D, R, C>>::Buffer>;
+    na::Matrix<D, R, C, <na::DefaultAllocator as Allocator<R, C>>::Buffer<D>>;
 pub type MatrixViewDim<'a, R, C = Const<1>, D = dtype> = na::MatrixView<'a, D, R, C>;

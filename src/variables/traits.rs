@@ -5,18 +5,8 @@ use downcast_rs::{impl_downcast, Downcast};
 use crate::{
     dtype,
     linalg::{
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        DimName,
-        DualAllocator,
-        DualVector,
-        MatrixDim,
-        MatrixViewDim,
-        Numeric,
-        VectorDim,
-        VectorViewX,
-        VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, MatrixDim,
+        MatrixViewDim, Numeric, VectorDim, VectorViewX, VectorX,
     },
 };
 
@@ -233,11 +223,11 @@ use nalgebra as na;
 /// properties here.
 pub trait MatrixLieGroup<D: Numeric = dtype>: Variable<D>
 where
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Self::TangentDim>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::MatrixDim, Self::MatrixDim>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Self::TangentDim>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::TangentDim, Const<1>>,
-    na::DefaultAllocator: na::allocator::Allocator<D, Self::VectorDim, Const<1>>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::TangentDim, Self::TangentDim>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::MatrixDim, Self::MatrixDim>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::VectorDim, Self::TangentDim>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::TangentDim, Const<1>>,
+    na::DefaultAllocator: na::allocator::Allocator<Self::VectorDim, Const<1>>,
 {
     /// Dimension of the tangent space
     type TangentDim: DimName;
