@@ -16,29 +16,28 @@ rustdoc-args = ["--html-in-header", "assets/katex-header.html"]
 [dependencies]
 # base
 ahash = "0.8.11"
-derive_more = "0.99.17"
 paste = "1.0.15"
 downcast-rs = "1.2.1"
-log = "0.4.21"
+log = "0.4.22"
 
 # numerical 
-faer = { version = "0.19.0", default-features = false, features = [
+faer = { version = "0.19.4", default-features = false, features = [
     "perf-warn",
     "std",
     "matrixcompare",
 ] }
-faer-ext = { version = "0.2.0", features = ["nalgebra"] }
-nalgebra = { version = "0.32.5", features = ["compare"] }
-num-dual = "0.9.1"
-matrixcompare = { version = "0.1" }
+faer-ext = { version = "0.3.0", features = ["nalgebra"] }
+nalgebra = { version = "0.33.2", features = ["compare"] }
+num-dual = "0.10.0"
+matrixcompare = { version = "0.3" }
 
 # serialization
-serde = { version = "1.0.203", optional = true }
-typetag = { version = "0.2.16", optional = true }
-serde_json = { version = "1.0.120", optional = true }
+serde = { version = "1.0.214", optional = true }
+typetag = { version = "0.2.18", optional = true }
+serde_json = { version = "1.0.132", optional = true }
 
 # rerun support
-rerun = { version = "0.18", optional = true, default-features = false, features = [
+rerun = { version = "0.19", optional = true, default-features = false, features = [
     "sdk",
 ] }
 
@@ -71,8 +70,8 @@ rerun = ["dep:rerun"]
 
 [dev-dependencies]
 matrixcompare = "0.3.0"
-pretty_env_logger = "0.4"
-nalgebra = { version = "0.32.5", features = ["compare"] }
+pretty_env_logger = "0.5"
+nalgebra = { version = "0.33.2", features = ["compare"] }
 
 [[example]]
 name = "g2o"

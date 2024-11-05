@@ -1,33 +1,17 @@
+use core::fmt;
+
 use super::{Residual, Residual1};
 #[allow(unused_imports)]
 use crate::{
     containers::{Key, Values},
     linalg::{
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        DiffResult,
-        DualAllocator,
-        DualVector,
-        ForwardProp,
-        MatrixX,
-        Numeric,
-        VectorX,
+        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, DualVector,
+        ForwardProp, MatrixX, Numeric, VectorX,
     },
     tag_residual,
     variables::{
-        Variable,
-        VariableUmbrella,
-        VectorVar1,
-        VectorVar2,
-        VectorVar3,
-        VectorVar4,
-        VectorVar5,
-        VectorVar6,
-        SE2,
-        SE3,
-        SO2,
-        SO3,
+        Variable, VariableUmbrella, VectorVar1, VectorVar2, VectorVar3, VectorVar4, VectorVar5,
+        VectorVar6, SE2, SE3, SO2, SO3,
     },
 };
 
@@ -51,7 +35,7 @@ tag_residual!(
 /// z \ominus v
 /// $$
 /// where $z$ is the prior value and $v$ is the variable being estimated.
-#[derive(Clone, Debug, derive_more::Display)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct PriorResidual<P: Variable> {
     prior: P,
@@ -93,6 +77,12 @@ where
     }
     fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
         self.residual1_jacobian(values, keys)
+    }
+}
+
+impl<P: Variable> fmt::Display for PriorResidual<P> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
