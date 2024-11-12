@@ -36,13 +36,7 @@
 //! simple tests over a few different variable types to ensure correctness.
 mod traits;
 pub use traits::{
-    GraphOptimizer,
-    OptError,
-    OptObserver,
-    OptObserverVec,
-    OptParams,
-    OptResult,
-    Optimizer,
+    GraphOptimizer, OptError, OptObserver, OptObserverVec, OptParams, OptResult, Optimizer,
 };
 
 mod macros;
@@ -65,7 +59,7 @@ pub mod test {
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
-        residuals::{BetweenResidual, PriorResidual, Residual, ResidualSafe},
+        residuals::{BetweenResidual, PriorResidual, ResidualSafe},
         symbols::X,
         variables::VariableUmbrella,
     };
@@ -104,10 +98,8 @@ pub mod test {
     where
         T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>>,
         UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>:
-            ResidualSafe + Residual<DimIn = Const<DIM>, DimOut = Const<DIM>, NumVars = Const<1>>,
-        BetweenResidual<T>: ResidualSafe
-            + Residual<DimIn = Const<DIM_DOUBLE>, DimOut = Const<DIM>, NumVars = Const<2>>,
+        PriorResidual<T>: ResidualSafe,
+        BetweenResidual<T>: ResidualSafe,
         O: Optimizer<Input = Values> + GraphOptimizer,
         Const<DIM>: ToTypenum,
         AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,

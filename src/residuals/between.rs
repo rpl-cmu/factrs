@@ -7,7 +7,7 @@ use super::{Residual, Residual2};
 use crate::{
     containers::{Key, Values},
     linalg::{
-        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DualAllocator, DualVector,
+        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DimName, DualAllocator, DualVector,
         ForwardProp, MatrixX, Numeric, VectorX,
     },
     tag_residual,
@@ -79,10 +79,12 @@ where
     P: VariableUmbrella + 'static,
     P::Dim: DimNameAdd<P::Dim>,
 {
-    type DimOut = <Self as Residual2>::DimOut;
-    type DimIn = <Self as Residual2>::DimIn;
-    type NumVars = Const<2>;
-
+    fn dim_in(&self) -> usize {
+        <Self as Residual2>::DimIn::USIZE
+    }
+    fn dim_out(&self) -> usize {
+        <Self as Residual2>::DimOut::USIZE
+    }
     fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
         self.residual2_values(values, keys)
     }

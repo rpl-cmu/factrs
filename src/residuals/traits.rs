@@ -15,17 +15,9 @@ type Alias<V, T> = <V as Variable>::Alias<T>;
 /// one of the numbered residuals traits instead, and then call the
 /// [impl_residual](crate::impl_residual) macro to implement this trait.
 pub trait Residual: Debug + Display {
-    type DimIn: DimName;
-    type DimOut: DimName;
-    type NumVars: DimName;
+    fn dim_in(&self) -> usize;
 
-    fn dim_in(&self) -> usize {
-        Self::DimIn::USIZE
-    }
-
-    fn dim_out(&self) -> usize {
-        Self::DimOut::USIZE
-    }
+    fn dim_out(&self) -> usize;
 
     fn residual(&self, values: &Values, keys: &[Key]) -> VectorX;
 

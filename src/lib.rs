@@ -79,6 +79,8 @@
 //! let result = opt.optimize(values);
 //! ```
 
+#![warn(clippy::unwrap_used)]
+
 /// The default floating point type used in the library
 #[cfg(not(feature = "f32"))]
 #[allow(non_camel_case_types)]

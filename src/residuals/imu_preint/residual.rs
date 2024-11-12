@@ -4,9 +4,9 @@ use nalgebra::Const;
 
 use super::{delta::ImuDelta, Accel, Gravity, Gyro, ImuState};
 use crate::{
-    containers::{Factor, FactorBuilder, Symbol, TypedSymbol},
-    dtype, impl_residual,
-    linalg::{ForwardProp, Matrix, Matrix3, VectorX},
+    containers::{Factor, FactorBuilder, Key, Symbol, TypedSymbol, Values},
+    dtype,
+    linalg::{DiffResult, DimName, ForwardProp, Matrix, Matrix3, MatrixX, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
     tag_residual,
@@ -354,7 +354,21 @@ impl Residual6 for ImuPreintegrationResidual {
     }
 }
 
-impl_residual!(6, ImuPreintegrationResidual);
+impl Residual for ImuPreintegrationResidual {
+    fn dim_in(&self) -> usize {
+        <Self as Residual6>::DimIn::USIZE
+    }
+    fn dim_out(&self) -> usize {
+        <Self as Residual6>::DimOut::USIZE
+    }
+    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
+        self.residual6_values(values, keys)
+    }
+
+    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
+        self.residual6_jacobian(values, keys)
+    }
+}
 
 impl fmt::Display for ImuPreintegrationResidual {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
