@@ -3,25 +3,9 @@ use std::{fmt, ops};
 use crate::{
     dtype,
     linalg::{
-        vectorx,
-        AllocatorBuffer,
-        Const,
-        DefaultAllocator,
-        Derivative,
-        DimName,
-        DualAllocator,
-        DualVector,
-        Matrix1,
-        Matrix2,
-        MatrixView,
-        Numeric,
-        Vector1,
-        Vector2,
-        VectorDim,
-        VectorView1,
-        VectorView2,
-        VectorViewX,
-        VectorX,
+        vectorx, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
+        DualVector, Matrix1, Matrix2, MatrixView, Numeric, Vector1, Vector2, VectorDim,
+        VectorView1, VectorView2, VectorViewX, VectorX,
     },
     tag_variable,
     variables::{MatrixLieGroup, Variable},
@@ -35,15 +19,15 @@ tag_variable!(SO2);
 /// numbers to represent rotations.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SO2<D: Numeric = dtype> {
-    a: D,
-    b: D,
+pub struct SO2<T: Numeric = dtype> {
+    a: T,
+    b: T,
 }
 
-impl<D: Numeric> SO2<D> {
+impl<T: Numeric> SO2<T> {
     /// Create a new SO2 from an angle in radians
     #[allow(clippy::needless_borrow)]
-    pub fn from_theta(theta: D) -> Self {
+    pub fn from_theta(theta: T) -> Self {
         SO2 {
             a: (&theta).cos(),
             b: (&theta).sin(),
@@ -51,19 +35,19 @@ impl<D: Numeric> SO2<D> {
     }
 
     /// Convert SO2 to an angle in radians
-    pub fn to_theta(&self) -> D {
+    pub fn to_theta(&self) -> T {
         self.b.atan2(self.a)
     }
 }
 
-impl<D: Numeric> Variable<D> for SO2<D> {
+impl<T: Numeric> Variable<T> for SO2<T> {
     type Dim = Const<1>;
-    type Alias<DD: Numeric> = SO2<DD>;
+    type Alias<TT: Numeric> = SO2<TT>;
 
     fn identity() -> Self {
         SO2 {
-            a: D::from(1.0),
-            b: D::from(0.0),
+            a: T::from(1.0),
+            b: T::from(0.0),
         }
     }
 
@@ -81,17 +65,17 @@ impl<D: Numeric> Variable<D> for SO2<D> {
         }
     }
 
-    fn exp(xi: VectorViewX<D>) -> Self {
+    fn exp(xi: VectorViewX<T>) -> Self {
         let theta = xi[0];
         SO2::from_theta(theta)
     }
 
-    fn log(&self) -> VectorX<D> {
+    fn log(&self) -> VectorX<T> {
         vectorx![self.b.atan2(self.a)]
     }
 
-    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
-        Self::Alias::<DD> {
+    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+        Self::Alias::<TT> {
             a: other.a.into(),
             b: other.b.into(),
         }
@@ -115,66 +99,66 @@ impl<D: Numeric> Variable<D> for SO2<D> {
     }
 }
 
-impl<D: Numeric> MatrixLieGroup<D> for SO2<D> {
+impl<T: Numeric> MatrixLieGroup<T> for SO2<T> {
     type TangentDim = Const<1>;
     type MatrixDim = Const<2>;
     type VectorDim = Const<2>;
 
-    fn adjoint(&self) -> Matrix1<D> {
+    fn adjoint(&self) -> Matrix1<T> {
         Matrix1::identity()
     }
 
-    fn hat(xi: VectorView1<D>) -> Matrix2<D> {
-        Matrix2::new(D::from(0.0), -xi[0], xi[0], D::from(0.0))
+    fn hat(xi: VectorView1<T>) -> Matrix2<T> {
+        Matrix2::new(T::from(0.0), -xi[0], xi[0], T::from(0.0))
     }
 
-    fn vee(xi: MatrixView<2, 2, D>) -> Vector1<D> {
+    fn vee(xi: MatrixView<2, 2, T>) -> Vector1<T> {
         Vector1::new(xi[(1, 0)])
     }
 
-    fn hat_swap(xi: VectorView2<D>) -> Vector2<D> {
+    fn hat_swap(xi: VectorView2<T>) -> Vector2<T> {
         Vector2::new(-xi[1], xi[0])
     }
 
-    fn apply(&self, v: VectorView2<D>) -> Vector2<D> {
+    fn apply(&self, v: VectorView2<T>) -> Vector2<T> {
         Vector2::new(v[0] * self.a - v[1] * self.b, v[0] * self.b + v[1] * self.a)
     }
 
-    fn from_matrix(mat: MatrixView<2, 2, D>) -> Self {
+    fn from_matrix(mat: MatrixView<2, 2, T>) -> Self {
         SO2 {
             a: mat[(0, 0)],
             b: mat[(1, 0)],
         }
     }
 
-    fn to_matrix(&self) -> Matrix2<D> {
+    fn to_matrix(&self) -> Matrix2<T> {
         Matrix2::new(self.a, -self.b, self.b, self.a)
     }
 }
 
-impl<D: Numeric> ops::Mul for SO2<D> {
-    type Output = SO2<D>;
+impl<T: Numeric> ops::Mul for SO2<T> {
+    type Output = SO2<T>;
 
     fn mul(self, other: Self) -> Self::Output {
         self.compose(&other)
     }
 }
 
-impl<D: Numeric> ops::Mul for &SO2<D> {
-    type Output = SO2<D>;
+impl<T: Numeric> ops::Mul for &SO2<T> {
+    type Output = SO2<T>;
 
     fn mul(self, other: Self) -> Self::Output {
         self.compose(other)
     }
 }
 
-impl<D: Numeric> fmt::Display for SO2<D> {
+impl<T: Numeric> fmt::Display for SO2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "SO2({:.3})", self.log()[0])
     }
 }
 
-impl<D: Numeric> fmt::Debug for SO2<D> {
+impl<T: Numeric> fmt::Debug for SO2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "SO2(a: {:.3}, b: {:.3})", self.a, self.b)
     }

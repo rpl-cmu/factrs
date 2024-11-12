@@ -19,14 +19,14 @@ tag_variable!(ImuBias);
 /// treated as a 6D vector for optimization purposes.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ImuBias<D: Numeric = dtype> {
-    gyro: Vector3<D>,
-    accel: Vector3<D>,
+pub struct ImuBias<T: Numeric = dtype> {
+    gyro: Vector3<T>,
+    accel: Vector3<T>,
 }
 
-impl<D: Numeric> ImuBias<D> {
+impl<T: Numeric> ImuBias<T> {
     /// Create a new IMU bias
-    pub fn new(gyro: Gyro<D>, accel: Accel<D>) -> Self {
+    pub fn new(gyro: Gyro<T>, accel: Accel<T>) -> Self {
         ImuBias {
             gyro: gyro.0,
             accel: accel.0,
@@ -42,19 +42,19 @@ impl<D: Numeric> ImuBias<D> {
     }
 
     /// Get the gyro bias
-    pub fn gyro(&self) -> &Vector3<D> {
+    pub fn gyro(&self) -> &Vector3<T> {
         &self.gyro
     }
 
     /// Get the accel bias
-    pub fn accel(&self) -> &Vector3<D> {
+    pub fn accel(&self) -> &Vector3<T> {
         &self.accel
     }
 }
 
-impl<D: Numeric> Variable<D> for ImuBias<D> {
+impl<T: Numeric> Variable<T> for ImuBias<T> {
     type Dim = crate::linalg::Const<6>;
-    type Alias<DD: Numeric> = ImuBias<DD>;
+    type Alias<TT: Numeric> = ImuBias<TT>;
 
     fn identity() -> Self {
         ImuBias {
@@ -77,13 +77,13 @@ impl<D: Numeric> Variable<D> for ImuBias<D> {
         }
     }
 
-    fn exp(delta: crate::linalg::VectorViewX<D>) -> Self {
+    fn exp(delta: crate::linalg::VectorViewX<T>) -> Self {
         let gyro = Vector3::new(delta[0], delta[1], delta[2]);
         let accel = Vector3::new(delta[3], delta[4], delta[5]);
         ImuBias { gyro, accel }
     }
 
-    fn log(&self) -> crate::linalg::VectorX<D> {
+    fn log(&self) -> crate::linalg::VectorX<T> {
         crate::linalg::vectorx![
             self.gyro.x,
             self.gyro.y,
@@ -94,7 +94,7 @@ impl<D: Numeric> Variable<D> for ImuBias<D> {
         ]
     }
 
-    fn dual_convert<DD: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<DD> {
+    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
         ImuBias {
             gyro: other.gyro.map(|x| x.into()),
             accel: other.accel.map(|x| x.into()),
@@ -123,7 +123,7 @@ impl<D: Numeric> Variable<D> for ImuBias<D> {
     }
 }
 
-impl<D: Numeric> fmt::Display for ImuBias<D> {
+impl<T: Numeric> fmt::Display for ImuBias<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -133,13 +133,13 @@ impl<D: Numeric> fmt::Display for ImuBias<D> {
     }
 }
 
-impl<D: Numeric> fmt::Debug for ImuBias<D> {
+impl<T: Numeric> fmt::Debug for ImuBias<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
 }
 
-impl<D: Numeric> ops::Sub for ImuBias<D> {
+impl<T: Numeric> ops::Sub for ImuBias<T> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self {
@@ -150,10 +150,10 @@ impl<D: Numeric> ops::Sub for ImuBias<D> {
     }
 }
 
-impl<'a, D: Numeric> ops::Sub for &'a ImuBias<D> {
-    type Output = ImuBias<D>;
+impl<'a, T: Numeric> ops::Sub for &'a ImuBias<T> {
+    type Output = ImuBias<T>;
 
-    fn sub(self, rhs: Self) -> ImuBias<D> {
+    fn sub(self, rhs: Self) -> ImuBias<T> {
         ImuBias {
             gyro: self.gyro - rhs.gyro,
             accel: self.accel - rhs.accel,

@@ -73,9 +73,9 @@ pub struct DiffResult<V, G> {
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<gradient_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::D>,)*) -> Self::D>
+            fn [<gradient_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::T>,)*) -> Self::T>
                     (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
-                    let f_wrapped = |$($name: $var::Alias<Self::D>,)*| vectorx![f($($name.clone(),)*)];
+                    let f_wrapped = |$($name: $var::Alias<Self::T>,)*| vectorx![f($($name.clone(),)*)];
                     let DiffResult { value, diff } = Self::[<jacobian_ $num>](f_wrapped, $($name,)*);
                     let diff = VectorX::from_iterator(diff.len(), diff.iter().cloned());
                     DiffResult { value: value[0], diff }
@@ -85,7 +85,7 @@ macro_rules! fn_maker {
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<jacobian_ $num>]<$( $var: Variable<Alias<$crate::dtype>=$var>, )* F: Fn($($var::Alias<Self::D>,)*) -> VectorX<Self::D>>
+            fn [<jacobian_ $num>]<$( $var: Variable<Alias<$crate::dtype>=$var>, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };
@@ -101,7 +101,7 @@ macro_rules! fn_maker {
 /// recommend [ForwardProp] which functions using dual numbers.
 pub trait Diff {
     /// The dtype of the variables
-    type D: Numeric;
+    type T: Numeric;
 
     fn_maker!(grad, 1, (v1: V1));
     fn_maker!(grad, 2, (v1: V1), (v2: V2));

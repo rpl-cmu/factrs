@@ -5,8 +5,7 @@ use nalgebra::Const;
 use super::{delta::ImuDelta, Accel, Gravity, Gyro, ImuState};
 use crate::{
     containers::{Factor, FactorBuilder, Symbol, TypedSymbol},
-    dtype,
-    impl_residual,
+    dtype, impl_residual,
     linalg::{ForwardProp, Matrix, Matrix3, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
@@ -307,17 +306,17 @@ impl Residual6 for ImuPreintegrationResidual {
     type V5 = VectorVar3;
     type V6 = ImuBias;
 
-    fn residual6<D: crate::linalg::Numeric>(
+    fn residual6<T: crate::linalg::Numeric>(
         &self,
-        x1: SE3<D>,
-        v1: VectorVar3<D>,
-        b1: ImuBias<D>,
-        x2: SE3<D>,
-        v2: VectorVar3<D>,
-        b2: ImuBias<D>,
-    ) -> VectorX<D> {
+        x1: SE3<T>,
+        v1: VectorVar3<T>,
+        b1: ImuBias<T>,
+        x2: SE3<T>,
+        v2: VectorVar3<T>,
+        b2: ImuBias<T>,
+    ) -> VectorX<T> {
         // Add dual types to all of our fields
-        let delta = ImuDelta::<D>::dual_convert(&self.delta);
+        let delta = ImuDelta::<T>::dual_convert(&self.delta);
 
         // Pull out the measurements
         let start = ImuState {
@@ -332,9 +331,9 @@ impl Residual6 for ImuPreintegrationResidual {
             p: p2_meas,
             bias: b2_meas,
         } = delta.predict(&start);
-        let p_2: VectorVar3<D> = x2.xyz().into_owned().into();
-        let p2_meas: VectorVar3<D> = p2_meas.into();
-        let v2_meas: VectorVar3<D> = v2_meas.into();
+        let p_2: VectorVar3<T> = x2.xyz().into_owned().into();
+        let p2_meas: VectorVar3<T> = p2_meas.into();
+        let v2_meas: VectorVar3<T> = v2_meas.into();
 
         // Compute residuals
         // Because of how the noise is integrated,

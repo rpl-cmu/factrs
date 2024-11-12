@@ -25,13 +25,13 @@ impl<
 
 // TODO: Expand on this instead of including in Variable??
 pub trait DualConvert {
-    type Alias<D: Numeric>;
-    fn dual_convert<D: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<D>;
+    type Alias<T: Numeric>;
+    fn dual_convert<T: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<T>;
 }
 
 impl<const R: usize, const C: usize, T: Numeric> DualConvert for Matrix<R, C, T> {
-    type Alias<D: Numeric> = Matrix<R, C, D>;
-    fn dual_convert<D: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<D> {
+    type Alias<TT: Numeric> = Matrix<R, C, TT>;
+    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
         other.map(|x| x.into())
     }
 }
