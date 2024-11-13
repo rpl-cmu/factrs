@@ -2,7 +2,7 @@ use core::fmt;
 
 use nalgebra::{DimNameAdd, DimNameSum};
 
-use super::{Residual, Residual2};
+use super::Residual2;
 #[allow(unused_imports)]
 use crate::{
     containers::{Key, Values},
@@ -52,6 +52,7 @@ impl<P: Variable> BetweenResidual<P> {
     }
 }
 
+#[super::mark(internal)]
 impl<P: VariableUmbrella + 'static> Residual2 for BetweenResidual<P>
 where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
@@ -68,29 +69,6 @@ where
     fn residual2<T: Numeric>(&self, v1: P::Alias<T>, v2: P::Alias<T>) -> VectorX<T> {
         let delta = P::dual_convert::<T>(&self.delta);
         v1.compose(&delta).ominus(&v2)
-    }
-}
-
-impl<P> Residual for BetweenResidual<P>
-where
-    AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
-    DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
-    DualVector<DimNameSum<P::Dim, P::Dim>>: Copy,
-    P: VariableUmbrella + 'static,
-    P::Dim: DimNameAdd<P::Dim>,
-{
-    fn dim_in(&self) -> usize {
-        <Self as Residual2>::DimIn::USIZE
-    }
-    fn dim_out(&self) -> usize {
-        <Self as Residual2>::DimOut::USIZE
-    }
-    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
-        self.residual2_values(values, keys)
-    }
-
-    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
-        self.residual2_jacobian(values, keys)
     }
 }
 

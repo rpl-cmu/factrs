@@ -3,8 +3,7 @@ use std::ops::Mul;
 use faer::{
     prelude::SpSolver,
     sparse::{linalg::solvers, SparseColMatRef},
-    Mat,
-    MatRef,
+    Mat, MatRef,
 };
 
 use crate::dtype;

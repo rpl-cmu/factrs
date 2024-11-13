@@ -952,6 +952,7 @@ version = "0.1.0"
 dependencies = [
  "ahash",
  "downcast-rs",
+ "factrs-proc",
  "faer",
  "faer-ext",
  "log",
@@ -964,6 +965,15 @@ dependencies = [
  "serde",
  "serde_json",
  "typetag",
+]
+
+[[package]]
+name = "factrs-proc"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
 ]
 
 [[package]]

@@ -1,15 +1,6 @@
 use rerun::{
-    components::RotationQuat,
-    Arrows2D,
-    Arrows3D,
-    AsComponents,
-    Points2D,
-    Points3D,
-    Quaternion,
-    Rotation3D,
-    Transform3D,
-    Vec2D,
-    Vec3D,
+    components::RotationQuat, Arrows2D, Arrows3D, AsComponents, Points2D, Points3D, Quaternion,
+    Rotation3D, Transform3D, Vec2D, Vec3D,
 };
 
 use crate::{

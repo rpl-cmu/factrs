@@ -1,6 +1,6 @@
 use core::fmt;
 
-use super::{Residual, Residual1};
+use super::Residual1;
 #[allow(unused_imports)]
 use crate::{
     containers::{Key, Values},
@@ -47,6 +47,7 @@ impl<P: VariableUmbrella> PriorResidual<P> {
     }
 }
 
+#[super::mark(internal)]
 impl<P: VariableUmbrella + 'static> Residual1 for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,
@@ -60,26 +61,6 @@ where
 
     fn residual1<T: Numeric>(&self, v: <Self::V1 as Variable>::Alias<T>) -> VectorX<T> {
         Self::V1::dual_convert::<T>(&self.prior).ominus(&v)
-    }
-}
-
-impl<P: VariableUmbrella + 'static> Residual for PriorResidual<P>
-where
-    AllocatorBuffer<P::Dim>: Sync + Send,
-    DefaultAllocator: DualAllocator<P::Dim>,
-    DualVector<P::Dim>: Copy,
-{
-    fn dim_in(&self) -> usize {
-        <Self as Residual1>::DimIn::USIZE
-    }
-    fn dim_out(&self) -> usize {
-        <Self as Residual1>::DimOut::USIZE
-    }
-    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
-        self.residual1_values(values, keys)
-    }
-    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
-        self.residual1_jacobian(values, keys)
     }
 }
 
