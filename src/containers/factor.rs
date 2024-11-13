@@ -92,7 +92,10 @@ impl Factor {
             .iter()
             .scan(0, |sum, k| {
                 let out = Some(*sum);
-                *sum += values.get_raw(*k).unwrap().dim();
+                *sum += values
+                    .get_raw(*k)
+                    .expect("Key missing in values")
+                    .dim();
                 out
             })
             .collect::<Vec<_>>();

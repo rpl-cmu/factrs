@@ -83,9 +83,9 @@ pub mod test {
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
-        values = opt.optimize(values).unwrap();
+        values = opt.optimize(values).expect("Optimization failed");
 
-        let out: &T = values.get_unchecked(X(0)).unwrap();
+        let out: &T = values.get_unchecked(X(0)).expect("Missing X(0)");
         assert_matrix_eq!(
             out.ominus(&p),
             VectorX::zeros(T::DIM),
@@ -128,9 +128,9 @@ pub mod test {
         graph.add_factor(factor);
 
         let mut opt = O::new(graph);
-        values = opt.optimize(values).unwrap();
+        values = opt.optimize(values).expect("Optimization failed");
 
-        let out1: &T = values.get_unchecked(X(0)).unwrap();
+        let out1: &T = values.get_unchecked(X(0)).expect("Missing X(0)");
         assert_matrix_eq!(
             out1.ominus(&p1),
             VectorX::zeros(T::DIM),
@@ -138,7 +138,7 @@ pub mod test {
             tol = 1e-6
         );
 
-        let out2: &T = values.get_unchecked(X(1)).unwrap();
+        let out2: &T = values.get_unchecked(X(1)).expect("Missing X(1)");
         assert_matrix_eq!(
             out2.ominus(&p2),
             VectorX::zeros(T::DIM),
