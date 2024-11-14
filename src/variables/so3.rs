@@ -117,8 +117,8 @@ impl<T: Numeric> Variable<T> for SO3<T> {
         if theta2 < T::from(1e-6) {
             // cos(theta / 2) \approx 1 - theta^2 / 8
             xyzw.w = T::from(1.0) - theta2 / T::from(8.0);
-            // TODO: Investigate the proper approximation here
-            let tmp = xyzw.w * T::from(0.5);
+            // Complete the square so that norm is one
+            let tmp = T::from(0.5);
             xyzw.x = xi[0] * tmp;
             xyzw.y = xi[1] * tmp;
             xyzw.z = xi[2] * tmp;
