@@ -13,7 +13,7 @@ macro_rules! assert_variable_eq {
     ($x:expr, $y:expr, comp = abs, tol = $tol:expr) => {
         matrixcompare::assert_matrix_eq!(
             $x.ominus(&$y),
-            $crate::linalg::VectorX::zeros($crate::variables::traits::Variable::dim(&$x)),
+            $crate::linalg::VectorX::zeros($crate::variables::Variable::dim(&$x)),
             comp = abs,
             tol = $tol
         );
