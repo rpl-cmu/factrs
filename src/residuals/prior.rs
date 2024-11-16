@@ -47,7 +47,7 @@ impl<P: VariableUmbrella> PriorResidual<P> {
     }
 }
 
-#[super::mark(internal)]
+#[super::mark]
 impl<P: VariableUmbrella + 'static> Residual1 for PriorResidual<P>
 where
     AllocatorBuffer<P::Dim>: Sync + Send,

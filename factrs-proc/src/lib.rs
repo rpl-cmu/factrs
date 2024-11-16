@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse::Parser, punctuated::Punctuated, Item};
+use syn::Item;
 
 #[proc_macro_attribute]
 pub fn mark_residual(
@@ -10,19 +10,8 @@ pub fn mark_residual(
     mark_residual2(args.into(), input.into()).into()
 }
 
-fn mark_residual2(args: TokenStream, input: TokenStream) -> TokenStream {
-    // Parse arguments
-    let args = Punctuated::<syn::Ident, syn::Token![,]>::parse_terminated
-        .parse2(args)
-        .unwrap();
-
-    let prefix = if args.len() == 1 && args[0] == "internal" {
-        quote! { crate }
-    } else {
-        quote! { factrs }
-    };
-
-    // Parse the item
+fn mark_residual2(_args: TokenStream, input: TokenStream) -> TokenStream {
+    // Parse the input
     let item = syn::parse2(input.clone()).expect("Failed to parse residual implementation.");
     let impl_block = match item {
         Item::Impl(s) => s,
@@ -55,20 +44,20 @@ fn mark_residual2(args: TokenStream, input: TokenStream) -> TokenStream {
     quote! {
         #input
 
-        impl #generics #prefix::residuals::Residual for #self_ty #where_clause {
+        impl #generics factrs::residuals::Residual for #self_ty #where_clause {
             fn dim_in(&self) -> usize {
-                <<Self as #residual_trait>::DimIn as #prefix::linalg::DimName>::USIZE
+                <<Self as #residual_trait>::DimIn as factrs::linalg::DimName>::USIZE
             }
 
             fn dim_out(&self) -> usize {
-                <<Self as  #residual_trait>::DimOut as #prefix::linalg::DimName>::USIZE
+                <<Self as  #residual_trait>::DimOut as factrs::linalg::DimName>::USIZE
             }
 
-            fn residual(&self, values: &#prefix::containers::Values, keys: &[#prefix::containers::Key]) -> #prefix::linalg::VectorX {
+            fn residual(&self, values: &factrs::containers::Values, keys: &[factrs::containers::Key]) -> factrs::linalg::VectorX {
                 #residual_trait::#residual_values(self, values, keys)
             }
 
-            fn residual_jacobian(&self, values: &#prefix::containers::Values, keys: &[#prefix::containers::Key]) -> #prefix::linalg::DiffResult<#prefix::linalg::VectorX, #prefix::linalg::MatrixX> {
+            fn residual_jacobian(&self, values: &factrs::containers::Values, keys: &[factrs::containers::Key]) -> factrs::linalg::DiffResult<factrs::linalg::VectorX, factrs::linalg::MatrixX> {
                 #residual_trait::#residual_jacobian(self, values, keys)
             }
         }
