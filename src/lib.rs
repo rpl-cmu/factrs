@@ -90,6 +90,13 @@ pub type dtype = f64;
 #[allow(non_camel_case_types)]
 pub type dtype = f32;
 
+pub use factrs_proc::fac;
+
+// Hack to be able to use our proc macro inside and out of our crate
+// https://users.rust-lang.org/t/how-to-express-crate-path-in-procedural-macros/91274/10
+#[doc(hidden)]
+extern crate self as factrs;
+
 pub mod containers;
 pub mod linalg;
 pub mod linear;

@@ -1,6 +1,15 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse::Parser, punctuated::Punctuated, Item};
+use syn::{parse::Parser, parse_macro_input, punctuated::Punctuated, Item};
+
+mod fac;
+
+#[proc_macro]
+pub fn fac(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let factor = parse_macro_input!(input as fac::Factor);
+
+    fac::fac(factor).into()
+}
 
 #[proc_macro_attribute]
 pub fn mark_residual(

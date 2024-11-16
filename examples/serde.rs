@@ -1,5 +1,6 @@
 use factrs::{
     containers::{FactorBuilder, Graph, Values, X},
+    fac,
     factors::Factor,
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
@@ -26,13 +27,14 @@ fn main() {
     let prior = PriorResidual::new(x);
     let bet = BetweenResidual::new(y);
 
-    let prior = FactorBuilder::new1(prior, X(0))
-        .noise(GaussianNoise::from_scalar_cov(0.1))
-        .robust(GemanMcClure::default())
-        .build();
-    let bet = FactorBuilder::new2(bet, X(0), X(1))
-        .noise(GaussianNoise::from_scalar_cov(10.0))
-        .build();
+    let prior = fac![
+        prior,
+        X(0),
+        GaussianNoise::from_scalar_cov(0.1),
+        GemanMcClure::default()
+    ];
+    let bet = fac![res, (X(0), X(1)), GaussianNoise::from_scalar_cov(10.0)];
+
     let mut graph = Graph::new();
     graph.add_factor(prior);
     graph.add_factor(bet);

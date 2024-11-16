@@ -25,6 +25,7 @@ We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) for 
 ```rust
 use factrs::{
    assign_symbols,
+   fac,
    containers::{FactorBuilder, Graph, Values},
    noise::GaussianNoise,
    optimizers::GaussNewton,
@@ -48,16 +49,18 @@ values.insert(X(1), SO2::identity());
 // Make the factors & insert into graph
 let mut graph = Graph::new();
 let res = PriorResidual::new(x.clone());
-let factor = FactorBuilder::new1(res, X(0)).build();
+let factor = fac![res, X(0)];
 graph.add_factor(factor);
 
 let res = BetweenResidual::new(y.minus(&x));
 let noise = GaussianNoise::from_scalar_sigma(0.1);
 let robust = Huber::default();
-let factor = FactorBuilder::new2(res, X(0), X(1))
-    .noise(noise)
-    .robust(robust)
-    .build();
+let factor = fac![res, (X(0), X(1)), noise, robust];
+// The same as above, but verbose
+// let factor = FactorBuilder::new2(res, X(0), X(1))
+//     .noise(noise)
+//     .robust(robust)
+//     .build();
 graph.add_factor(factor);
 
 // Optimize!
