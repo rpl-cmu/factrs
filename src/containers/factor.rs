@@ -5,7 +5,7 @@ use crate::{
     linalg::{Const, DiffResult, MatrixBlock},
     linear::LinearFactor,
     noise::{NoiseModel, NoiseModelSafe, UnitNoise},
-    residuals::ResidualSafe,
+    residuals::Residual,
     robust::{RobustCostSafe, L2},
 };
 
@@ -52,7 +52,7 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
     keys: Vec<Key>,
-    residual: Box<dyn ResidualSafe>,
+    residual: Box<dyn Residual>,
     noise: Box<dyn NoiseModelSafe>,
     robust: Box<dyn RobustCostSafe>,
 }
@@ -92,10 +92,7 @@ impl Factor {
             .iter()
             .scan(0, |sum, k| {
                 let out = Some(*sum);
-                *sum += values
-                    .get_raw(*k)
-                    .expect("Key missing in values")
-                    .dim();
+                *sum += values.get_raw(*k).expect("Key missing in values").dim();
                 out
             })
             .collect::<Vec<_>>();
@@ -116,7 +113,7 @@ impl Factor {
 /// and [L2] respectively.
 pub struct FactorBuilder<const DIM_OUT: usize> {
     keys: Vec<Key>,
-    residual: Box<dyn ResidualSafe>,
+    residual: Box<dyn Residual>,
     noise: Option<Box<dyn NoiseModelSafe>>,
     robust: Option<Box<dyn RobustCostSafe>>,
 }
@@ -127,7 +124,7 @@ macro_rules! impl_new_builder {
             #[doc = "Create a new factor with " $num " variable connections, while verifying the key types."]
             pub fn [<new $num>]<R, $($key_type),*>(residual: R, $($key: $key_type),*) -> Self
             where
-                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + ResidualSafe + 'static,
+                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + Residual + 'static,
                 $(
                     $key_type: TypedSymbol<R::$var>,
                 )*
@@ -143,7 +140,7 @@ macro_rules! impl_new_builder {
             #[doc = "Create a new factor with " $num " variable connections, without verifying the key types."]
             pub fn [<new $num _unchecked>]<R, $($key_type),*>(residual: R, $($key: $key_type),*) -> Self
             where
-                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + ResidualSafe + 'static,
+                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + Residual + 'static,
                 $(
                     $key_type: Symbol,
                 )*

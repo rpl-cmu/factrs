@@ -2,6 +2,6 @@
 #[macro_export]
 macro_rules! tag_residual {
     ($($ty:ty),* $(,)?) => {$(
-        $crate::register_typetag!($crate::residuals::ResidualSafe, $ty);
+        $crate::register_typetag!($crate::residuals::Residual, $ty);
     )*};
 }

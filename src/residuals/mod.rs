@@ -47,9 +47,7 @@
 //! }
 //! ```
 mod traits;
-pub use traits::{
-    Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6, ResidualSafe,
-};
+pub use traits::{Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6};
 
 pub use factrs_proc::mark_residual as mark;
 

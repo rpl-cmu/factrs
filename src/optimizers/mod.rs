@@ -59,7 +59,7 @@ pub mod test {
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
         noise::{NoiseModelSafe, UnitNoise},
-        residuals::{BetweenResidual, PriorResidual, ResidualSafe},
+        residuals::{BetweenResidual, PriorResidual, Residual},
         symbols::X,
         variables::VariableUmbrella,
     };
@@ -68,7 +68,7 @@ pub mod test {
     where
         T: 'static + VariableUmbrella<Dim = Const<DIM>>,
         UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>: ResidualSafe,
+        PriorResidual<T>: Residual,
         O: Optimizer<Input = Values> + GraphOptimizer,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
@@ -98,8 +98,8 @@ pub mod test {
     where
         T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>>,
         UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>: ResidualSafe,
-        BetweenResidual<T>: ResidualSafe,
+        PriorResidual<T>: Residual,
+        BetweenResidual<T>: Residual,
         O: Optimizer<Input = Values> + GraphOptimizer,
         Const<DIM>: ToTypenum,
         AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,
