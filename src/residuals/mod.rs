@@ -24,6 +24,7 @@
 //! };
 //!
 //! #[derive(Debug)]
+//! # #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 //! struct ZResidual {
 //!     value: dtype
 //! }
@@ -34,7 +35,7 @@
 //!     }
 //! }
 //!
-//! #[residuals::mark]
+//! #[factrs::tag]
 //! impl residuals::Residual1 for ZResidual {
 //!     type DimIn = Const<6>;
 //!     type DimOut = Const<1>;

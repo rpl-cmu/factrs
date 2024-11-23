@@ -1,6 +1,7 @@
 use proc_macro2::Ident;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
+use syn::parse_quote;
 use syn::ConstParam;
 use syn::Error;
 use syn::GenericParam;
@@ -45,7 +46,8 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
         }
         // Simple variable, just use as is
         1 => {
-            expanded.extend(tag_all(&name));
+            let name_str = name.to_string();
+            expanded.extend(tag_all(&name, &name_str));
             expanded.extend(quote!(
                 impl typetag::Tagged for #name {
                     fn tag() -> String {
@@ -58,7 +60,8 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
         2 => {
             let first_generic = item.generics.params.first().unwrap();
             if let GenericParam::Const(ConstParam { ident, .. }) = first_generic {
-                let format = quote! { #name<{}> }.to_string();
+                let format = format!("{}<{{}}>", name.to_string());
+                // let format = quote! { #name<{}> }.to_string();
                 expanded.extend(quote! {
                     impl<const #ident: usize> typetag::Tagged for #name<#ident> {
                         fn tag() -> String {
@@ -67,8 +70,9 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
                     }
                 });
                 for i in 1usize..=20 {
-                    let name_num = quote!(#name<#i>);
-                    expanded.extend(tag_all(&name_num));
+                    let name_str = format!("{}<{}>", name, i);
+                    let name_qt = parse_quote!(#name<#i>);
+                    expanded.extend(tag_all(&name_qt, &name_str));
                 }
             }
         }
@@ -79,12 +83,14 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
     expanded
 }
 
-fn tag_all(kind: &TokenStream2) -> TokenStream2 {
+fn tag_all(kind: &TokenStream2, name: &str) -> TokenStream2 {
+    let name_prior = format!("PriorResidual<{}>", name);
+    let name_between = format!("BetweenResidual<{}>", name);
     quote! {
         // Self
         typetag::__private::inventory::submit! {
             <dyn factrs::variables::VariableSafe>::typetag_register(
-                stringify!(#kind),
+                #name,
                 (|deserializer| typetag::__private::Result::Ok(
                     typetag::__private::Box::new(
                         typetag::__private::erased_serde::deserialize::<#kind>(deserializer)?
@@ -96,7 +102,7 @@ fn tag_all(kind: &TokenStream2) -> TokenStream2 {
         // Prior
         typetag::__private::inventory::submit! {
             <dyn factrs::residuals::Residual>::typetag_register(
-                stringify!(PriorResidual<#kind>),
+                #name_prior,
                 (|deserializer| typetag::__private::Result::Ok(
                     typetag::__private::Box::new(
                         typetag::__private::erased_serde::deserialize::<factrs::residuals::PriorResidual<#kind>>(deserializer)?
@@ -108,7 +114,7 @@ fn tag_all(kind: &TokenStream2) -> TokenStream2 {
         // Between
         typetag::__private::inventory::submit! {
             <dyn factrs::residuals::Residual>::typetag_register(
-                stringify!(PriorResidual<#kind>),
+                #name_between,
                 (|deserializer| typetag::__private::Result::Ok(
                     typetag::__private::Box::new(
                         typetag::__private::erased_serde::deserialize::<factrs::residuals::PriorResidual<#kind>>(deserializer)?

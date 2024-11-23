@@ -5,7 +5,7 @@
 #[macro_export]
 macro_rules! assert_variable_eq {
     ($x:expr, $y:expr) => {
-        matrixcompare::assert_matrix_eq!($x.ominus(&$y), $crate::linalg::VectorX::zeros($x.dim()));
+        matrixcompare::assert_matrix_eq!($crate::variables::Variable::ominus($x, &$y), $crate::linalg::VectorX::zeros($crate::variables::Variable::dim($x)));
     };
     ($x:expr, $y:expr, comp = exact) => {
         matrixcompare::assert_matrix_eq!($x.ominus(&$y), $crate::linalg::VectorX::zeros($x.dim()), comp = exact);

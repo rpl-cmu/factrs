@@ -184,6 +184,8 @@ impl<T: Variable + 'static> VariableSafe for T {
     }
 }
 
+impl_downcast!(VariableSafe);
+
 #[cfg(feature = "serde")]
 pub use register_variablesafe as tag_variable;
 
@@ -196,8 +198,6 @@ pub trait VariableUmbrella<T: Numeric = dtype>:
 {
 }
 impl<T: Numeric, V: VariableSafe + Variable<T, Alias<T> = V>> VariableUmbrella<T> for V {}
-
-impl_downcast!(VariableSafe);
 
 impl Clone for Box<dyn VariableSafe> {
     fn clone(&self) -> Self {
