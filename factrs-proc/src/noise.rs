@@ -23,7 +23,7 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
     }
 
     let mut expanded = quote! {
-        #[factrs::__private::typetag::serde]
+        #[typetag::serde]
         #item
     };
 

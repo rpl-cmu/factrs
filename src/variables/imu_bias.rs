@@ -2,7 +2,7 @@ use std::{fmt, ops};
 
 use nalgebra::Const;
 
-use super::{Variable, VariableSafe};
+use super::Variable;
 use crate::{
     dtype,
     linalg::{DualVector, Numeric, Vector3, VectorDim},

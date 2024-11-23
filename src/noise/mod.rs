@@ -35,6 +35,7 @@ pub trait NoiseModel: Debug + Display {
     fn whiten_mat(&self, m: MatrixX) -> MatrixX;
 }
 
+#[cfg(feature = "serde")]
 pub use register_noisemodel as tag_noise;
 
 mod gaussian;

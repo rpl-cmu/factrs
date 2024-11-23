@@ -184,6 +184,7 @@ impl<T: Variable + 'static> VariableSafe for T {
     }
 }
 
+#[cfg(feature = "serde")]
 pub use register_variablesafe as tag_variable;
 
 /// Umbrella trait for variables

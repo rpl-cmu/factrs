@@ -54,7 +54,10 @@
 //!
 //! [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
 mod traits;
-pub use traits::{MatrixLieGroup, Variable, VariableSafe, VariableUmbrella, tag_variable};
+pub use traits::{MatrixLieGroup, Variable, VariableSafe, VariableUmbrella};
+
+#[cfg(feature = "serde")]
+pub use traits::tag_variable;
 
 mod so2;
 pub use so2::SO2;

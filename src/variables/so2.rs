@@ -7,7 +7,7 @@ use crate::{
         DualVector, Matrix1, Matrix2, MatrixView, Numeric, Vector1, Vector2, VectorDim,
         VectorView1, VectorView2, VectorViewX, VectorX,
     },
-    variables::{MatrixLieGroup, Variable, VariableSafe},
+    variables::{MatrixLieGroup, Variable},
 };
 
 /// Special Orthogonal Group in 2D

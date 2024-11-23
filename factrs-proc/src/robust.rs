@@ -7,7 +7,7 @@ pub fn tag(item: ItemImpl) -> proc_macro2::TokenStream {
     }
 
     quote! {
-        #[factrs::__private::typetag::serde]
+        #[typetag::serde]
         #item
     }
 }

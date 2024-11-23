@@ -8,7 +8,7 @@ use crate::{
         DualVector, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorDim, VectorView3,
         VectorViewX, VectorX,
     },
-    variables::{MatrixLieGroup, Variable, VariableSafe},
+    variables::{MatrixLieGroup, Variable},
 };
 
 /// 3D Special Orthogonal Group

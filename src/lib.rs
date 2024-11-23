@@ -96,10 +96,10 @@ pub type dtype = f32;
 extern crate self as factrs;
 pub use factrs_proc::tag;
 
-#[doc(hidden)]
-pub mod __private {
-    pub extern crate typetag;
-}
+// #[doc(hidden)]
+// pub mod __private {
+//     pub extern crate typetag;
+// }
 
 pub mod containers;
 pub mod linalg;
@@ -149,7 +149,3 @@ pub mod serde {
     pub use crate::robust::tag_robust;
     pub use crate::variables::tag_variable;
 }
-
-// Dummy implementation so things don't break when the serde feature is disabled
-#[cfg(not(feature = "serde"))]
-pub mod serde {}

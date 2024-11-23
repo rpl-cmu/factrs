@@ -8,7 +8,7 @@ use crate::{
         Matrix3x6, Matrix4, Matrix6, MatrixView, Numeric, Vector3, Vector6, VectorView3,
         VectorView6, VectorViewX, VectorX,
     },
-    variables::{MatrixLieGroup, Variable, VariableSafe, SO3},
+    variables::{MatrixLieGroup, Variable, SO3},
 };
 
 /// Special Euclidean Group in 3D

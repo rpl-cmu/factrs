@@ -41,6 +41,7 @@ pub trait RobustCost: Debug {
     fn weight(&self, d2: dtype) -> dtype;
 }
 
+#[cfg(feature = "serde")]
 pub use register_robustcost as tag_robust;
 
 // ------------------------- L2 Norm ------------------------- //

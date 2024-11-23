@@ -9,7 +9,7 @@ use crate::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Numeric,
         Vector, VectorDim, VectorViewX, VectorX,
     },
-    variables::{Variable, VariableSafe},
+    variables::Variable,
 };
 
 // ------------------------- Our needs ------------------------- //

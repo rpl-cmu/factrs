@@ -79,9 +79,12 @@ mod test {
     #[cfg(feature = "f32")]
     const TOL: f32 = 1e-3;
 
-    fn test_prior_jacobian<P>(prior: P)
-    where
-        P: typetag::Tagged + VariableUmbrella + 'static,
+    fn test_prior_jacobian<
+        #[cfg(feature = "serde")] P: VariableUmbrella + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] P: VariableUmbrella + 'static,
+    >(
+        prior: P,
+    ) where
         AllocatorBuffer<P::Dim>: Sync + Send,
         DefaultAllocator: DualAllocator<P::Dim>,
         DualVector<P::Dim>: Copy,

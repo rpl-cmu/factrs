@@ -47,9 +47,10 @@
 //! }
 //! ```
 mod traits;
-pub use traits::{
-    tag_residual, Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6,
-};
+pub use traits::{Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6};
+
+#[cfg(feature = "serde")]
+pub use traits::tag_residual;
 
 mod prior;
 pub use prior::PriorResidual;

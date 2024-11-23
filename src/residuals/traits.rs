@@ -25,6 +25,7 @@ pub trait Residual: Debug + Display {
     fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
 }
 
+#[cfg(feature = "serde")]
 pub use register_residual as tag_residual;
 
 /// The object safe version of [Residual].

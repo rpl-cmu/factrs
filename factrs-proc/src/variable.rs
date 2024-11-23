@@ -47,7 +47,7 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
         1 => {
             expanded.extend(tag_all(&name));
             expanded.extend(quote!(
-                impl factrs::__private::typetag::Tagged for #name {
+                impl typetag::Tagged for #name {
                     fn tag() -> String {
                         String::from(#name_quotes)
                     }
@@ -60,7 +60,7 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
             if let GenericParam::Const(ConstParam { ident, .. }) = first_generic {
                 let format = quote! { #name<{}> }.to_string();
                 expanded.extend(quote! {
-                    impl<const #ident: usize> factrs::__private::typetag::Tagged for #name<#ident> {
+                    impl<const #ident: usize> typetag::Tagged for #name<#ident> {
                         fn tag() -> String {
                             format!(#format, #ident)
                         }
@@ -82,7 +82,16 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
 fn tag_all(kind: &TokenStream2) -> TokenStream2 {
     quote! {
         // Self
-        factrs::variables::tag_variable!(#kind);
+        typetag::__private::inventory::submit! {
+            <dyn factrs::variables::VariableSafe>::typetag_register(
+                stringify!(#kind),
+                (|deserializer| typetag::__private::Result::Ok(
+                    typetag::__private::Box::new(
+                        typetag::__private::erased_serde::deserialize::<#kind>(deserializer)?
+                    ),
+                )) as typetag::__private::DeserializeFn<<dyn factrs::variables::VariableSafe as typetag::__private::Strictest>::Object>,
+            )
+        }
 
         // Prior
         typetag::__private::inventory::submit! {

@@ -33,10 +33,10 @@ pub fn tag(mut item: ItemImpl) -> TokenStream2 {
                 .as_mut()
                 .unwrap()
                 .predicates
-                .push(parse_quote!(#ident: factrs::__private::typetag::Tagged));
+                .push(parse_quote!(#ident: typetag::Tagged));
         }
 
-        quote!( #[factrs::__private::typetag::serde] )
+        quote!( #[typetag::serde] )
     } else {
         TokenStream2::new()
     };
