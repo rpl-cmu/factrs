@@ -25,6 +25,8 @@ pub trait Residual: Debug + Display {
     fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
 }
 
+pub use register_residual as tag_residual;
+
 /// The object safe version of [Residual].
 ///
 /// This trait is used to allow for dynamic dispatch of residuals.

@@ -9,7 +9,6 @@ use crate::{
     linalg::{ForwardProp, Matrix, Matrix3, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
-    tag_residual,
     traits::*,
     variables::{ImuBias, MatrixLieGroup, VectorVar3, SE3, SO3},
 };
@@ -287,15 +286,13 @@ impl ImuPreintegrator {
 
 // ------------------------- The Residual ------------------------- //
 
-tag_residual!(ImuPreintegrationResidual);
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ImuPreintegrationResidual {
     delta: ImuDelta,
 }
 
-#[crate::residuals::mark]
+#[factrs::tag]
 impl Residual6 for ImuPreintegrationResidual {
     type Differ = ForwardProp<Const<15>>;
     type DimIn = Const<30>;

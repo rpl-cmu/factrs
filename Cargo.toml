@@ -35,11 +35,11 @@ matrixcompare = { version = "0.3" }
 
 # serialization
 serde = { version = "1.0.214", optional = true }
-typetag = { version = "0.2.18", optional = true }
+typetag = { version = "0.2.18", optional = true, path = "factrs-typetag" }
 serde_json = { version = "1.0.132", optional = true }
 
 # rerun support
-rerun = { version = "0.19", optional = true, default-features = false, features = [
+rerun = { version = "0.20", optional = true, default-features = false, features = [
     "sdk",
 ] }
 
@@ -60,6 +60,7 @@ rayon = ["faer/rayon"]
 serde = [
     "dep:serde",
     "dep:typetag",
+    "factrs-proc/serde",
     "nalgebra/serde-serialize",
     "faer/serde",
     "ahash/serde",

@@ -13,7 +13,7 @@ macro_rules! assert_variable_eq {
     ($x:expr, $y:expr, comp = abs, tol = $tol:expr) => {
         matrixcompare::assert_matrix_eq!(
             $x.ominus(&$y),
-            $crate::linalg::VectorX::zeros($crate::variables::traits::Variable::dim(&$x)),
+            $crate::linalg::VectorX::zeros($crate::variables::Variable::dim(&$x)),
             comp = abs,
             tol = $tol
         );
@@ -112,7 +112,7 @@ macro_rules! test_variable {
 macro_rules! test_lie {
     ($var:ident) => {
         fn tangent<T: Variable>(scale: dtype) -> $crate::linalg::VectorX {
-            VectorX::from_fn(T::DIM, |_, i| scale * ((i + 1) as dtype) / 10.0)
+            $crate::linalg::VectorX::from_fn(T::DIM, |_, i| scale * ((i + 1) as dtype) / 10.0)
         }
 
         #[test]
@@ -169,12 +169,4 @@ macro_rules! test_lie {
             matrixcompare::assert_matrix_eq!(dx, dx_exp, comp = abs, tol = 1e-6);
         }
     };
-}
-
-/// Register a type as a [variable](crate::variables) for serialization.
-#[macro_export]
-macro_rules! tag_variable {
-    ($($ty:ty),* $(,)?) => {$(
-        $crate::register_typetag!($crate::variables::VariableSafe, $ty);
-    )*};
 }

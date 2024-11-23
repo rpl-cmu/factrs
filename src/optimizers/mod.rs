@@ -58,7 +58,7 @@ pub mod test {
         containers::{FactorBuilder, Graph, Values},
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
-        noise::{NoiseModelSafe, UnitNoise},
+        noise::{NoiseModel, UnitNoise},
         residuals::{BetweenResidual, PriorResidual, Residual},
         symbols::X,
         variables::VariableUmbrella,
@@ -66,8 +66,8 @@ pub mod test {
 
     pub fn optimize_prior<O, T, const DIM: usize>()
     where
-        T: 'static + VariableUmbrella<Dim = Const<DIM>>,
-        UnitNoise<DIM>: NoiseModelSafe,
+        T: 'static + VariableUmbrella<Dim = Const<DIM>> + typetag::Tagged,
+        UnitNoise<DIM>: NoiseModel,
         PriorResidual<T>: Residual,
         O: Optimizer<Input = Values> + GraphOptimizer,
     {
@@ -96,8 +96,8 @@ pub mod test {
 
     pub fn optimize_between<O, T, const DIM: usize, const DIM_DOUBLE: usize>()
     where
-        T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>>,
-        UnitNoise<DIM>: NoiseModelSafe,
+        T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>> + typetag::Tagged,
+        UnitNoise<DIM>: NoiseModel,
         PriorResidual<T>: Residual,
         BetweenResidual<T>: Residual,
         O: Optimizer<Input = Values> + GraphOptimizer,

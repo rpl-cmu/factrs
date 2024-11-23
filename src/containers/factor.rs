@@ -4,9 +4,9 @@ use crate::{
     dtype,
     linalg::{Const, DiffResult, MatrixBlock},
     linear::LinearFactor,
-    noise::{NoiseModel, NoiseModelSafe, UnitNoise},
+    noise::{NoiseModel, UnitNoise},
     residuals::Residual,
-    robust::{RobustCostSafe, L2},
+    robust::{RobustCost, L2},
 };
 
 /// Main structure to represent a factor in the graph.
@@ -53,8 +53,8 @@ use crate::{
 pub struct Factor {
     keys: Vec<Key>,
     residual: Box<dyn Residual>,
-    noise: Box<dyn NoiseModelSafe>,
-    robust: Box<dyn RobustCostSafe>,
+    noise: Box<dyn NoiseModel>,
+    robust: Box<dyn RobustCost>,
 }
 
 impl Factor {
@@ -114,8 +114,8 @@ impl Factor {
 pub struct FactorBuilder<const DIM_OUT: usize> {
     keys: Vec<Key>,
     residual: Box<dyn Residual>,
-    noise: Option<Box<dyn NoiseModelSafe>>,
-    robust: Option<Box<dyn RobustCostSafe>>,
+    noise: Option<Box<dyn NoiseModel>>,
+    robust: Option<Box<dyn RobustCost>>,
 }
 
 macro_rules! impl_new_builder {
@@ -169,7 +169,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Add a noise model to the factor.
     pub fn noise<N>(mut self, noise: N) -> Self
     where
-        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModelSafe,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModel,
     {
         self.noise = Some(Box::new(noise));
         self
@@ -178,7 +178,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Add a robust kernel to the factor.
     pub fn robust<C>(mut self, robust: C) -> Self
     where
-        C: 'static + RobustCostSafe,
+        C: 'static + RobustCost,
     {
         self.robust = Some(Box::new(robust));
         self
@@ -187,7 +187,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Build the factor.
     pub fn build(self) -> Factor
     where
-        UnitNoise<DIM_OUT>: NoiseModelSafe,
+        UnitNoise<DIM_OUT>: NoiseModel,
     {
         let noise = self.noise.unwrap_or_else(|| Box::new(UnitNoise::<DIM_OUT>));
         let robust = self.robust.unwrap_or_else(|| Box::new(L2));

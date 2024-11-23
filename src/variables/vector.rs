@@ -9,18 +9,8 @@ use crate::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Numeric,
         Vector, VectorDim, VectorViewX, VectorX,
     },
-    tag_variable,
-    variables::Variable,
+    variables::{Variable, VariableSafe},
 };
-
-tag_variable!(
-    VectorVar<1>,
-    VectorVar<2>,
-    VectorVar<3>,
-    VectorVar<4>,
-    VectorVar<5>,
-    VectorVar<6>,
-);
 
 // ------------------------- Our needs ------------------------- //
 /// Newtype wrapper around nalgebra::Vector
@@ -33,6 +23,7 @@ tag_variable!(
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VectorVar<const N: usize, T: Numeric = dtype>(pub Vector<N, T>);
 
+#[factrs::tag]
 impl<const N: usize, T: Numeric> Variable<T> for VectorVar<N, T> {
     type Dim = Const<N>;
     type Alias<TT: Numeric> = VectorVar<N, TT>;

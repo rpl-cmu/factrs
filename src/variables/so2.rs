@@ -7,11 +7,8 @@ use crate::{
         DualVector, Matrix1, Matrix2, MatrixView, Numeric, Vector1, Vector2, VectorDim,
         VectorView1, VectorView2, VectorViewX, VectorX,
     },
-    tag_variable,
-    variables::{MatrixLieGroup, Variable},
+    variables::{MatrixLieGroup, Variable, VariableSafe},
 };
-
-tag_variable!(SO2);
 
 /// Special Orthogonal Group in 2D
 ///
@@ -40,6 +37,7 @@ impl<T: Numeric> SO2<T> {
     }
 }
 
+#[factrs::tag]
 impl<T: Numeric> Variable<T> for SO2<T> {
     type Dim = Const<1>;
     type Alias<TT: Numeric> = SO2<TT>;

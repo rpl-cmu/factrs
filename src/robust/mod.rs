@@ -32,8 +32,8 @@ use crate::dtype;
 /// to implement your own kernel, we recommend using
 /// [NumericalDiff](crate::linalg::NumericalDiff) to check that the weight is
 /// correct.
-
-pub trait RobustCost: Default + Debug {
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
+pub trait RobustCost: Debug {
     /// Compute the loss \rho(x^2)
     fn loss(&self, d2: dtype) -> dtype;
 
@@ -41,51 +41,7 @@ pub trait RobustCost: Default + Debug {
     fn weight(&self, d2: dtype) -> dtype;
 }
 
-/// Safe version of [RobustCost] that can be used in trait objects
-///
-/// This will be implemented via a blanket impl for all types that implement
-/// [RobustCost]. It's actually redundant, but we include it for completeness in
-/// case we want to add additional methods in the future.
-#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
-pub trait RobustCostSafe: Debug {
-    fn loss(&self, d2: dtype) -> dtype;
-
-    fn weight(&self, d2: dtype) -> dtype;
-}
-
-impl<
-        #[cfg(not(feature = "serde"))] T: RobustCost,
-        #[cfg(feature = "serde")] T: RobustCost + crate::serde::Tagged,
-    > RobustCostSafe for T
-{
-    fn loss(&self, d2: dtype) -> dtype {
-        RobustCost::loss(self, d2)
-    }
-
-    fn weight(&self, d2: dtype) -> dtype {
-        RobustCost::weight(self, d2)
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_name(&self) -> &'static str {
-        Self::TAG
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_deserialize(&self) {}
-}
-
-/// Register a type as a [robust cost](crate::robust) for serialization.
-#[macro_export]
-macro_rules! tag_robust {
-    ($($ty:ty),* $(,)?) => {$(
-        $crate::register_typetag!($crate::robust::RobustCostSafe, $ty);
-    )*};
-}
-
-tag_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
+pub use register_robustcost as tag_robust;
 
 // ------------------------- L2 Norm ------------------------- //
 #[derive(Clone, Debug)]
@@ -98,6 +54,7 @@ impl Default for L2 {
     }
 }
 
+#[crate::tag]
 impl RobustCost for L2 {
     fn loss(&self, d2: dtype) -> dtype {
         d2 / 2.0
@@ -119,6 +76,7 @@ impl Default for L1 {
     }
 }
 
+#[crate::tag]
 impl RobustCost for L1 {
     fn loss(&self, d2: dtype) -> dtype {
         d2.sqrt()
@@ -152,6 +110,7 @@ impl Default for Huber {
     }
 }
 
+#[crate::tag]
 impl RobustCost for Huber {
     fn loss(&self, d2: dtype) -> dtype {
         if d2 <= self.k * self.k {
@@ -191,6 +150,7 @@ impl Default for Fair {
     }
 }
 
+#[crate::tag]
 impl RobustCost for Fair {
     fn loss(&self, d2: dtype) -> dtype {
         let d = d2.sqrt();
@@ -223,6 +183,7 @@ impl Default for Cauchy {
     }
 }
 
+#[crate::tag]
 impl RobustCost for Cauchy {
     fn loss(&self, d2: dtype) -> dtype {
         self.c2 * ((1.0 + d2 / self.c2).ln()) / 2.0
@@ -254,6 +215,7 @@ impl Default for GemanMcClure {
     }
 }
 
+#[crate::tag]
 impl RobustCost for GemanMcClure {
     fn loss(&self, d2: dtype) -> dtype {
         0.5 * self.c2 * d2 / (self.c2 + d2)
@@ -287,6 +249,7 @@ impl Default for Welsch {
     }
 }
 
+#[crate::tag]
 impl RobustCost for Welsch {
     fn loss(&self, d2: dtype) -> dtype {
         self.c2 * (1.0 - (-d2 / self.c2).exp()) / 2.0
@@ -318,6 +281,7 @@ impl Default for Tukey {
     }
 }
 
+#[crate::tag]
 impl RobustCost for Tukey {
     fn loss(&self, d2: dtype) -> dtype {
         if d2 <= self.c2 {

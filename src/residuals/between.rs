@@ -10,25 +10,11 @@ use crate::{
         AllocatorBuffer, Const, DefaultAllocator, DiffResult, DimName, DualAllocator, DualVector,
         ForwardProp, MatrixX, Numeric, VectorX,
     },
-    tag_residual,
     variables::{
         Variable, VariableUmbrella, VectorVar1, VectorVar2, VectorVar3, VectorVar4, VectorVar5,
         VectorVar6, SE2, SE3, SO2, SO3,
     },
 };
-
-tag_residual!(
-    BetweenResidual<VectorVar1>,
-    BetweenResidual<VectorVar2>,
-    BetweenResidual<VectorVar3>,
-    BetweenResidual<VectorVar4>,
-    BetweenResidual<VectorVar5>,
-    BetweenResidual<VectorVar6>,
-    BetweenResidual<SE2>,
-    BetweenResidual<SE3>,
-    BetweenResidual<SO2>,
-    BetweenResidual<SO3>,
-);
 
 /// Binary factor between variables.
 ///
@@ -52,7 +38,7 @@ impl<P: Variable> BetweenResidual<P> {
     }
 }
 
-#[super::mark]
+#[factrs::tag]
 impl<P: VariableUmbrella + 'static> Residual2 for BetweenResidual<P>
 where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,

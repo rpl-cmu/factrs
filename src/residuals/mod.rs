@@ -47,9 +47,9 @@
 //! }
 //! ```
 mod traits;
-pub use traits::{Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6};
-
-pub use factrs_proc::mark_residual as mark;
+pub use traits::{
+    tag_residual, Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6,
+};
 
 mod prior;
 pub use prior::PriorResidual;
@@ -59,5 +59,3 @@ pub use between::BetweenResidual;
 
 pub mod imu_preint;
 pub use imu_preint::{Accel, Gravity, Gyro, ImuCovariance, ImuPreintegrator};
-
-mod macros;
