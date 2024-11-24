@@ -1,27 +1,38 @@
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::{parse_quote, ItemImpl};
+use quote::{format_ident, quote};
+use syn::{parse_quote, ItemImpl, Path};
 
-pub fn tag(mut item: ItemImpl) -> TokenStream2 {
-    // Parse what residual number we're using
-    let residual_trait = item.trait_.clone().expect("No trait was given").1;
+fn parse_residual_trait(item: &ItemImpl) -> syn::Result<(Path, u32)> {
+    let err = syn::Error::new_spanned(&item, "unable to parse residual number");
+    let residual_trait = item.trait_.clone().ok_or(err.clone())?.1;
+
     let num = residual_trait
         .segments
         .last()
-        .expect("No ident found")
+        .ok_or(err.clone())?
         .ident
         .to_string()
         .replace("Residual", "")
-        .parse::<u32>()
-        .expect("Residual wasn't parseable as a number");
+        .parse::<u32>();
+
+    match num {
+        Result::Err(_) => return Err(err),
+        Result::Ok(n) => return Ok((residual_trait, n)),
+    }
+}
+
+pub fn tag(mut item: ItemImpl) -> TokenStream2 {
+    // Parse what residual number we're using
+    let (residual_trait, num) = match parse_residual_trait(&item) {
+        Result::Err(e) => return e.to_compile_error(),
+        Result::Ok(n) => n,
+    };
 
     // Build all the things we need from it
-    let residual_values = format!("residual{}_values", num);
-    let residual_values = syn::Ident::new(&residual_values, proc_macro2::Span::call_site());
-    let residual_jacobian = format!("residual{}_jacobian", num);
-    let residual_jacobian = syn::Ident::new(&residual_jacobian, proc_macro2::Span::call_site());
+    let residual_values = format_ident!("residual{}_values", num);
+    let residual_jacobian = format_ident!("residual{}_jacobian", num);
 
-    // If we shouldd add typetag
+    // If we should add typetag
     let typetag = if cfg!(feature = "serde") {
         // Add where clauses to all impl
         let all_type_params: Vec<_> = item.generics.type_params().cloned().collect();

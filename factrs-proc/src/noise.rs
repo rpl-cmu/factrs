@@ -41,8 +41,18 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
         1 => {
             if let GenericParam::Const(_) = item.generics.params.first().unwrap() {
                 for i in 1usize..=20 {
+                    let name_str = format!("{}<{}>", name, i);
                     expanded.extend(quote!(
-                        factrs::noise::tag_noise!(#name<#i>);
+                        typetag::__private::inventory::submit! {
+                            <dyn factrs::noise::NoiseModel>::typetag_register(
+                                #name_str,
+                                (|deserializer| typetag::__private::Result::Ok(
+                                    typetag::__private::Box::new(
+                                        typetag::__private::erased_serde::deserialize::<#name<#i>>(deserializer)?
+                                    ),
+                                )) as typetag::__private::DeserializeFn<<dyn factrs::noise::NoiseModel as typetag::__private::Strictest>::Object>,
+                            )
+                        }
                     ));
                 }
             }
