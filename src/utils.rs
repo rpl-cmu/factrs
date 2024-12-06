@@ -7,7 +7,7 @@ use std::{
 use crate::{
     assign_symbols,
     containers::{FactorBuilder, Graph, Values},
-    dtype,
+    dtype, fac,
     linalg::{Matrix3, Matrix6, Vector3},
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
@@ -41,7 +41,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
 
                 // Add prior on whatever the first variable is
                 if values.len() == 1 {
-                    let factor = FactorBuilder::new1(PriorResidual::new(var.clone()), key).build();
+                    let factor = fac![PriorResidual::new(var.clone()), key];
                     graph.add_factor(factor);
                 }
 
@@ -67,9 +67,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 let key2 = X(id_curr);
                 let var = SE2::new(theta, x, y);
                 let noise = GaussianNoise::from_matrix_inf(inf.as_view());
-                let factor = FactorBuilder::new2(BetweenResidual::new(var), key1, key2)
-                    .noise(noise)
-                    .build();
+                let factor = fac![BetweenResidual::new(var), (key1, key2), noise];
                 graph.add_factor(factor);
             }
 
@@ -92,9 +90,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
                 if values.len() == 1 {
                     let noise =
                         GaussianNoise::<6>::from_diag_covs(1e-6, 1e-6, 1e-6, 1e-4, 1e-4, 1e-4);
-                    let factor = FactorBuilder::new1(PriorResidual::new(var.clone()), key)
-                        .noise(noise)
-                        .build();
+                    let factor = fac![PriorResidual::new(var.clone()), key, noise];
                     graph.add_factor(factor);
                 }
 

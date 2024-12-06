@@ -1,13 +1,11 @@
+use syn::parse_macro_input;
 use syn::ItemImpl;
 
+mod fac;
 mod noise;
 mod residual;
 mod robust;
 mod variable;
-
-mod kw {
-    syn::custom_keyword!(path);
-}
 
 enum BoxedTypes {
     Residual,
@@ -51,7 +49,7 @@ pub fn mark(
 
     let trait_type = match check_type(&input) {
         Ok(syntax_tree) => syntax_tree,
-        Err(err) => return proc_macro::TokenStream::from(err.to_compile_error()),
+        Err(err) => return err.to_compile_error().into(),
     };
 
     match trait_type {
@@ -61,4 +59,11 @@ pub fn mark(
         BoxedTypes::Robust => robust::mark(input),
     }
     .into()
+}
+
+#[proc_macro]
+pub fn fac(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let factor = parse_macro_input!(input as fac::Factor);
+
+    fac::fac(factor).into()
 }
