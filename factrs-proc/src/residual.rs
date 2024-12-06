@@ -21,7 +21,7 @@ fn parse_residual_trait(item: &ItemImpl) -> syn::Result<(Path, u32)> {
     }
 }
 
-pub fn tag(mut item: ItemImpl) -> TokenStream2 {
+pub fn mark(mut item: ItemImpl) -> TokenStream2 {
     // Parse what residual number we're using
     let (residual_trait, num) = match parse_residual_trait(&item) {
         Result::Err(e) => return e.to_compile_error(),

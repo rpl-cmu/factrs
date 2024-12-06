@@ -43,7 +43,7 @@ fn check_type(input: &ItemImpl) -> syn::Result<BoxedTypes> {
 }
 
 #[proc_macro_attribute]
-pub fn tag(
+pub fn mark(
     _args: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
@@ -55,10 +55,10 @@ pub fn tag(
     };
 
     match trait_type {
-        BoxedTypes::Residual => residual::tag(input),
-        BoxedTypes::Variable => variable::tag(input),
-        BoxedTypes::Noise => noise::tag(input),
-        BoxedTypes::Robust => robust::tag(input),
+        BoxedTypes::Residual => residual::mark(input),
+        BoxedTypes::Variable => variable::mark(input),
+        BoxedTypes::Noise => noise::mark(input),
+        BoxedTypes::Robust => robust::mark(input),
     }
     .into()
 }

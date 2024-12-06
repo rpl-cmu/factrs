@@ -10,7 +10,7 @@ use nalgebra::Const;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DoubleCovariance<const N: usize>;
 
-#[factrs::tag]
+#[factrs::mark]
 impl<const N: usize> NoiseModel for DoubleCovariance<N> {
     type Dim = Const<N>;
 

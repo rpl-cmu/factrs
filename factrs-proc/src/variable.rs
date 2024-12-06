@@ -21,7 +21,7 @@ fn type_name(mut ty: &Type) -> Option<Ident> {
     }
 }
 
-pub fn tag(item: ItemImpl) -> TokenStream2 {
+pub fn mark(item: ItemImpl) -> TokenStream2 {
     if !cfg!(feature = "serde") {
         return quote! { #item };
     }
@@ -77,6 +77,7 @@ pub fn tag(item: ItemImpl) -> TokenStream2 {
             }
         }
         // Anymore and it's up to the user
+        // TODO: Could at least implement tagged here
         _ => {}
     }
 

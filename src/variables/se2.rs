@@ -51,7 +51,7 @@ impl<T: Numeric> SE2<T> {
     }
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl<T: Numeric> Variable<T> for SE2<T> {
     type Dim = Const<3>;
     type Alias<TT: Numeric> = SE2<TT>;

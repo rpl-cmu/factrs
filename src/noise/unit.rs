@@ -11,7 +11,7 @@ use crate::linalg::{Const, MatrixX, VectorX};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UnitNoise<const N: usize>;
 
-#[factrs::tag]
+#[factrs::mark]
 impl<const N: usize> NoiseModel for UnitNoise<N> {
     type Dim = Const<N>;
 

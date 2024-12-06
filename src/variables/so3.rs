@@ -71,7 +71,7 @@ impl<T: Numeric> SO3<T> {
     }
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl<T: Numeric> Variable<T> for SO3<T> {
     type Dim = Const<3>;
     type Alias<TT: Numeric> = SO3<TT>;

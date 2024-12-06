@@ -37,7 +37,7 @@ impl<T: Numeric> SO2<T> {
     }
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl<T: Numeric> Variable<T> for SO2<T> {
     type Dim = Const<1>;
     type Alias<TT: Numeric> = SO2<TT>;

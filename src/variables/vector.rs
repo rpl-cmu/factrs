@@ -23,7 +23,7 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VectorVar<const N: usize, T: Numeric = dtype>(pub Vector<N, T>);
 
-#[factrs::tag]
+#[factrs::mark]
 impl<const N: usize, T: Numeric> Variable<T> for VectorVar<N, T> {
     type Dim = Const<N>;
     type Alias<TT: Numeric> = VectorVar<N, TT>;

@@ -55,7 +55,7 @@ impl Default for L2 {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for L2 {
     fn loss(&self, d2: dtype) -> dtype {
         d2 / 2.0
@@ -77,7 +77,7 @@ impl Default for L1 {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for L1 {
     fn loss(&self, d2: dtype) -> dtype {
         d2.sqrt()
@@ -111,7 +111,7 @@ impl Default for Huber {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for Huber {
     fn loss(&self, d2: dtype) -> dtype {
         if d2 <= self.k * self.k {
@@ -151,7 +151,7 @@ impl Default for Fair {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for Fair {
     fn loss(&self, d2: dtype) -> dtype {
         let d = d2.sqrt();
@@ -184,7 +184,7 @@ impl Default for Cauchy {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for Cauchy {
     fn loss(&self, d2: dtype) -> dtype {
         self.c2 * ((1.0 + d2 / self.c2).ln()) / 2.0
@@ -216,7 +216,7 @@ impl Default for GemanMcClure {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for GemanMcClure {
     fn loss(&self, d2: dtype) -> dtype {
         0.5 * self.c2 * d2 / (self.c2 + d2)
@@ -250,7 +250,7 @@ impl Default for Welsch {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for Welsch {
     fn loss(&self, d2: dtype) -> dtype {
         self.c2 * (1.0 - (-d2 / self.c2).exp()) / 2.0
@@ -282,7 +282,7 @@ impl Default for Tukey {
     }
 }
 
-#[crate::tag]
+#[factrs::mark]
 impl RobustCost for Tukey {
     fn loss(&self, d2: dtype) -> dtype {
         if d2 <= self.c2 {

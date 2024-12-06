@@ -4,7 +4,7 @@ use factrs::{dtype, robust::RobustCost};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DoubleL2;
 
-#[factrs::tag]
+#[factrs::mark]
 impl RobustCost for DoubleL2 {
     fn loss(&self, d2: dtype) -> dtype {
         d2

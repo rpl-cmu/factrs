@@ -292,7 +292,7 @@ pub struct ImuPreintegrationResidual {
     delta: ImuDelta,
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl Residual6 for ImuPreintegrationResidual {
     type Differ = ForwardProp<Const<15>>;
     type DimIn = Const<30>;

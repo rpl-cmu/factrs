@@ -21,7 +21,7 @@ impl XPrior {
     }
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl Residual1 for XPrior {
     type Differ = ForwardProp<<Self as Residual1>::DimIn>;
     type V1 = SE2;

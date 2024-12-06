@@ -49,7 +49,7 @@ impl<T: Numeric> ImuBias<T> {
     }
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl<T: Numeric> Variable<T> for ImuBias<T> {
     type Dim = crate::linalg::Const<6>;
     type Alias<TT: Numeric> = ImuBias<TT>;

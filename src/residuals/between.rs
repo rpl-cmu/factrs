@@ -38,7 +38,7 @@ impl<P: Variable> BetweenResidual<P> {
     }
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl<P: VariableUmbrella + 'static> Residual2 for BetweenResidual<P>
 where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,

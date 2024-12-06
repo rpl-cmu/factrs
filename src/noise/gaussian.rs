@@ -16,7 +16,7 @@ pub struct GaussianNoise<const N: usize> {
     sqrt_inf: Matrix<N, N>,
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl<const N: usize> NoiseModel for GaussianNoise<N> {
     type Dim = Const<N>;
 

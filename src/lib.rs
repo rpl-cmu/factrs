@@ -94,7 +94,7 @@ pub type dtype = f32;
 // https://users.rust-lang.org/t/how-to-express-crate-path-in-procedural-macros/91274/10
 #[doc(hidden)]
 extern crate self as factrs;
-pub use factrs_proc::tag;
+pub use factrs_proc::mark;
 
 // #[doc(hidden)]
 // pub mod __private {

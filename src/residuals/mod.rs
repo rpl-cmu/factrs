@@ -35,7 +35,7 @@
 //!     }
 //! }
 //!
-//! #[factrs::tag]
+//! #[factrs::mark]
 //! impl residuals::Residual1 for ZResidual {
 //!     type DimIn = Const<6>;
 //!     type DimOut = Const<1>;

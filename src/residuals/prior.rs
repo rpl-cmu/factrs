@@ -33,7 +33,7 @@ impl<P: VariableUmbrella> PriorResidual<P> {
     }
 }
 
-#[factrs::tag]
+#[factrs::mark]
 impl<P> Residual1 for PriorResidual<P>
 where
     P: VariableUmbrella + 'static,
