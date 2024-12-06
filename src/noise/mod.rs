@@ -7,12 +7,6 @@ use std::fmt::{Debug, Display};
 
 use crate::linalg::{DimName, MatrixX, VectorX};
 
-/*
-TODO:
-- Make list of Variable/Residuals to tag as variables are added
-- Make sure this works across crates? Think it should just fine
-*/
-
 /// The trait for a noise model.
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait NoiseModel: Debug + Display {
