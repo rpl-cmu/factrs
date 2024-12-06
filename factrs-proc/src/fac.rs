@@ -57,7 +57,7 @@ impl Parse for Factor {
         let keys = match &input[1] {
             // in brackets
             Expr::Array(a) => a.elems.clone(),
-            // in parantheses
+            // in parentheses
             Expr::Tuple(t) => t.elems.clone(),
             // a single key for unary factors
             Expr::Path(_) => {
@@ -68,12 +68,11 @@ impl Parse for Factor {
             _ => {
                 return Err(syn::Error::new_spanned(
                     &input[1],
-                    "Expected keys in brackets or parantheses",
+                    "Expected keys in brackets or parentheses",
                 ));
             }
         };
 
-        // TODO: Someway to input robust without noise?
         // Then the noise
         let noise = if input.len() >= 3 {
             Some(input[2].clone())
