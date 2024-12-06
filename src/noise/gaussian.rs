@@ -4,26 +4,7 @@ use super::{NoiseModel, UnitNoise};
 use crate::{
     dtype,
     linalg::{Const, Matrix, MatrixView, MatrixX, Vector, VectorView, VectorX},
-    tag_noise,
 };
-
-tag_noise!(
-    GaussianNoise<1>,
-    GaussianNoise<2>,
-    GaussianNoise<3>,
-    GaussianNoise<4>,
-    GaussianNoise<5>,
-    GaussianNoise<6>,
-    GaussianNoise<7>,
-    GaussianNoise<8>,
-    GaussianNoise<9>,
-    GaussianNoise<10>,
-    GaussianNoise<11>,
-    GaussianNoise<12>,
-    GaussianNoise<13>,
-    GaussianNoise<14>,
-    GaussianNoise<15>,
-);
 
 /// A Gaussian noise model.
 ///
@@ -35,6 +16,7 @@ pub struct GaussianNoise<const N: usize> {
     sqrt_inf: Matrix<N, N>,
 }
 
+#[factrs::mark]
 impl<const N: usize> NoiseModel for GaussianNoise<N> {
     type Dim = Const<N>;
 

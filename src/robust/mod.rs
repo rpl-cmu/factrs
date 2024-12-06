@@ -32,8 +32,8 @@ use crate::dtype;
 /// to implement your own kernel, we recommend using
 /// [NumericalDiff](crate::linalg::NumericalDiff) to check that the weight is
 /// correct.
-
-pub trait RobustCost: Default + Debug {
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
+pub trait RobustCost: Debug {
     /// Compute the loss \rho(x^2)
     fn loss(&self, d2: dtype) -> dtype;
 
@@ -41,51 +41,8 @@ pub trait RobustCost: Default + Debug {
     fn weight(&self, d2: dtype) -> dtype;
 }
 
-/// Safe version of [RobustCost] that can be used in trait objects
-///
-/// This will be implemented via a blanket impl for all types that implement
-/// [RobustCost]. It's actually redundant, but we include it for completeness in
-/// case we want to add additional methods in the future.
-#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
-pub trait RobustCostSafe: Debug {
-    fn loss(&self, d2: dtype) -> dtype;
-
-    fn weight(&self, d2: dtype) -> dtype;
-}
-
-impl<
-        #[cfg(not(feature = "serde"))] T: RobustCost,
-        #[cfg(feature = "serde")] T: RobustCost + crate::serde::Tagged,
-    > RobustCostSafe for T
-{
-    fn loss(&self, d2: dtype) -> dtype {
-        RobustCost::loss(self, d2)
-    }
-
-    fn weight(&self, d2: dtype) -> dtype {
-        RobustCost::weight(self, d2)
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_name(&self) -> &'static str {
-        Self::TAG
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_deserialize(&self) {}
-}
-
-/// Register a type as a [robust cost](crate::robust) for serialization.
-#[macro_export]
-macro_rules! tag_robust {
-    ($($ty:ty),* $(,)?) => {$(
-        $crate::register_typetag!($crate::robust::RobustCostSafe, $ty);
-    )*};
-}
-
-tag_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
+#[cfg(feature = "serde")]
+pub use register_robustcost as tag_robust;
 
 // ------------------------- L2 Norm ------------------------- //
 #[derive(Clone, Debug)]
@@ -98,6 +55,7 @@ impl Default for L2 {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for L2 {
     fn loss(&self, d2: dtype) -> dtype {
         d2 / 2.0
@@ -119,6 +77,7 @@ impl Default for L1 {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for L1 {
     fn loss(&self, d2: dtype) -> dtype {
         d2.sqrt()
@@ -152,6 +111,7 @@ impl Default for Huber {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for Huber {
     fn loss(&self, d2: dtype) -> dtype {
         if d2 <= self.k * self.k {
@@ -191,6 +151,7 @@ impl Default for Fair {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for Fair {
     fn loss(&self, d2: dtype) -> dtype {
         let d = d2.sqrt();
@@ -223,6 +184,7 @@ impl Default for Cauchy {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for Cauchy {
     fn loss(&self, d2: dtype) -> dtype {
         self.c2 * ((1.0 + d2 / self.c2).ln()) / 2.0
@@ -254,6 +216,7 @@ impl Default for GemanMcClure {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for GemanMcClure {
     fn loss(&self, d2: dtype) -> dtype {
         0.5 * self.c2 * d2 / (self.c2 + d2)
@@ -287,6 +250,7 @@ impl Default for Welsch {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for Welsch {
     fn loss(&self, d2: dtype) -> dtype {
         self.c2 * (1.0 - (-d2 / self.c2).exp()) / 2.0
@@ -318,6 +282,7 @@ impl Default for Tukey {
     }
 }
 
+#[factrs::mark]
 impl RobustCost for Tukey {
     fn loss(&self, d2: dtype) -> dtype {
         if d2 <= self.c2 {
@@ -336,61 +301,64 @@ impl RobustCost for Tukey {
     }
 }
 
+// Helpers for making sure robust costs are implemented correctly
+use crate::linalg::numerical_derivative;
+use matrixcompare::assert_scalar_eq;
+
+#[cfg(not(feature = "f32"))]
+const EPS: dtype = 1e-6;
+#[cfg(not(feature = "f32"))]
+const TOL: dtype = 1e-6;
+
+#[cfg(feature = "f32")]
+const EPS: dtype = 1e-3;
+#[cfg(feature = "f32")]
+const TOL: dtype = 1e-2;
+
+pub fn test_weight(robust: &impl RobustCost, d: dtype) {
+    let got = robust.weight(d * d);
+    // weight = loss'(d) / d
+    let actual = numerical_derivative(|d| robust.loss(d * d), d, EPS).diff / d;
+
+    println!("Weight got: {}, Weight actual: {}", got, actual);
+    assert_scalar_eq!(got, actual, comp = abs, tol = TOL);
+}
+
+#[macro_export]
+macro_rules! test_robust {
+    ($($robust:ident),*) => {
+        use paste::paste;
+        use matrixcompare::assert_scalar_eq;
+
+        paste!{
+            $(
+                #[test]
+                #[allow(non_snake_case)]
+                fn [<$robust _weight>]() {
+                    let robust = $robust::default();
+                    // Test near origin
+                    $crate::robust::test_weight(&robust, 0.1);
+                    // Test far away
+                    $crate::robust::test_weight(&robust, 50.0);
+                }
+
+                #[test]
+                #[allow(non_snake_case)]
+                fn [<$robust _center>]() {
+                    let robust = $robust::default();
+                    println!("Center: {}", $crate::robust::RobustCost::loss(&robust, 0.0));
+                    assert_scalar_eq!(RobustCost::loss(&robust, 0.0), 0.0, comp=float);
+                }
+
+            )*
+        }
+
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use matrixcompare::assert_scalar_eq;
-
     use super::*;
-    use crate::linalg::numerical_derivative;
 
-    #[cfg(not(feature = "f32"))]
-    const EPS: dtype = 1e-6;
-    #[cfg(not(feature = "f32"))]
-    const TOL: dtype = 1e-6;
-
-    #[cfg(feature = "f32")]
-    const EPS: dtype = 1e-3;
-    #[cfg(feature = "f32")]
-    const TOL: dtype = 1e-2;
-
-    fn test_weight(robust: &impl RobustCost, d: dtype) {
-        let got = robust.weight(d * d);
-        // weight = loss'(d) / d
-        let actual = numerical_derivative(|d| robust.loss(d * d), d, EPS).diff / d;
-
-        println!("Weight got: {}, Weight actual: {}", got, actual);
-        assert_scalar_eq!(got, actual, comp = abs, tol = TOL);
-    }
-
-    macro_rules! robust_tests {
-        ($($robust:ident),*) => {
-            use paste::paste;
-
-            paste!{
-                $(
-                    #[test]
-                    #[allow(non_snake_case)]
-                    fn [<$robust _weight>]() {
-                        let robust = $robust::default();
-                        // Test near origin
-                        test_weight(&robust, 0.1);
-                        // Test far away
-                        test_weight(&robust, 50.0);
-                    }
-
-                    #[test]
-                    #[allow(non_snake_case)]
-                    fn [<$robust _center>]() {
-                        let robust = $robust::default();
-                        println!("Center: {}", RobustCost::loss(&robust, 0.0));
-                        assert_scalar_eq!(RobustCost::loss(&robust, 0.0), 0.0, comp=float);
-                    }
-
-                )*
-            }
-
-        }
-    }
-
-    robust_tests!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
+    test_robust!(L2, L1, Huber, Fair, Cauchy, GemanMcClure, Welsch, Tukey);
 }

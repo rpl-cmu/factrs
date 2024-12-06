@@ -79,6 +79,8 @@
 //! let result = opt.optimize(values);
 //! ```
 
+#![warn(clippy::unwrap_used)]
+
 /// The default floating point type used in the library
 #[cfg(not(feature = "f32"))]
 #[allow(non_camel_case_types)]
@@ -87,6 +89,17 @@ pub type dtype = f64;
 #[cfg(feature = "f32")]
 #[allow(non_camel_case_types)]
 pub type dtype = f32;
+
+// Hack to be able to use our proc macro inside and out of our crate
+// https://users.rust-lang.org/t/how-to-express-crate-path-in-procedural-macros/91274/10
+#[doc(hidden)]
+extern crate self as factrs;
+pub use factrs_proc::mark;
+
+// #[doc(hidden)]
+// pub mod __private {
+//     pub extern crate typetag;
+// }
 
 pub mod containers;
 pub mod linalg;
@@ -131,43 +144,8 @@ pub mod rerun;
 
 #[cfg(feature = "serde")]
 pub mod serde {
-    pub trait Tagged: serde::Serialize {
-        const TAG: &'static str;
-    }
-
-    #[macro_export]
-    macro_rules! register_typetag {
-        ($trait:path, $ty:ty) => {
-            // TODO: It'd be great if this was a blanket implementation, but
-            // I had problems getting it to run over const generics
-            impl $crate::serde::Tagged for $ty {
-                const TAG: &'static str = stringify!($ty);
-            }
-
-            typetag::__private::inventory::submit! {
-                <dyn $trait>::typetag_register(
-                    <$ty as $crate::serde::Tagged>::TAG, // Tag of the type
-                    (|deserializer| typetag::__private::Result::Ok(
-                        typetag::__private::Box::new(
-                            typetag::__private::erased_serde::deserialize::<$ty>(deserializer)?
-                        ),
-                    )) as typetag::__private::DeserializeFn<<dyn $trait as typetag::__private::Strictest>::Object>
-                )
-            }
-        };
-    }
-}
-
-// Dummy implementation so things don't break when the serde feature is disabled
-#[cfg(not(feature = "serde"))]
-pub mod serde {
-    //! Misc helpers for serde support. Enable feature to use.
-    /// Register a type for serialization.
-    ///
-    /// Prefer usage of [tag_variable](crate::tag_variable),
-    /// [tag_noise](crate::tag_noise), etc.
-    #[macro_export]
-    macro_rules! register_typetag {
-        ($trait:path, $ty:ty) => {};
-    }
+    pub use crate::noise::tag_noise;
+    pub use crate::residuals::tag_residual;
+    pub use crate::robust::tag_robust;
+    pub use crate::variables::tag_variable;
 }

@@ -77,7 +77,7 @@ impl Graph {
                     let Idx {
                         idx: col,
                         dim: col_dim,
-                    } = order.get(*key).unwrap();
+                    } = order.get(*key).expect("Key missing in values");
                     (0..*col_dim).for_each(|j| {
                         indices.push((row + i, col + j));
                     });
@@ -88,7 +88,7 @@ impl Graph {
 
         let (sparsity_pattern, sparsity_order) =
             SymbolicSparseColMat::try_new_from_indices(total_rows, total_columns, &indices)
-                .unwrap();
+                .expect("Failed to make sparse matrix");
         GraphOrder {
             order,
             sparsity_pattern,

@@ -5,11 +5,10 @@ use nalgebra::Const;
 use super::{delta::ImuDelta, Accel, Gravity, Gyro, ImuState};
 use crate::{
     containers::{Factor, FactorBuilder, Symbol, TypedSymbol},
-    dtype, impl_residual,
+    dtype,
     linalg::{ForwardProp, Matrix, Matrix3, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
-    tag_residual,
     traits::*,
     variables::{ImuBias, MatrixLieGroup, VectorVar3, SE3, SO3},
 };
@@ -287,14 +286,13 @@ impl ImuPreintegrator {
 
 // ------------------------- The Residual ------------------------- //
 
-tag_residual!(ImuPreintegrationResidual);
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ImuPreintegrationResidual {
     delta: ImuDelta,
 }
 
+#[factrs::mark]
 impl Residual6 for ImuPreintegrationResidual {
     type Differ = ForwardProp<Const<30>>;
     type DimIn = Const<30>;
@@ -353,8 +351,6 @@ impl Residual6 for ImuPreintegrationResidual {
         residual
     }
 }
-
-impl_residual!(6, ImuPreintegrationResidual);
 
 impl fmt::Display for ImuPreintegrationResidual {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

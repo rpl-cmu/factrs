@@ -1,15 +1,6 @@
 use rerun::{
-    components::RotationQuat,
-    Arrows2D,
-    Arrows3D,
-    AsComponents,
-    Points2D,
-    Points3D,
-    Quaternion,
-    Rotation3D,
-    Transform3D,
-    Vec2D,
-    Vec3D,
+    components::RotationQuat, Arrows2D, Arrows3D, AsComponents, Points2D, Points3D, Quaternion,
+    Rotation3D, Transform3D, Vec2D, Vec3D,
 };
 
 use crate::{
@@ -70,8 +61,16 @@ impl From<VectorVar2> for Points2D {
 impl<'a> From<&'a SO2> for Arrows2D {
     fn from(so2: &'a SO2) -> Arrows2D {
         let mat = so2.to_matrix().map(|x| x as f32);
-        let x: [f32; 2] = mat.column(0).as_slice().try_into().unwrap();
-        let y: [f32; 2] = mat.column(1).as_slice().try_into().unwrap();
+        let x: [f32; 2] = mat
+            .column(0)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
+        let y: [f32; 2] = mat
+            .column(1)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         Arrows2D::from_vectors([x, y]).with_colors([[255, 0, 0], [0, 255, 0]])
     }
 }
@@ -85,7 +84,12 @@ impl From<SO2> for Arrows2D {
 // 2D SE2
 impl<'a> From<&'a SE2> for Arrows2D {
     fn from(se2: &'a SE2) -> Arrows2D {
-        let xy: [f32; 2] = se2.xy().map(|x| x as f32).as_slice().try_into().unwrap();
+        let xy: [f32; 2] = se2
+            .xy()
+            .map(|x| x as f32)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         let arrows: Arrows2D = se2.rot().into();
         arrows.with_origins([xy, xy])
     }
@@ -172,9 +176,21 @@ impl From<SO3> for Rotation3D {
 impl<'a> From<&'a SO3> for Arrows3D {
     fn from(so3: &'a SO3) -> Arrows3D {
         let mat = so3.to_matrix().map(|x| x as f32);
-        let x: [f32; 3] = mat.column(0).as_slice().try_into().unwrap();
-        let y: [f32; 3] = mat.column(1).as_slice().try_into().unwrap();
-        let z: [f32; 3] = mat.column(2).as_slice().try_into().unwrap();
+        let x: [f32; 3] = mat
+            .column(0)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
+        let y: [f32; 3] = mat
+            .column(1)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
+        let z: [f32; 3] = mat
+            .column(2)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         Arrows3D::from_vectors([x, y, z]).with_colors([[255, 0, 0], [0, 255, 0], [0, 0, 255]])
     }
 }
@@ -204,7 +220,12 @@ impl From<SE3> for Transform3D {
 impl<'a> From<&'a SE3> for Arrows3D {
     fn from(se3: &'a SE3) -> Arrows3D {
         let arrows: Arrows3D = se3.rot().into();
-        let xyz: [f32; 3] = se3.xyz().map(|x| x as f32).as_slice().try_into().unwrap();
+        let xyz: [f32; 3] = se3
+            .xyz()
+            .map(|x| x as f32)
+            .as_slice()
+            .try_into()
+            .expect("Failed to convert to slice");
         arrows.with_origins([xyz, xyz, xyz])
     }
 }
@@ -391,6 +412,8 @@ where
     fn on_step(&self, values: &Values, idx: f64) {
         self.rec.set_time_seconds("stable_time", idx);
         let sol: R = values.filter::<V>().collect();
-        self.rec.log(self.topic.clone(), &sol).unwrap();
+        self.rec
+            .log(self.topic.clone(), &sol)
+            .expect("Failed to log topic");
     }
 }

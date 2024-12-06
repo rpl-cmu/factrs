@@ -27,14 +27,14 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
     let mut graph = Graph::new();
 
     for line in BufReader::new(file).lines() {
-        let line = line.unwrap();
+        let line = line.expect("Missing line");
         let parts = line.split(" ").collect::<Vec<&str>>();
         match parts[0] {
             "VERTEX_SE2" => {
-                let id = parts[1].parse::<u64>().unwrap();
-                let x = parts[2].parse::<dtype>().unwrap();
-                let y = parts[3].parse::<dtype>().unwrap();
-                let theta = parts[4].parse::<dtype>().unwrap();
+                let id = parts[1].parse::<u64>().expect("Failed to parse g20");
+                let x = parts[2].parse::<dtype>().expect("Failed to parse g20");
+                let y = parts[3].parse::<dtype>().expect("Failed to parse g20");
+                let theta = parts[4].parse::<dtype>().expect("Failed to parse g20");
 
                 let var = SE2::new(theta, x, y);
                 let key = X(id);
@@ -49,18 +49,18 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
             }
 
             "EDGE_SE2" => {
-                let id_prev = parts[1].parse::<u64>().unwrap();
-                let id_curr = parts[2].parse::<u64>().unwrap();
-                let x = parts[3].parse::<dtype>().unwrap();
-                let y = parts[4].parse::<dtype>().unwrap();
-                let theta = parts[5].parse::<dtype>().unwrap();
+                let id_prev = parts[1].parse::<u64>().expect("Failed to parse g20");
+                let id_curr = parts[2].parse::<u64>().expect("Failed to parse g20");
+                let x = parts[3].parse::<dtype>().expect("Failed to parse g20");
+                let y = parts[4].parse::<dtype>().expect("Failed to parse g20");
+                let theta = parts[5].parse::<dtype>().expect("Failed to parse g20");
 
-                let m11 = parts[6].parse::<dtype>().unwrap();
-                let m12 = parts[7].parse::<dtype>().unwrap();
-                let m13 = parts[8].parse::<dtype>().unwrap();
-                let m22 = parts[9].parse::<dtype>().unwrap();
-                let m23 = parts[10].parse::<dtype>().unwrap();
-                let m33 = parts[11].parse::<dtype>().unwrap();
+                let m11 = parts[6].parse::<dtype>().expect("Failed to parse g20");
+                let m12 = parts[7].parse::<dtype>().expect("Failed to parse g20");
+                let m13 = parts[8].parse::<dtype>().expect("Failed to parse g20");
+                let m22 = parts[9].parse::<dtype>().expect("Failed to parse g20");
+                let m23 = parts[10].parse::<dtype>().expect("Failed to parse g20");
+                let m33 = parts[11].parse::<dtype>().expect("Failed to parse g20");
                 let inf = Matrix3::new(m11, m12, m13, m12, m22, m23, m13, m23, m33);
 
                 let key1 = X(id_prev);
@@ -74,14 +74,14 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
             }
 
             "VERTEX_SE3:QUAT" => {
-                let id = parts[1].parse::<u64>().unwrap();
-                let x = parts[2].parse::<dtype>().unwrap();
-                let y = parts[3].parse::<dtype>().unwrap();
-                let z = parts[4].parse::<dtype>().unwrap();
-                let qx = parts[5].parse::<dtype>().unwrap();
-                let qy = parts[6].parse::<dtype>().unwrap();
-                let qz = parts[7].parse::<dtype>().unwrap();
-                let qw = parts[8].parse::<dtype>().unwrap();
+                let id = parts[1].parse::<u64>().expect("Failed to parse g20");
+                let x = parts[2].parse::<dtype>().expect("Failed to parse g20");
+                let y = parts[3].parse::<dtype>().expect("Failed to parse g20");
+                let z = parts[4].parse::<dtype>().expect("Failed to parse g20");
+                let qx = parts[5].parse::<dtype>().expect("Failed to parse g20");
+                let qy = parts[6].parse::<dtype>().expect("Failed to parse g20");
+                let qz = parts[7].parse::<dtype>().expect("Failed to parse g20");
+                let qw = parts[8].parse::<dtype>().expect("Failed to parse g20");
 
                 let rot = SO3::from_xyzw(qx, qy, qz, qw);
                 let xyz = Vector3::new(x, y, z);
@@ -102,37 +102,37 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
             }
 
             "EDGE_SE3:QUAT" => {
-                let id_prev = parts[1].parse::<u64>().unwrap();
-                let id_curr = parts[2].parse::<u64>().unwrap();
-                let x = parts[3].parse::<dtype>().unwrap();
-                let y = parts[4].parse::<dtype>().unwrap();
-                let z = parts[5].parse::<dtype>().unwrap();
-                let qx = parts[6].parse::<dtype>().unwrap();
-                let qy = parts[7].parse::<dtype>().unwrap();
-                let qz = parts[8].parse::<dtype>().unwrap();
-                let qw = parts[9].parse::<dtype>().unwrap();
+                let id_prev = parts[1].parse::<u64>().expect("Failed to parse g20");
+                let id_curr = parts[2].parse::<u64>().expect("Failed to parse g20");
+                let x = parts[3].parse::<dtype>().expect("Failed to parse g20");
+                let y = parts[4].parse::<dtype>().expect("Failed to parse g20");
+                let z = parts[5].parse::<dtype>().expect("Failed to parse g20");
+                let qx = parts[6].parse::<dtype>().expect("Failed to parse g20");
+                let qy = parts[7].parse::<dtype>().expect("Failed to parse g20");
+                let qz = parts[8].parse::<dtype>().expect("Failed to parse g20");
+                let qw = parts[9].parse::<dtype>().expect("Failed to parse g20");
 
-                let m11 = parts[10].parse::<dtype>().unwrap();
-                let m12 = parts[11].parse::<dtype>().unwrap();
-                let m13 = parts[12].parse::<dtype>().unwrap();
-                let m14 = parts[13].parse::<dtype>().unwrap();
-                let m15 = parts[14].parse::<dtype>().unwrap();
-                let m16 = parts[15].parse::<dtype>().unwrap();
-                let m22 = parts[16].parse::<dtype>().unwrap();
-                let m23 = parts[17].parse::<dtype>().unwrap();
-                let m24 = parts[18].parse::<dtype>().unwrap();
-                let m25 = parts[19].parse::<dtype>().unwrap();
-                let m26 = parts[20].parse::<dtype>().unwrap();
-                let m33 = parts[21].parse::<dtype>().unwrap();
-                let m34 = parts[22].parse::<dtype>().unwrap();
-                let m35 = parts[23].parse::<dtype>().unwrap();
-                let m36 = parts[24].parse::<dtype>().unwrap();
-                let m44 = parts[25].parse::<dtype>().unwrap();
-                let m45 = parts[26].parse::<dtype>().unwrap();
-                let m46 = parts[27].parse::<dtype>().unwrap();
-                let m55 = parts[28].parse::<dtype>().unwrap();
-                let m56 = parts[29].parse::<dtype>().unwrap();
-                let m66 = parts[30].parse::<dtype>().unwrap();
+                let m11 = parts[10].parse::<dtype>().expect("Failed to parse g20");
+                let m12 = parts[11].parse::<dtype>().expect("Failed to parse g20");
+                let m13 = parts[12].parse::<dtype>().expect("Failed to parse g20");
+                let m14 = parts[13].parse::<dtype>().expect("Failed to parse g20");
+                let m15 = parts[14].parse::<dtype>().expect("Failed to parse g20");
+                let m16 = parts[15].parse::<dtype>().expect("Failed to parse g20");
+                let m22 = parts[16].parse::<dtype>().expect("Failed to parse g20");
+                let m23 = parts[17].parse::<dtype>().expect("Failed to parse g20");
+                let m24 = parts[18].parse::<dtype>().expect("Failed to parse g20");
+                let m25 = parts[19].parse::<dtype>().expect("Failed to parse g20");
+                let m26 = parts[20].parse::<dtype>().expect("Failed to parse g20");
+                let m33 = parts[21].parse::<dtype>().expect("Failed to parse g20");
+                let m34 = parts[22].parse::<dtype>().expect("Failed to parse g20");
+                let m35 = parts[23].parse::<dtype>().expect("Failed to parse g20");
+                let m36 = parts[24].parse::<dtype>().expect("Failed to parse g20");
+                let m44 = parts[25].parse::<dtype>().expect("Failed to parse g20");
+                let m45 = parts[26].parse::<dtype>().expect("Failed to parse g20");
+                let m46 = parts[27].parse::<dtype>().expect("Failed to parse g20");
+                let m55 = parts[28].parse::<dtype>().expect("Failed to parse g20");
+                let m56 = parts[29].parse::<dtype>().expect("Failed to parse g20");
+                let m66 = parts[30].parse::<dtype>().expect("Failed to parse g20");
                 #[rustfmt::skip]
                 let inf = Matrix6::new(
                     m44, m45, m46, m14, m15, m16,

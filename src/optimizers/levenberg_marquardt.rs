@@ -98,14 +98,14 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
         // Solve the linear system
         let linear_graph = self.graph.linearize(&values);
         let DiffResult { value: r, diff: j } =
-            linear_graph.residual_jacobian(self.graph_order.as_ref().unwrap());
+            linear_graph.residual_jacobian(self.graph_order.as_ref().expect("Missing graph order"));
 
         // Form A
         let jtj = j
             .as_ref()
             .transpose()
             .to_col_major()
-            .unwrap()
+            .expect("J failed to transpose")
             .mul(j.as_ref());
 
         // Form I
@@ -123,7 +123,7 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
             jtj.ncols(),
             &triplets_i,
         )
-        .unwrap();
+        .expect("Failed to make damping terms");
 
         // Form b
         let b = j.as_ref().transpose().mul(&r);
@@ -144,7 +144,11 @@ impl<S: LinearSolver> Optimizer for LevenMarquardt<S> {
                 .column(0)
                 .clone_owned();
             dx = LinearValues::from_order_and_vector(
-                self.graph_order.as_ref().unwrap().order.clone(),
+                self.graph_order
+                    .as_ref()
+                    .expect("Missing graph order")
+                    .order
+                    .clone(),
                 delta,
             );
 
