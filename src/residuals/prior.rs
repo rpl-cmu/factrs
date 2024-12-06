@@ -8,25 +8,11 @@ use crate::{
         AllocatorBuffer, Const, DefaultAllocator, DiffResult, DimName, DualAllocator, DualVector,
         ForwardProp, MatrixX, Numeric, VectorX,
     },
-    tag_residual,
     variables::{
         Variable, VariableUmbrella, VectorVar1, VectorVar2, VectorVar3, VectorVar4, VectorVar5,
         VectorVar6, SE2, SE3, SO2, SO3,
     },
 };
-
-tag_residual!(
-    PriorResidual<VectorVar1>,
-    PriorResidual<VectorVar2>,
-    PriorResidual<VectorVar3>,
-    PriorResidual<VectorVar4>,
-    PriorResidual<VectorVar5>,
-    PriorResidual<VectorVar6>,
-    PriorResidual<SE2>,
-    PriorResidual<SE3>,
-    PriorResidual<SO2>,
-    PriorResidual<SO3>,
-);
 
 /// Unary factor for a prior on a variable.
 ///
@@ -36,8 +22,8 @@ tag_residual!(
 /// $$
 /// where $z$ is the prior value and $v$ is the variable being estimated.
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct PriorResidual<P: Variable> {
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PriorResidual<P> {
     prior: P,
 }
 
@@ -47,9 +33,10 @@ impl<P: VariableUmbrella> PriorResidual<P> {
     }
 }
 
-#[super::mark(internal)]
-impl<P: VariableUmbrella + 'static> Residual1 for PriorResidual<P>
+#[factrs::mark]
+impl<P> Residual1 for PriorResidual<P>
 where
+    P: VariableUmbrella + 'static,
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
     DualVector<P::Dim>: Copy,
@@ -92,9 +79,12 @@ mod test {
     #[cfg(feature = "f32")]
     const TOL: f32 = 1e-3;
 
-    fn test_prior_jacobian<P>(prior: P)
-    where
-        P: VariableUmbrella + 'static,
+    fn test_prior_jacobian<
+        #[cfg(feature = "serde")] P: VariableUmbrella + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] P: VariableUmbrella + 'static,
+    >(
+        prior: P,
+    ) where
         AllocatorBuffer<P::Dim>: Sync + Send,
         DefaultAllocator: DualAllocator<P::Dim>,
         DualVector<P::Dim>: Copy,

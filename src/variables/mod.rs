@@ -56,6 +56,9 @@
 mod traits;
 pub use traits::{MatrixLieGroup, Variable, VariableSafe, VariableUmbrella};
 
+#[cfg(feature = "serde")]
+pub use traits::tag_variable;
+
 mod so2;
 pub use so2::SO2;
 

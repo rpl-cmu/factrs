@@ -58,17 +58,21 @@ pub mod test {
         containers::{FactorBuilder, Graph, Values},
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
-        noise::{NoiseModelSafe, UnitNoise},
-        residuals::{BetweenResidual, PriorResidual, ResidualSafe},
+        noise::{NoiseModel, UnitNoise},
+        residuals::{BetweenResidual, PriorResidual, Residual},
         symbols::X,
         variables::VariableUmbrella,
     };
 
-    pub fn optimize_prior<O, T, const DIM: usize>()
+    pub fn optimize_prior<
+        O,
+        const DIM: usize,
+        #[cfg(feature = "serde")] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static,
+    >()
     where
-        T: 'static + VariableUmbrella<Dim = Const<DIM>>,
-        UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>: ResidualSafe,
+        UnitNoise<DIM>: NoiseModel,
+        PriorResidual<T>: Residual,
         O: Optimizer<Input = Values> + GraphOptimizer,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
@@ -94,12 +98,17 @@ pub mod test {
         );
     }
 
-    pub fn optimize_between<O, T, const DIM: usize, const DIM_DOUBLE: usize>()
+    pub fn optimize_between<
+        O,
+        const DIM: usize,
+        const DIM_DOUBLE: usize,
+        #[cfg(feature = "serde")] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static,
+    >()
     where
-        T: 'static + VariableUmbrella<Dim = nalgebra::Const<DIM>>,
-        UnitNoise<DIM>: NoiseModelSafe,
-        PriorResidual<T>: ResidualSafe,
-        BetweenResidual<T>: ResidualSafe,
+        UnitNoise<DIM>: NoiseModel,
+        PriorResidual<T>: Residual,
+        BetweenResidual<T>: Residual,
         O: Optimizer<Input = Values> + GraphOptimizer,
         Const<DIM>: ToTypenum,
         AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,

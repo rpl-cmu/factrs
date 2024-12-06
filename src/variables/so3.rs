@@ -8,11 +8,8 @@ use crate::{
         DualVector, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorDim, VectorView3,
         VectorViewX, VectorX,
     },
-    tag_variable,
     variables::{MatrixLieGroup, Variable},
 };
-
-tag_variable!(SO3);
 
 /// 3D Special Orthogonal Group
 ///
@@ -74,6 +71,7 @@ impl<T: Numeric> SO3<T> {
     }
 }
 
+#[factrs::mark]
 impl<T: Numeric> Variable<T> for SO3<T> {
     type Dim = Const<3>;
     type Alias<TT: Numeric> = SO3<TT>;
@@ -112,16 +110,20 @@ impl<T: Numeric> Variable<T> for SO3<T> {
     fn exp(xi: VectorViewX<T>) -> Self {
         let mut xyzw = Vector4::zeros();
 
-        let theta = xi.norm();
+        let theta2 = xi.norm_squared();
 
-        xyzw.w = (theta * T::from(0.5)).cos();
-
-        if theta < T::from(1e-3) {
-            let tmp = xyzw.w * T::from(0.5);
+        if theta2 < T::from(1e-6) {
+            // cos(theta / 2) \approx 1 - theta^2 / 8
+            xyzw.w = T::from(1.0) - theta2 / T::from(8.0);
+            // Complete the square so that norm is one
+            let tmp = T::from(0.5);
             xyzw.x = xi[0] * tmp;
             xyzw.y = xi[1] * tmp;
             xyzw.z = xi[2] * tmp;
         } else {
+            let theta = theta2.sqrt();
+            xyzw.w = (theta * T::from(0.5)).cos();
+
             let omega = xi / theta;
             let sin_theta_half = (T::from(1.0) - xyzw.w * xyzw.w).sqrt();
             xyzw.x = omega[0] * sin_theta_half;

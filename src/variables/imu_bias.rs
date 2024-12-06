@@ -7,10 +7,7 @@ use crate::{
     dtype,
     linalg::{DualVector, Numeric, Vector3, VectorDim},
     residuals::{Accel, Gyro},
-    tag_variable,
 };
-
-tag_variable!(ImuBias);
 
 // TODO: Use newtypes internally as well?
 /// IMU bias
@@ -52,6 +49,7 @@ impl<T: Numeric> ImuBias<T> {
     }
 }
 
+#[factrs::mark]
 impl<T: Numeric> Variable<T> for ImuBias<T> {
     type Dim = crate::linalg::Const<6>;
     type Alias<TT: Numeric> = ImuBias<TT>;

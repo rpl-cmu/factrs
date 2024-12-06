@@ -24,6 +24,7 @@
 //! };
 //!
 //! #[derive(Debug)]
+//! # #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 //! struct ZResidual {
 //!     value: dtype
 //! }
@@ -34,7 +35,7 @@
 //!     }
 //! }
 //!
-//! #[residuals::mark]
+//! #[factrs::mark]
 //! impl residuals::Residual1 for ZResidual {
 //!     type DimIn = Const<6>;
 //!     type DimOut = Const<1>;
@@ -47,11 +48,10 @@
 //! }
 //! ```
 mod traits;
-pub use traits::{
-    Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6, ResidualSafe,
-};
+pub use traits::{Residual, Residual1, Residual2, Residual3, Residual4, Residual5, Residual6};
 
-pub use factrs_proc::mark_residual as mark;
+#[cfg(feature = "serde")]
+pub use traits::tag_residual;
 
 mod prior;
 pub use prior::PriorResidual;
@@ -61,5 +61,3 @@ pub use between::BetweenResidual;
 
 pub mod imu_preint;
 pub use imu_preint::{Accel, Gravity, Gyro, ImuCovariance, ImuPreintegrator};
-
-mod macros;

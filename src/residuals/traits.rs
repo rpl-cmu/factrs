@@ -14,6 +14,7 @@ type Alias<V, T> = <V as Variable>::Alias<T>;
 /// This trait is used to implement custom residuals. It is recommended to use
 /// one of the numbered residuals traits instead, and then call the
 /// [impl_residual](crate::impl_residual) macro to implement this trait.
+#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait Residual: Debug + Display {
     fn dim_in(&self) -> usize;
 
@@ -24,52 +25,8 @@ pub trait Residual: Debug + Display {
     fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
 }
 
-/// The object safe version of [Residual].
-///
-/// This trait is used to allow for dynamic dispatch of residuals.
-/// Implemented for all types that implement [Residual].
-#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
-pub trait ResidualSafe: Debug + Display {
-    fn dim_in(&self) -> usize;
-
-    fn dim_out(&self) -> usize;
-
-    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX;
-
-    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX>;
-}
-
-impl<
-        #[cfg(not(feature = "serde"))] R: Residual,
-        #[cfg(feature = "serde")] R: Residual + crate::serde::Tagged,
-    > ResidualSafe for R
-{
-    fn dim_in(&self) -> usize {
-        Residual::dim_in(self)
-    }
-
-    fn dim_out(&self) -> usize {
-        Residual::dim_out(self)
-    }
-
-    fn residual(&self, values: &Values, keys: &[Key]) -> VectorX {
-        Residual::residual(self, values, keys)
-    }
-
-    fn residual_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
-        Residual::residual_jacobian(self, values, keys)
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_name(&self) -> &'static str {
-        Self::TAG
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_deserialize(&self) {}
-}
+#[cfg(feature = "serde")]
+pub use register_residual as tag_residual;
 
 // -------------- Use Macro to create residuals with set sizes -------------- //
 use paste::paste;

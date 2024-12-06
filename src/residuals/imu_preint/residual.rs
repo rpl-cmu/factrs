@@ -9,7 +9,6 @@ use crate::{
     linalg::{ForwardProp, Matrix, Matrix3, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
-    tag_residual,
     traits::*,
     variables::{ImuBias, MatrixLieGroup, VectorVar3, SE3, SO3},
 };
@@ -287,17 +286,15 @@ impl ImuPreintegrator {
 
 // ------------------------- The Residual ------------------------- //
 
-tag_residual!(ImuPreintegrationResidual);
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ImuPreintegrationResidual {
     delta: ImuDelta,
 }
 
-#[crate::residuals::mark(internal)]
+#[factrs::mark]
 impl Residual6 for ImuPreintegrationResidual {
-    type Differ = ForwardProp<Const<15>>;
+    type Differ = ForwardProp<Const<30>>;
     type DimIn = Const<30>;
     type DimOut = Const<15>;
     type V1 = SE3;
@@ -358,5 +355,82 @@ impl Residual6 for ImuPreintegrationResidual {
 impl fmt::Display for ImuPreintegrationResidual {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ImuPreintegrationResidual({})", self.delta)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        assert_variable_eq, assign_symbols,
+        containers::{Graph, Values},
+        linalg::Vector3,
+        optimizers::GaussNewton,
+        residuals::{Accel, Gyro, PriorResidual},
+        variables::{ImuBias, VectorVar3, SE3},
+    };
+
+    use super::*;
+
+    assign_symbols!(X: SE3; V: VectorVar3; B: ImuBias);
+
+    // Test using residual in an optimization problem
+    #[test]
+    fn optimize() {
+        // Initial conditions
+        let accel = Accel::new(0.1, 0.0, -9.81);
+        let gyro = Gyro::zeros();
+        let x0 = SE3::identity();
+        let v0 = VectorVar3::identity();
+        let b0 = ImuBias::identity();
+        let dt = 0.01;
+        let n = 100;
+
+        // Integrate measurements
+        let mut preint = ImuPreintegrator::new(ImuCovariance::default(), b0.clone(), Gravity::up());
+        for _ in 0..n {
+            preint.integrate(&gyro, &accel, dt);
+        }
+        println!("xi_pos : {}", preint.delta);
+
+        // Build factor and graph
+        let mut graph = Graph::new();
+        let factor = preint.build(X(0), V(0), B(0), X(1), V(1), B(1));
+        let prior_x0 = FactorBuilder::new1(PriorResidual::new(x0.clone()), X(0)).build();
+        let prior_v0 = FactorBuilder::new1(PriorResidual::new(v0.clone()), V(0)).build();
+        let prior_b0 = FactorBuilder::new1(PriorResidual::new(b0.clone()), B(0)).build();
+        graph.add_factor(factor);
+        graph.add_factor(prior_x0);
+        graph.add_factor(prior_v0);
+        graph.add_factor(prior_b0);
+
+        // println!("{:?}", graph);
+
+        let mut values = Values::new();
+        values.insert(X(0), x0);
+        values.insert(V(0), v0);
+        values.insert(B(0), b0);
+        values.insert(X(1), SE3::identity());
+        values.insert(V(1), VectorVar3::identity());
+        values.insert(B(1), ImuBias::identity());
+
+        // Optimize
+        let mut opt: GaussNewton = GaussNewton::new(graph);
+        let results = opt.optimize(values).expect("Optimization failed");
+
+        // Check results
+        let t = n as dtype * dt;
+        let xyz = Vector3::new(accel.0.x * t * t / 2.0, 0.0, 0.0);
+
+        let x1_exp = SE3::from_rot_trans(SO3::identity(), xyz);
+        let x1_got = results.get(X(1)).expect("Somehow missing X(1)").clone();
+        println!("x1_exp: {}", x1_exp);
+        println!("x1_got: {}", x1_got);
+        assert_variable_eq!(x1_got, x1_exp, comp = abs, tol = 1e-5);
+
+        let v1_exp = VectorVar3::new(accel.0.x * t, 0.0, 0.0);
+        let v1_got = results.get(V(1)).expect("Somehow missing V(1)").clone();
+        println!("v1_exp: {}", v1_exp);
+        println!("v1_got: {}", v1_got);
+        assert_variable_eq!(v1_got, v1_exp, comp = abs, tol = 1e-5);
     }
 }

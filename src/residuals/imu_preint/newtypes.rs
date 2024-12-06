@@ -79,6 +79,7 @@ impl<T: Numeric> Gravity<T> {
 /// Struct to hold an Imu state
 ///
 /// Specifically holds an Imu state to which an ImuDelta can be applied
+#[derive(Clone, Debug)]
 pub struct ImuState<T: Numeric = dtype> {
     pub r: SO3<T>,
     pub v: Vector3<T>,

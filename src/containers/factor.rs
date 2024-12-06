@@ -4,9 +4,9 @@ use crate::{
     dtype,
     linalg::{Const, DiffResult, MatrixBlock},
     linear::LinearFactor,
-    noise::{NoiseModel, NoiseModelSafe, UnitNoise},
-    residuals::ResidualSafe,
-    robust::{RobustCostSafe, L2},
+    noise::{NoiseModel, UnitNoise},
+    residuals::Residual,
+    robust::{RobustCost, L2},
 };
 
 /// Main structure to represent a factor in the graph.
@@ -52,9 +52,9 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
     keys: Vec<Key>,
-    residual: Box<dyn ResidualSafe>,
-    noise: Box<dyn NoiseModelSafe>,
-    robust: Box<dyn RobustCostSafe>,
+    residual: Box<dyn Residual>,
+    noise: Box<dyn NoiseModel>,
+    robust: Box<dyn RobustCost>,
 }
 
 impl Factor {
@@ -92,10 +92,7 @@ impl Factor {
             .iter()
             .scan(0, |sum, k| {
                 let out = Some(*sum);
-                *sum += values
-                    .get_raw(*k)
-                    .expect("Key missing in values")
-                    .dim();
+                *sum += values.get_raw(*k).expect("Key missing in values").dim();
                 out
             })
             .collect::<Vec<_>>();
@@ -116,9 +113,9 @@ impl Factor {
 /// and [L2] respectively.
 pub struct FactorBuilder<const DIM_OUT: usize> {
     keys: Vec<Key>,
-    residual: Box<dyn ResidualSafe>,
-    noise: Option<Box<dyn NoiseModelSafe>>,
-    robust: Option<Box<dyn RobustCostSafe>>,
+    residual: Box<dyn Residual>,
+    noise: Option<Box<dyn NoiseModel>>,
+    robust: Option<Box<dyn RobustCost>>,
 }
 
 macro_rules! impl_new_builder {
@@ -127,7 +124,7 @@ macro_rules! impl_new_builder {
             #[doc = "Create a new factor with " $num " variable connections, while verifying the key types."]
             pub fn [<new $num>]<R, $($key_type),*>(residual: R, $($key: $key_type),*) -> Self
             where
-                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + ResidualSafe + 'static,
+                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + Residual + 'static,
                 $(
                     $key_type: TypedSymbol<R::$var>,
                 )*
@@ -143,7 +140,7 @@ macro_rules! impl_new_builder {
             #[doc = "Create a new factor with " $num " variable connections, without verifying the key types."]
             pub fn [<new $num _unchecked>]<R, $($key_type),*>(residual: R, $($key: $key_type),*) -> Self
             where
-                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + ResidualSafe + 'static,
+                R: crate::residuals::[<Residual $num>]<DimOut = Const<DIM_OUT>> + Residual + 'static,
                 $(
                     $key_type: Symbol,
                 )*
@@ -172,7 +169,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Add a noise model to the factor.
     pub fn noise<N>(mut self, noise: N) -> Self
     where
-        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModelSafe,
+        N: 'static + NoiseModel<Dim = Const<DIM_OUT>> + NoiseModel,
     {
         self.noise = Some(Box::new(noise));
         self
@@ -181,7 +178,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Add a robust kernel to the factor.
     pub fn robust<C>(mut self, robust: C) -> Self
     where
-        C: 'static + RobustCostSafe,
+        C: 'static + RobustCost,
     {
         self.robust = Some(Box::new(robust));
         self
@@ -190,7 +187,7 @@ impl<const DIM_OUT: usize> FactorBuilder<DIM_OUT> {
     /// Build the factor.
     pub fn build(self) -> Factor
     where
-        UnitNoise<DIM_OUT>: NoiseModelSafe,
+        UnitNoise<DIM_OUT>: NoiseModel,
     {
         let noise = self.noise.unwrap_or_else(|| Box::new(UnitNoise::<DIM_OUT>));
         let robust = self.robust.unwrap_or_else(|| Box::new(L2));

@@ -8,11 +8,8 @@ use crate::{
         Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric, Vector2, Vector3, VectorView2,
         VectorView3, VectorViewX, VectorX,
     },
-    tag_variable,
     variables::{MatrixLieGroup, Variable, SO2},
 };
-
-tag_variable!(SE2);
 
 /// Special Euclidean Group in 2D
 ///
@@ -54,6 +51,7 @@ impl<T: Numeric> SE2<T> {
     }
 }
 
+#[factrs::mark]
 impl<T: Numeric> Variable<T> for SE2<T> {
     type Dim = Const<3>;
     type Alias<TT: Numeric> = SE2<TT>;

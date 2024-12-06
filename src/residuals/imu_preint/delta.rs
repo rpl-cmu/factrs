@@ -253,6 +253,7 @@ mod test {
         assert_matrix_eq!(delta.xi_theta, gyro.0 * t, comp = abs, tol = 1e-5);
     }
 
+    // Test construction of state transtition matrix A
     #[test]
     fn make_a() {
         let dt = 0.1;
@@ -333,6 +334,7 @@ mod test {
         );
     }
 
+    // Test we get correct jacobian H for bias propagation
     #[test]
     #[allow(non_snake_case)]
     fn propagate_h() {

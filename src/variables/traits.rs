@@ -159,6 +159,7 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
 ///
 /// This trait is used to allow for dynamic dispatch of noise models.
 /// Implemented for all types that implement [Variable].
+// TODO: Rename to VariableGeneric? Something like that
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait VariableSafe: Debug + Display + Downcast {
     fn clone_box(&self) -> Box<dyn VariableSafe>;
@@ -168,11 +169,8 @@ pub trait VariableSafe: Debug + Display + Downcast {
     fn oplus_mut(&mut self, delta: VectorViewX);
 }
 
-impl<
-        #[cfg(not(feature = "serde"))] T: Variable + 'static,
-        #[cfg(feature = "serde")] T: Variable + 'static + crate::serde::Tagged,
-    > VariableSafe for T
-{
+#[cfg_attr(feature = "serde", typetag::serde)]
+impl<T: Variable + 'static> VariableSafe for T {
     fn clone_box(&self) -> Box<dyn VariableSafe> {
         Box::new((*self).clone())
     }
@@ -184,17 +182,12 @@ impl<
     fn oplus_mut(&mut self, delta: VectorViewX) {
         *self = self.oplus(delta);
     }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_name(&self) -> &'static str {
-        Self::TAG
-    }
-
-    #[doc(hidden)]
-    #[cfg(feature = "serde")]
-    fn typetag_deserialize(&self) {}
 }
+
+impl_downcast!(VariableSafe);
+
+#[cfg(feature = "serde")]
+pub use register_variablesafe as tag_variable;
 
 /// Umbrella trait for variables
 ///
@@ -205,8 +198,6 @@ pub trait VariableUmbrella<T: Numeric = dtype>:
 {
 }
 impl<T: Numeric, V: VariableSafe + Variable<T, Alias<T> = V>> VariableUmbrella<T> for V {}
-
-impl_downcast!(VariableSafe);
 
 impl Clone for Box<dyn VariableSafe> {
     fn clone(&self) -> Self {
