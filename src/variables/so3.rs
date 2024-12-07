@@ -336,12 +336,22 @@ mod tests {
 
     test_lie!(SO3);
 
+    #[cfg(not(feature = "f32"))]
+    const PWR: i32 = 6;
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-6;
+
+    #[cfg(feature = "f32")]
+    const PWR: i32 = 3;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
+
     #[test]
     fn dexp() {
         let xi = Vector3::new(0.1, 0.2, 0.3);
         let got = SO3::dexp(xi.as_view());
 
-        let exp = NumericalDiff::<6>::jacobian_variable_1(
+        let exp = NumericalDiff::<PWR>::jacobian_variable_1(
             |x: VectorVar3| SO3::exp(Vector3::from(x).as_view()),
             &VectorVar3::from(xi),
         )
@@ -349,6 +359,6 @@ mod tests {
 
         println!("got: {}", got);
         println!("exp: {}", exp);
-        assert_matrix_eq!(got, exp, comp = abs, tol = 1e-6);
+        assert_matrix_eq!(got, exp, comp = abs, tol = TOL);
     }
 }

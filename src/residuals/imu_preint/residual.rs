@@ -16,7 +16,7 @@ use crate::{
 
 /// Covariance parameters for the IMU preintegration
 ///
-/// Trys to come with semi-resonable defaults for the covariance parameters
+/// Tries to come with semi-reasonable defaults for the covariance parameters
 /// ```
 /// use factrs::residuals::ImuCovariance;
 /// let cov = ImuCovariance::default();
@@ -363,6 +363,7 @@ mod test {
     use crate::{
         assert_variable_eq, assign_symbols,
         containers::{Graph, Values},
+        fac,
         linalg::Vector3,
         optimizers::GaussNewton,
         residuals::{Accel, Gyro, PriorResidual},
@@ -395,9 +396,9 @@ mod test {
         // Build factor and graph
         let mut graph = Graph::new();
         let factor = preint.build(X(0), V(0), B(0), X(1), V(1), B(1));
-        let prior_x0 = FactorBuilder::new1(PriorResidual::new(x0.clone()), X(0)).build();
-        let prior_v0 = FactorBuilder::new1(PriorResidual::new(v0.clone()), V(0)).build();
-        let prior_b0 = FactorBuilder::new1(PriorResidual::new(b0.clone()), B(0)).build();
+        let prior_x0 = fac!(PriorResidual::new(x0.clone()), X(0), 1e-3);
+        let prior_v0 = fac!(PriorResidual::new(v0.clone()), V(0), 1e-3);
+        let prior_b0 = fac!(PriorResidual::new(b0.clone()), B(0), 1e-3);
         graph.add_factor(factor);
         graph.add_factor(prior_x0);
         graph.add_factor(prior_v0);
