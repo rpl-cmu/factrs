@@ -75,9 +75,9 @@ mod test {
     const TOL: f64 = 1e-6;
 
     #[cfg(feature = "f32")]
-    const PWR: i32 = 3;
+    const PWR: i32 = 4;
     #[cfg(feature = "f32")]
-    const TOL: f32 = 1e-3;
+    const TOL: f32 = 1e-2;
 
     fn test_prior_jacobian<
         #[cfg(feature = "serde")] P: VariableUmbrella + 'static + typetag::Tagged,

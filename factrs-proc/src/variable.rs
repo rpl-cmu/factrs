@@ -60,7 +60,7 @@ pub fn mark(item: ItemImpl) -> TokenStream2 {
         2 => {
             let first_generic = item.generics.params.first().unwrap();
             if let GenericParam::Const(ConstParam { ident, .. }) = first_generic {
-                let format = format!("{}<{{}}>", name.to_string());
+                let format = format!("{}<{{}}>", name);
                 // let format = quote! { #name<{}> }.to_string();
                 expanded.extend(quote! {
                     impl<const #ident: usize> typetag::Tagged for #name<#ident> {

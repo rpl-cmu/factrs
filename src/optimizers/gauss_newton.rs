@@ -79,7 +79,11 @@ impl<S: LinearSolver> Optimizer for GaussNewton<S> {
 
         // Update the values
         let dx = LinearValues::from_order_and_vector(
-            self.graph_order.as_ref().expect("Missing graph order").order.clone(),
+            self.graph_order
+                .as_ref()
+                .expect("Missing graph order")
+                .order
+                .clone(),
             delta,
         );
         values.oplus_mut(&dx);
