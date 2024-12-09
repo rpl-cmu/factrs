@@ -90,7 +90,7 @@ impl<T: Numeric> ImuDelta<T> {
         // Setup
         self.dt += dt;
         let accel_world = SO3::exp(self.xi_theta.as_view()).apply(accel.0.as_view());
-        let H = SO3::dexp(self.xi_theta.as_view());
+        let H = SO3::dexp_right(self.xi_theta.as_view());
         let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
 
         // Integrate (make sure integration occurs in the correct order)
@@ -118,7 +118,7 @@ impl<T: Numeric> ImuDelta<T> {
     // that's faster
     #[allow(non_snake_case)]
     fn A(&self, gyro: &GyroUnbiased<T>, accel: &AccelUnbiased<T>, dt: T) -> Matrix<15, 15, T> {
-        let H = SO3::dexp(self.xi_theta.as_view());
+        let H = SO3::dexp_right(self.xi_theta.as_view());
         let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
         let R: nalgebra::Matrix<
             T,
@@ -196,6 +196,11 @@ mod test {
         variables::VectorVar,
     };
 
+    #[cfg(not(feature = "f32"))]
+    const TOL: f64 = 1e-5;
+    #[cfg(feature = "f32")]
+    const TOL: f32 = 1e-3;
+
     // Helper function to integrate a constant gyro / accel for a given amount of
     // time
     fn integrate<T: Numeric>(
@@ -231,9 +236,9 @@ mod test {
         let delta = integrate(&gyro, &accel, &ImuBias::identity(), n, t);
 
         println!("Delta: {}", delta);
-        assert_scalar_eq!(delta.dt, t, comp = abs, tol = 1e-5);
-        assert_matrix_eq!(delta.xi_vel, accel.0 * t, comp = abs, tol = 1e-5);
-        assert_matrix_eq!(delta.xi_pos, accel.0 * t * t / 2.0, comp = abs, tol = 1e-5);
+        assert_scalar_eq!(delta.dt, t, comp = abs, tol = TOL);
+        assert_matrix_eq!(delta.xi_vel, accel.0 * t, comp = abs, tol = TOL);
+        assert_matrix_eq!(delta.xi_pos, accel.0 * t * t / 2.0, comp = abs, tol = TOL);
     }
 
     // Test constant angular velocity
@@ -249,16 +254,15 @@ mod test {
         let delta = integrate(&gyro, &accel, &ImuBias::identity(), n, t);
 
         println!("Delta: {}", delta);
-        assert_scalar_eq!(delta.dt, t, comp = abs, tol = 1e-5);
-        assert_matrix_eq!(delta.xi_theta, gyro.0 * t, comp = abs, tol = 1e-5);
+        assert_scalar_eq!(delta.dt, t, comp = abs, tol = TOL);
+        assert_matrix_eq!(delta.xi_theta, gyro.0 * t, comp = abs, tol = TOL);
     }
 
     // Test construction of state transtition matrix A
     #[test]
     fn make_a() {
         let dt = 0.1;
-        let v: nalgebra::Matrix<f64, Const<15>, Const<1>, nalgebra::ArrayStorage<f64, 15, 1>> =
-            Vector::<15>::from_fn(|i, _| i as dtype / 10.0);
+        let v = Vector::<15>::from_fn(|i, _| i as dtype / 10.0);
         let gyro = Gyro::new(3.0, 2.0, 1.0);
         let accel: Accel = Accel::new(1.0, 2.0, 3.0);
 
@@ -330,7 +334,7 @@ mod test {
             a_exp.fixed_view::<15, 12>(0, 3),
             a_got.fixed_view::<15, 12>(0, 3),
             comp = abs,
-            tol = 1e-5
+            tol = TOL
         );
     }
 
@@ -366,7 +370,7 @@ mod test {
 
         println!("H_accel_got: {:.4}", H_accel_got);
         println!("H_accel_exp: {:.4}", H_accel_exp);
-        assert_matrix_eq!(H_accel_got, H_accel_exp, comp = abs, tol = 1e-5);
+        assert_matrix_eq!(H_accel_got, H_accel_exp, comp = abs, tol = TOL);
 
         println!("H_gyro_got: {:.4}", H_gyro_got);
         println!("H_gyro_exp: {:.4}", H_gyro_exp);
@@ -375,7 +379,7 @@ mod test {
             H_gyro_got.fixed_view::<6, 3>(3, 0),
             H_gyro_exp.fixed_view::<6, 3>(3, 0),
             comp = abs,
-            tol = 1e-5
+            tol = TOL
         );
     }
 }

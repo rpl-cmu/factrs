@@ -1,12 +1,14 @@
 use factrs::{
-    containers::{FactorBuilder, Graph, Values, X},
+    assign_symbols,
+    containers::{Graph, Values},
     fac,
-    factors::Factor,
     noise::GaussianNoise,
     residuals::{BetweenResidual, PriorResidual},
-    robust::{GemanMcClure, L2},
+    robust::GemanMcClure,
     variables::{SE2, SO2},
 };
+
+assign_symbols!(X: SO2, SE2);
 
 fn main() {
     // ------------------------- Try with values ------------------------- //
@@ -33,7 +35,7 @@ fn main() {
         GaussianNoise::from_scalar_cov(0.1),
         GemanMcClure::default()
     ];
-    let bet = fac![res, (X(0), X(1)), GaussianNoise::from_scalar_cov(10.0)];
+    let bet = fac![bet, (X(0), X(1)), GaussianNoise::from_scalar_cov(10.0)];
 
     let mut graph = Graph::new();
     graph.add_factor(prior);

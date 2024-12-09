@@ -1632,9 +1632,9 @@ dependencies = [
 
 [[package]]
 name = "num-dual"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6185c88d91fc70d8d930195aca598f2f5045f888096fbefa66530f556206283"
+checksum = "6ead76d4b28e52327483b22770fe0686fa8a9e520e9362da9a2582e2131aad33"
 dependencies = [
  "approx",
  "nalgebra",

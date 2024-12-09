@@ -3,7 +3,7 @@ use quote::{format_ident, quote};
 use syn::{parse_quote, ItemImpl, Path};
 
 fn parse_residual_trait(item: &ItemImpl) -> syn::Result<(Path, u32)> {
-    let err = syn::Error::new_spanned(&item, "unable to parse residual number");
+    let err = syn::Error::new_spanned(item, "unable to parse residual number");
     let residual_trait = item.trait_.clone().ok_or(err.clone())?.1;
 
     let num = residual_trait
@@ -16,8 +16,8 @@ fn parse_residual_trait(item: &ItemImpl) -> syn::Result<(Path, u32)> {
         .parse::<u32>();
 
     match num {
-        Result::Err(_) => return Err(err),
-        Result::Ok(n) => return Ok((residual_trait, n)),
+        Result::Err(_) => Err(err),
+        Result::Ok(n) => Ok((residual_trait, n)),
     }
 }
 

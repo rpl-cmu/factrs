@@ -1,6 +1,7 @@
 use proc_macro2::Span;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
+use syn::parse_quote;
 use syn::{parse::Parse, punctuated::Punctuated, Expr, Ident, Token};
 
 pub struct Factor {
@@ -29,7 +30,7 @@ impl Factor {
         let func = Ident::new(&format!("new{}", self.keys.len()), Span::call_site());
         let res = &self.residual;
         let keys = &self.keys;
-        return quote! { #func(#res, #keys) };
+        quote! { #func(#res, #keys) }
     }
 }
 
@@ -45,7 +46,7 @@ impl Parse for Factor {
             ));
         } else if input.len() > 4 {
             return Err(syn::Error::new_spanned(
-                &input.last(),
+                input.last(),
                 "Expected at most four items",
             ));
         }
@@ -60,7 +61,7 @@ impl Parse for Factor {
             // in parentheses
             Expr::Tuple(t) => t.elems.clone(),
             // a single key for unary factors
-            Expr::Path(_) => {
+            Expr::Path(_) | Expr::Call(_) => {
                 let mut p = Punctuated::<Expr, Token![,]>::new();
                 p.push(input[1].clone());
                 p
@@ -75,7 +76,12 @@ impl Parse for Factor {
 
         // Then the noise
         let noise = if input.len() >= 3 {
-            Some(input[2].clone())
+            match &input[2] {
+                Expr::Lit(l) => {
+                    Some(parse_quote!(factrs::noise::GaussianNoise::from_scalar_sigma(#l)))
+                }
+                _ => Some(input[2].clone()),
+            }
         } else {
             None
         };

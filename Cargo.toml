@@ -11,6 +11,10 @@ keywords = ["nonlinear", "optimization", "robotics", "estimation", "SLAM"]
 categories = ["science::robotics", "mathematics"]
 rust-version = "1.81"
 
+[workspace]
+members = ["factrs-proc"]
+exclude = ["factrs-typetag"]
+
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "assets/katex-header.html"]
 
@@ -20,7 +24,7 @@ ahash = "0.8.11"
 paste = "1.0.15"
 downcast-rs = "1.2.1"
 log = "0.4.22"
-factrs-proc = {version = "0.1.0", path = "./factrs-proc"}
+factrs-proc = { version = "0.1.0", path = "./factrs-proc" }
 
 # numerical 
 faer = { version = "0.19.4", default-features = false, features = [
@@ -30,12 +34,12 @@ faer = { version = "0.19.4", default-features = false, features = [
 ] }
 faer-ext = { version = "0.3.0", features = ["nalgebra"] }
 nalgebra = { version = "0.33.2", features = ["compare"] }
-num-dual = "0.10.0"
+num-dual = "0.11.0"
 matrixcompare = { version = "0.3" }
 
 # serialization
 serde = { version = "1.0.214", optional = true }
-typetag = { version = "0.2.18", optional = true, path = "factrs-typetag" }
+typetag = { version = "0.2.18", optional = true, path = "./factrs-typetag" }
 serde_json = { version = "1.0.132", optional = true }
 
 # rerun support
