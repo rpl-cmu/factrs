@@ -29,9 +29,9 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
     fn inverse(&self) -> Self;
     /// Composition of two group elements
     fn compose(&self, other: &Self) -> Self;
-    /// Exponential map (trivial if a vectorspace)
+    /// Exponential map (trivial if a vector space)
     fn exp(delta: VectorViewX<T>) -> Self;
-    /// Logarithm map (trivial if a vectorspace)
+    /// Logarithm map (trivial if a vector space)
     fn log(&self) -> VectorX<T>;
 
     /// Conversion to dual space

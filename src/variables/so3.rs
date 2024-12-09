@@ -14,7 +14,7 @@ use crate::{
 /// 3D Special Orthogonal Group
 ///
 /// Implementation of SO(3) for 3D rotations. Specifically, we use quaternions
-/// to represent rotations due to their underyling efficiency when computing
+/// to represent rotations due to their underlying efficiency when computing
 /// log/exp maps.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -52,6 +52,14 @@ impl<T: Numeric> SO3<T> {
     }
 
     pub fn dexp(xi: VectorView3<T>) -> Matrix3<T> {
+        if cfg!(feature = "left") {
+            Self::dexp_left(xi)
+        } else {
+            Self::dexp_right(xi)
+        }
+    }
+
+    pub fn dexp_right(xi: VectorView3<T>) -> Matrix3<T> {
         let theta2 = xi.norm_squared();
 
         let (a, b) = if theta2 < T::from(1e-6) {
@@ -64,10 +72,26 @@ impl<T: Numeric> SO3<T> {
         };
 
         let hat = SO3::hat(xi);
-        // gtsam says minus here for -hat a, but ethan eade says plus
-        // Empirically (via our test & jac in ImuDelta), minus is correct
-        // Need to find reference to confirm
+        // Right has a minus
         Matrix3::identity() - hat * a + hat * hat * b
+    }
+
+    pub fn dexp_left(xi: VectorView3<T>) -> Matrix3<T> {
+        let theta2 = xi.norm_squared();
+
+        let (a, b) = if theta2 < T::from(1e-6) {
+            // TODO: Higher order terms using theta2?
+            (T::from(0.5), T::from(1.0) / T::from(6.0))
+        } else {
+            let theta = theta2.sqrt();
+            let a = (T::from(1.0) - theta.cos()) / theta2;
+            let b = (theta - theta.sin()) / (theta * theta2);
+            (a, b)
+        };
+
+        let hat = SO3::hat(xi);
+        // Left has a plus
+        Matrix3::identity() + hat * a + hat * hat * b
     }
 }
 

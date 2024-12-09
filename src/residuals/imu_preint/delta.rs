@@ -90,7 +90,7 @@ impl<T: Numeric> ImuDelta<T> {
         // Setup
         self.dt += dt;
         let accel_world = SO3::exp(self.xi_theta.as_view()).apply(accel.0.as_view());
-        let H = SO3::dexp(self.xi_theta.as_view());
+        let H = SO3::dexp_right(self.xi_theta.as_view());
         let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
 
         // Integrate (make sure integration occurs in the correct order)
@@ -118,7 +118,7 @@ impl<T: Numeric> ImuDelta<T> {
     // that's faster
     #[allow(non_snake_case)]
     fn A(&self, gyro: &GyroUnbiased<T>, accel: &AccelUnbiased<T>, dt: T) -> Matrix<15, 15, T> {
-        let H = SO3::dexp(self.xi_theta.as_view());
+        let H = SO3::dexp_right(self.xi_theta.as_view());
         let Hinv = H.try_inverse().expect("Failed to invert H(theta)");
         let R: nalgebra::Matrix<
             T,
