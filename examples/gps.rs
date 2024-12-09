@@ -95,8 +95,8 @@ fn main() {
 
     // Add gps factors
     let g0 = fac![GpsResidual::new(0.0, 0.0), X(0), 1.0 as std];
-    let g1 = fac![GpsResidual::new(0.0, 2.0), X(1), 1.0 as std];
-    let g2 = fac![GpsResidual::new(0.0, 4.0), X(2), 1.0 as std];
+    let g1 = fac![GpsResidual::new(2.0, 0.0), X(1), 1.0 as std];
+    let g2 = fac![GpsResidual::new(4.0, 0.0), X(2), 1.0 as std];
     graph.add_factor(g0);
     graph.add_factor(g1);
     graph.add_factor(g2);
