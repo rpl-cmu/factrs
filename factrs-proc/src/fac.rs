@@ -1,7 +1,9 @@
 use proc_macro2::Span;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
+use quote::ToTokens;
 use syn::parse_quote;
+use syn::ExprCast;
 use syn::{parse::Parse, punctuated::Punctuated, Expr, Ident, Token};
 
 pub struct Factor {
@@ -76,10 +78,16 @@ impl Parse for Factor {
 
         // Then the noise
         let noise = if input.len() >= 3 {
+            let m = quote!(factrs::noise);
             match &input[2] {
-                Expr::Lit(l) => {
-                    Some(parse_quote!(factrs::noise::GaussianNoise::from_scalar_sigma(#l)))
+                Expr::Cast(ExprCast { expr, ty, .. }) => {
+                    match ty.to_token_stream().to_string().as_str() {
+                        "std" => Some(parse_quote!(#m::GaussianNoise::from_scalar_sigma(#expr))),
+                        "cov" => Some(parse_quote!(#m::GaussianNoise::from_scalar_cov(#expr))),
+                        _ => return Err(syn::Error::new_spanned(ty, "Unknown cast for noise")),
+                    }
                 }
+                Expr::Infer(_) => Some(parse_quote!(#m::UnitNoise)),
                 _ => Some(input[2].clone()),
             }
         } else {
