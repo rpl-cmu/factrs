@@ -53,10 +53,10 @@ let factor = fac![res, X(0)];
 graph.add_factor(factor);
 
 let res = BetweenResidual::new(y.minus(&x));
-let noise = GaussianNoise::from_scalar_sigma(0.1);
 let robust = Huber::default();
-let factor = fac![res, (X(0), X(1)), noise, robust];
+let factor = fac![res, (X(0), X(1)), 0.1 as std, robust];
 // The same as above, but verbose
+// let noise = GaussianNoise::from_scalar_sigma(0.1);
 // let factor = FactorBuilder::new2(res, X(0), X(1))
 //     .noise(noise)
 //     .robust(robust)

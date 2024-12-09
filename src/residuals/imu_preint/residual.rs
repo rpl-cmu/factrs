@@ -396,9 +396,9 @@ mod test {
         // Build factor and graph
         let mut graph = Graph::new();
         let factor = preint.build(X(0), V(0), B(0), X(1), V(1), B(1));
-        let prior_x0 = fac!(PriorResidual::new(x0.clone()), X(0), 1e-3);
-        let prior_v0 = fac!(PriorResidual::new(v0.clone()), V(0), 1e-3);
-        let prior_b0 = fac!(PriorResidual::new(b0.clone()), B(0), 1e-3);
+        let prior_x0 = fac!(PriorResidual::new(x0.clone()), X(0), 1e-3 as cov);
+        let prior_v0 = fac!(PriorResidual::new(v0.clone()), V(0), 1e-3 as cov);
+        let prior_b0 = fac!(PriorResidual::new(b0.clone()), B(0), 1e-3 as cov);
         graph.add_factor(factor);
         graph.add_factor(prior_x0);
         graph.add_factor(prior_v0);
