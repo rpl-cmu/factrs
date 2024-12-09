@@ -1,17 +1,9 @@
-use core::fmt;
-
-use super::Residual1;
-#[allow(unused_imports)]
 use crate::{
-    containers::{Key, Values},
     linalg::{
-        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DimName, DualAllocator, DualVector,
-        ForwardProp, MatrixX, Numeric, VectorX,
+        AllocatorBuffer, DefaultAllocator, DualAllocator, DualVector, ForwardProp, Numeric, VectorX,
     },
-    variables::{
-        Variable, VariableUmbrella, VectorVar1, VectorVar2, VectorVar3, VectorVar4, VectorVar5,
-        VectorVar6, SE2, SE3, SO2, SO3,
-    },
+    residuals::Residual1,
+    variables::{Variable, VariableUmbrella},
 };
 
 /// Unary factor for a prior on a variable.
@@ -51,12 +43,6 @@ where
     }
 }
 
-impl<P: Variable> fmt::Display for PriorResidual<P> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 #[cfg(test)]
 mod test {
 
@@ -64,9 +50,7 @@ mod test {
 
     use super::*;
     use crate::{
-        linalg::{vectorx, DefaultAllocator, Diff, DualAllocator, NumericalDiff},
-        symbols::X,
-        variables::{VectorVar3, SE3, SO3},
+        containers::Values, linalg::{vectorx, DefaultAllocator, Diff, DualAllocator, NumericalDiff}, symbols::X, variables::{VectorVar3, SE3, SO3}
     };
 
     #[cfg(not(feature = "f32"))]
