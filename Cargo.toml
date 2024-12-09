@@ -81,12 +81,5 @@ pretty_env_logger = "0.5"
 nalgebra = { version = "0.33.2", features = ["compare"] }
 
 [[example]]
-name = "g2o"
-
-[[example]]
-name = "g2o-rerun"
-required-features = ["rerun"]
-
-[[example]]
 name = "serde"
 required-features = ["serde", "serde_json"]
