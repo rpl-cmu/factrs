@@ -26,6 +26,8 @@ use factrs::{
 use factrs::variables::{VectorVar2, SE2};
 
 #[derive(Clone, Debug)]
+// Enable serialization if it's desired
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GpsResidual {
     meas: VectorVar2,
 }
