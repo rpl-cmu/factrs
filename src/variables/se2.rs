@@ -235,10 +235,8 @@ impl<T: Numeric> fmt::Display for SE2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "SE2({:.3}, {:.3}, {:.3})",
-            self.rot.log()[0],
-            self.xy[0],
-            self.xy[1]
+            "{}, x: {:.3}, y: {:.3}",
+            self.rot, self.xy[0], self.xy[1]
         )
     }
 }
@@ -247,7 +245,7 @@ impl<T: Numeric> fmt::Debug for SE2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "SE2({:?}, x: {:.3}, y: {:.3})",
+            "SE2({}, x: {:.3}, y: {:.3})",
             self.rot, self.xy[0], self.xy[1]
         )
     }

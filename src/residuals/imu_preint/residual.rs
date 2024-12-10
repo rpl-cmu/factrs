@@ -1,12 +1,8 @@
-use std::fmt;
-
-use nalgebra::Const;
-
 use super::{delta::ImuDelta, Accel, Gravity, Gyro, ImuState};
 use crate::{
     containers::{Factor, FactorBuilder, Symbol, TypedSymbol},
     dtype,
-    linalg::{ForwardProp, Matrix, Matrix3, VectorX},
+    linalg::{Const, ForwardProp, Matrix, Matrix3, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
     traits::*,
@@ -349,12 +345,6 @@ impl Residual6 for ImuPreintegrationResidual {
         residual.fixed_rows_mut::<6>(9).copy_from(&r_bias);
 
         residual
-    }
-}
-
-impl fmt::Display for ImuPreintegrationResidual {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ImuPreintegrationResidual({})", self.delta)
     }
 }
 

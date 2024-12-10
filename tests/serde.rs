@@ -1,5 +1,4 @@
 #[cfg(feature = "serde")]
-#[cfg(feature = "serde_json")]
 mod ser_de {
     use factrs::{
         containers::Values, residuals::PriorResidual, symbols::X, traits::Residual,

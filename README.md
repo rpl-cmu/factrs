@@ -20,7 +20,25 @@ Currently, it supports the following features
 
 We recommend you checkout the [docs](https://docs.rs/factrs/latest/factrs/) for more info.
 
-# Example
+# Examples
+There's a number of examples found in the [examples](/examples/) folder, including loading g20 files, serialization, and custom factors.
+
+To run any of the examples, simply clone this repository and run,
+```bash
+cargo run --release --example g20 ./examples/data/M3500.g20
+```
+to visualize the optimization steps with [rerun](https://rerun.io) simply add `--features rerun` to the above command.
+
+Running the other examples can be done similarly,
+```bash
+cargo run --release --example serde --features serde
+cargo run --release --example gps
+``` 
+
+Additionally, we recommend checking out the [tests](/tests/) folder for more examples of custom noise models, residuals, robust kernels, and variables.
+
+<details>
+<summary>Full Example</summary>
 
 ```rust
 use factrs::{
@@ -55,7 +73,7 @@ graph.add_factor(factor);
 let res = BetweenResidual::new(y.minus(&x));
 let robust = Huber::default();
 let factor = fac![res, (X(0), X(1)), 0.1 as std, robust];
-// The same as above, but verbose
+// fac! is syntactic sugar for the following
 // let noise = GaussianNoise::from_scalar_sigma(0.1);
 // let factor = FactorBuilder::new2(res, X(0), X(1))
 //     .noise(noise)
@@ -73,6 +91,8 @@ Simply add via cargo as you do any rust dependency,
 ```bash
 cargo add factrs
 ```
+</details>
+
 
 # Contributions
 

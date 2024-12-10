@@ -30,7 +30,6 @@ impl<const N: usize> fmt::Display for DoubleCovariance<N> {
 }
 
 #[cfg(feature = "serde")]
-#[cfg(feature = "serde_json")]
 mod ser_de {
     use factrs::linalg::vectorx;
 
