@@ -49,7 +49,7 @@ jobs:
     - name: default
       run: cargo test 
     - name: serde
-      run: cargo test --features="serde,serde_json"
+      run: cargo test --features serde
     - name: f32
       run: cargo test --features f32
     - name: left
