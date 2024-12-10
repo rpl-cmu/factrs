@@ -10,6 +10,7 @@ repository = "https://github.com/rpl-cmu/factrs"
 keywords = ["nonlinear", "optimization", "robotics", "estimation", "SLAM"]
 categories = ["science::robotics", "mathematics"]
 rust-version = "1.81"
+exclude = ["examples/data/*"]
 
 [workspace]
 members = ["factrs-proc"]

@@ -18,7 +18,7 @@ use std::net::{SocketAddr, SocketAddrV4};
 #[cfg(feature = "rerun")]
 fn rerun_init(opt: &mut GaussNewton, dim: &str, obj: &str) {
     // Setup the rerun & the callback
-    let socket = SocketAddrV4::new("172.31.65.81".parse().unwrap(), 9876);
+    let socket = SocketAddrV4::new("0.0.0.0".parse().unwrap(), 9876);
     let rec = rerun::RecordingStreamBuilder::new("rerun_example_dna_abacus")
         .connect_tcp_opts(SocketAddr::V4(socket), rerun::default_flush_timeout())
         .unwrap();
