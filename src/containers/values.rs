@@ -1,6 +1,6 @@
 use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator};
 
-use ahash::AHashMap;
+use foldhash::HashMap;
 
 use super::{DefaultSymbol, Key, Symbol, TypedSymbol};
 use crate::{
@@ -29,10 +29,10 @@ use crate::{
 /// values.insert(X(0), x);
 /// ```
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
-    values: AHashMap<Key, Box<dyn VariableSafe>>,
+    values: HashMap<Key, Box<dyn VariableSafe>>,
 }
 
 impl Values {
@@ -222,13 +222,5 @@ impl IntoIterator for Values {
 
     fn into_iter(self) -> Self::IntoIter {
         self.values.into_iter()
-    }
-}
-
-impl Default for Values {
-    fn default() -> Self {
-        Self {
-            values: AHashMap::new(),
-        }
     }
 }

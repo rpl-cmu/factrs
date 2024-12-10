@@ -65,6 +65,7 @@ use paste::paste;
 use crate::variables::Variable;
 
 /// A struct to hold the result of a differentiation operation
+#[derive(Debug, Clone)]
 pub struct DiffResult<V, G> {
     pub value: V,
     pub diff: G,

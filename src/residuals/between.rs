@@ -1,19 +1,11 @@
-use core::fmt;
-
 use nalgebra::{DimNameAdd, DimNameSum};
 
-use super::Residual2;
-#[allow(unused_imports)]
 use crate::{
-    containers::{Key, Values},
     linalg::{
-        AllocatorBuffer, Const, DefaultAllocator, DiffResult, DimName, DualAllocator, DualVector,
-        ForwardProp, MatrixX, Numeric, VectorX,
+        AllocatorBuffer, DefaultAllocator, DualAllocator, DualVector, ForwardProp, Numeric, VectorX,
     },
-    variables::{
-        Variable, VariableUmbrella, VectorVar1, VectorVar2, VectorVar3, VectorVar4, VectorVar5,
-        VectorVar6, SE2, SE3, SO2, SO3,
-    },
+    residuals::Residual2,
+    variables::{Variable, VariableUmbrella},
 };
 
 /// Binary factor between variables.
@@ -55,11 +47,5 @@ where
     fn residual2<T: Numeric>(&self, v1: P::Alias<T>, v2: P::Alias<T>) -> VectorX<T> {
         let delta = P::dual_convert::<T>(&self.delta);
         v1.compose(&delta).ominus(&v2)
-    }
-}
-
-impl<P: Variable> fmt::Display for BetweenResidual<P> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
     }
 }

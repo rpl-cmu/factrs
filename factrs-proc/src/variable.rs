@@ -118,7 +118,7 @@ fn tag_all(kind: &TokenStream2, name: &str) -> TokenStream2 {
                 #name_between,
                 (|deserializer| typetag::__private::Result::Ok(
                     typetag::__private::Box::new(
-                        typetag::__private::erased_serde::deserialize::<factrs::residuals::PriorResidual<#kind>>(deserializer)?
+                        typetag::__private::erased_serde::deserialize::<factrs::residuals::BetweenResidual<#kind>>(deserializer)?
                     ),
                 )) as typetag::__private::DeserializeFn<<dyn factrs::residuals::Residual as typetag::__private::Strictest>::Object>,
             )

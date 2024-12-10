@@ -27,7 +27,7 @@ pub struct Key(pub u64);
 
 impl Symbol for Key {}
 
-/// This provides a custom conversion two and from a u64 key.
+/// This provides a custom conversion to and from a u64 key.
 pub trait Symbol: fmt::Debug + Into<Key> {}
 
 pub struct DefaultSymbol {
@@ -59,7 +59,7 @@ impl From<DefaultSymbol> for Key {
 
 impl fmt::Debug for DefaultSymbol {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {})", self.chr, self.idx)
+        write!(f, "{}{}", self.chr, self.idx)
     }
 }
 

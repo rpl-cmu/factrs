@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 use crate::{
     containers::{Key, Values},
@@ -15,7 +15,7 @@ type Alias<V, T> = <V as Variable>::Alias<T>;
 /// one of the numbered residuals traits instead, and then call the
 /// [impl_residual](crate::impl_residual) macro to implement this trait.
 #[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
-pub trait Residual: Debug + Display {
+pub trait Residual: Debug {
     fn dim_in(&self) -> usize;
 
     fn dim_out(&self) -> usize;

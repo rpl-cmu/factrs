@@ -43,7 +43,6 @@ impl fmt::Display for XPrior {
 // TODO: Some tests to make sure it optimizes
 
 #[cfg(feature = "serde")]
-#[cfg(feature = "serde_json")]
 mod ser_de {
     use factrs::{containers::Values, symbols::X, traits::Residual};
 

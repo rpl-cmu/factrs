@@ -18,7 +18,6 @@ impl RobustCost for DoubleL2 {
 factrs::test_robust!(DoubleL2);
 
 #[cfg(feature = "serde")]
-#[cfg(feature = "serde_json")]
 mod ser_de {
     use super::*;
 

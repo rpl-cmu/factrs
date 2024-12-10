@@ -32,6 +32,7 @@ SE3 -> Arrows3D, Points3D
 
 // ------------------------- 2D Objects ------------------------- //
 // 2D Vectors
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a VectorVar2> for Vec2D {
     fn from(v: &'a VectorVar2) -> Vec2D {
         Vec2D::new(v[0] as f32, v[1] as f32)
@@ -58,6 +59,7 @@ impl From<VectorVar2> for Points2D {
 }
 
 // 2D Rotations
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SO2> for Arrows2D {
     fn from(so2: &'a SO2) -> Arrows2D {
         let mat = so2.to_matrix().map(|x| x as f32);
@@ -82,6 +84,7 @@ impl From<SO2> for Arrows2D {
 }
 
 // 2D SE2
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE2> for Arrows2D {
     fn from(se2: &'a SE2) -> Arrows2D {
         let xy: [f32; 2] = se2
@@ -101,6 +104,7 @@ impl From<SE2> for Arrows2D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE2> for Points2D {
     fn from(se2: &'a SE2) -> Points2D {
         let xy = [se2.x() as f32, se2.y() as f32];
@@ -114,6 +118,7 @@ impl From<SE2> for Points2D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE2> for Vec2D {
     fn from(se2: &'a SE2) -> Vec2D {
         let xy = [se2.x() as f32, se2.y() as f32];
@@ -129,6 +134,7 @@ impl From<SE2> for Vec2D {
 
 // ------------------------- 3D Objects ------------------------- //
 // 3D Vectors
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a VectorVar3> for Vec3D {
     fn from(v: &'a VectorVar3) -> Vec3D {
         Vec3D::new(v[0] as f32, v[1] as f32, v[2] as f32)
@@ -155,6 +161,7 @@ impl From<VectorVar3> for Points3D {
 }
 
 // 3D Rotations
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SO3> for Rotation3D {
     fn from(so3: &'a SO3) -> Rotation3D {
         let xyzw = [
@@ -173,6 +180,7 @@ impl From<SO3> for Rotation3D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SO3> for Arrows3D {
     fn from(so3: &'a SO3) -> Arrows3D {
         let mat = so3.to_matrix().map(|x| x as f32);
@@ -217,6 +225,7 @@ impl From<SE3> for Transform3D {
     }
 }
 
+#[allow(clippy::unnecessary_cast)]
 impl<'a> From<&'a SE3> for Arrows3D {
     fn from(se3: &'a SE3) -> Arrows3D {
         let arrows: Arrows3D = se3.rot().into();

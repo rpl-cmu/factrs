@@ -72,7 +72,6 @@ impl<T: Numeric> fmt::Debug for MyVar<T> {
 factrs::test_variable!(MyVar);
 
 #[cfg(feature = "serde")]
-#[cfg(feature = "serde_json")]
 mod ser_de {
     use super::*;
     use factrs::{

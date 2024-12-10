@@ -115,8 +115,8 @@ impl LinearGraph {
 
 #[cfg(test)]
 mod test {
-    use ahash::HashMap;
     use faer_ext::IntoNalgebra;
+    use foldhash::HashMap;
     use matrixcompare::assert_matrix_eq;
 
     use super::*;

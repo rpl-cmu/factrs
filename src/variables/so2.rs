@@ -152,13 +152,21 @@ impl<T: Numeric> ops::Mul for &SO2<T> {
 
 impl<T: Numeric> fmt::Display for SO2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "SO2({:.3})", self.log()[0])
+        if f.alternate() {
+            write!(f, "a: {:.3}, b: {:.3}", self.a, self.b)
+        } else {
+            write!(f, "theta: {:.3}", self.log()[0])
+        }
     }
 }
 
 impl<T: Numeric> fmt::Debug for SO2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "SO2(a: {:.3}, b: {:.3})", self.a, self.b)
+        if f.alternate() {
+            write!(f, "SO2(a: {:.3}, b: {:.3})", self.a, self.b)
+        } else {
+            write!(f, "SO2(theta: {:.3})", self.log()[0])
+        }
     }
 }
 
