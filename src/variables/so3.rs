@@ -335,17 +335,31 @@ impl<T: Numeric> ops::Mul for &SO3<T> {
 
 impl<T: Numeric> fmt::Display for SO3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision = f.precision().unwrap_or(3);
+        let log = self.log();
         write!(
             f,
-            "SO3({:.3}, {:.3}, {:.3}, {:.3})",
-            self.xyzw[0], self.xyzw[1], self.xyzw[2], self.xyzw[3]
+            "SO3({:.p$}, {:.p$}, {:.p$})",
+            log[0],
+            log[1],
+            log[2],
+            p = precision
         )
     }
 }
 
 impl<T: Numeric> fmt::Debug for SO3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        let precision = f.precision().unwrap_or(3);
+        write!(
+            f,
+            "SO3(x: {:.p$}, y: {:.p$}, z: {:.p$}, w: {:.p$})",
+            self.xyzw[0],
+            self.xyzw[1],
+            self.xyzw[2],
+            self.xyzw[3],
+            p = precision
+        )
     }
 }
 

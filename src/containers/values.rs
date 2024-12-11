@@ -211,29 +211,43 @@ impl Values {
 
 impl fmt::Display for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision = f.precision().unwrap_or(3);
         if f.alternate() {
-            writeln!(f, "{{")?;
+            writeln!(f, "Values {{")?;
             for (key, value) in self.values.iter() {
                 write!(f, "   ")?;
                 self.key_fmtr.fmt(*key, f)?;
-                writeln!(f, ": {:?},", value)?;
+                writeln!(f, ": {:#.p$},", value, p = precision)?;
             }
-            write!(f, "}}")
         } else {
-            write!(f, "{{ ")?;
+            write!(f, "Values {{ ")?;
             for (key, value) in self.values.iter() {
                 self.key_fmtr.fmt(*key, f)?;
-                write!(f, ": {:?}, ", value)?;
+                write!(f, ": {:.p$}, ", value, p = precision)?;
             }
-            write!(f, "}}")
         }
+        write!(f, "}}")
     }
 }
 
 impl fmt::Debug for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Values ")?;
-        fmt::Display::fmt(self, f)
+        let precision = f.precision().unwrap_or(3);
+        if f.alternate() {
+            writeln!(f, "Values {{")?;
+            for (key, value) in self.values.iter() {
+                write!(f, "   ")?;
+                self.key_fmtr.fmt(*key, f)?;
+                writeln!(f, ": {:#.p$?},", value, p = precision)?;
+            }
+        } else {
+            write!(f, "Values {{ ")?;
+            for (key, value) in self.values.iter() {
+                self.key_fmtr.fmt(*key, f)?;
+                write!(f, ": {:.p$?}, ", value, p = precision)?;
+            }
+        }
+        write!(f, "}}")
     }
 }
 

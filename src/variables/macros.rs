@@ -104,7 +104,7 @@ macro_rules! test_variable {
 
 /// Test (most of) the matrix lie group rules
 ///
-/// Specifcally test
+/// Specifically test
 /// - to/form matrix
 /// - hat/vee
 /// - jacobian of rotation function with hat_swap

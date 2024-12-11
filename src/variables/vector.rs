@@ -101,12 +101,13 @@ impl<const N: usize, T: Numeric> From<VectorVar<N, T>> for Vector<N, T> {
 
 impl<const N: usize, T: Numeric> Display for VectorVar<N, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Vector{}(", N)?;
+        let precision = f.precision().unwrap_or(3);
+        write!(f, "VectorVar{}(", N)?;
         for (i, x) in self.0.iter().enumerate() {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "{:.3}", x)?;
+            write!(f, "{:.p$}", x, p = precision)?;
         }
         write!(f, ")")
     }

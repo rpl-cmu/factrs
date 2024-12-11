@@ -233,20 +233,28 @@ impl<T: Numeric> ops::Mul for &SE2<T> {
 
 impl<T: Numeric> fmt::Display for SE2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision: usize = f.precision().unwrap_or(3);
         write!(
             f,
-            "{}, x: {:.3}, y: {:.3}",
-            self.rot, self.xy[0], self.xy[1]
+            "SE2(theta: {:.p$}, x: {:.p$}, y: {:.p$})",
+            self.rot.log()[0],
+            self.xy[0],
+            self.xy[1],
+            p = precision
         )
     }
 }
 
 impl<T: Numeric> fmt::Debug for SE2<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision: usize = f.precision().unwrap_or(3);
         write!(
             f,
-            "SE2({}, x: {:.3}, y: {:.3})",
-            self.rot, self.xy[0], self.xy[1]
+            "SE2({:?}, x: {:.p$}, y: {:.p$})",
+            self.rot,
+            self.xy[0],
+            self.xy[1],
+            p = precision
         )
     }
 }
