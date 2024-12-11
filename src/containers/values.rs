@@ -2,7 +2,10 @@ use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterato
 
 use foldhash::HashMap;
 
-use super::{DefaultSymbol, Key, Symbol, TypedSymbol};
+use super::{
+    symbol::{DefaultSymbolHandler, KeyFormatter},
+    Key, Symbol, TypedSymbol,
+};
 use crate::{
     linear::LinearValues,
     variables::{VariableSafe, VariableUmbrella},
@@ -29,15 +32,31 @@ use crate::{
 /// values.insert(X(0), x);
 /// ```
 
-#[derive(Clone, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
     values: HashMap<Key, Box<dyn VariableSafe>>,
+    key_fmtr: Box<dyn KeyFormatter>,
+}
+
+impl Default for Values {
+    fn default() -> Self {
+        Self {
+            values: HashMap::default(),
+            key_fmtr: Box::new(DefaultSymbolHandler),
+        }
+    }
 }
 
 impl Values {
     pub fn new() -> Self {
-        Self::default()
+        Values::default()
+    }
+
+    pub fn from_formatter(fmtr: impl KeyFormatter + 'static) -> Self {
+        Self {
+            values: HashMap::default(),
+            key_fmtr: Box::new(fmtr),
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -62,7 +81,7 @@ impl Values {
         self.values.insert(symbol.into(), Box::new(value))
     }
 
-    /// Unchecked verison of [Values::insert].
+    /// Unchecked version of [Values::insert].
     pub fn insert_unchecked<S, V>(&mut self, symbol: S, value: V) -> Option<Box<dyn VariableSafe>>
     where
         S: Symbol,
@@ -190,20 +209,21 @@ impl Values {
     }
 }
 
-// TODO: Find a way to make this usable on custom symbols (not just
-// DefaultSymbol)
 impl fmt::Display for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
             writeln!(f, "{{")?;
             for (key, value) in self.values.iter() {
-                writeln!(f, "  {:?}: {:?},", DefaultSymbol::from(*key), value)?;
+                write!(f, "   ")?;
+                self.key_fmtr.fmt(*key, f)?;
+                writeln!(f, ": {:?},", value)?;
             }
             write!(f, "}}")
         } else {
-            write!(f, "{{")?;
+            write!(f, "{{ ")?;
             for (key, value) in self.values.iter() {
-                write!(f, "{:?}: {:?}, ", DefaultSymbol::from(*key), value)?;
+                self.key_fmtr.fmt(*key, f)?;
+                write!(f, ": {:?}, ", value)?;
             }
             write!(f, "}}")
         }
@@ -212,6 +232,7 @@ impl fmt::Display for Values {
 
 impl fmt::Debug for Values {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Values ")?;
         fmt::Display::fmt(self, f)
     }
 }
