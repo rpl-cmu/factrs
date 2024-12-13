@@ -1,8 +1,10 @@
 use std::{
-    collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator, marker::PhantomData,
+    collections::hash_map::Entry, default::Default, fmt, fmt::Write, iter::IntoIterator,
+    marker::PhantomData,
 };
 
 use foldhash::HashMap;
+use pad_adapter::PadAdapter;
 
 use super::{
     symbol::{DefaultSymbolHandler, KeyFormatter},
@@ -227,20 +229,20 @@ impl<'v, KF: KeyFormatter> fmt::Display for ValuesFormatter<'v, KF> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let precision = f.precision().unwrap_or(3);
         if f.alternate() {
-            writeln!(f, "Values {{")?;
+            f.write_str("Values {\n")?;
+            let mut pad = PadAdapter::new(f);
             for (key, value) in self.values.iter() {
-                write!(f, "   ")?;
-                KF::fmt(f, *key)?;
-                writeln!(f, ": {:#.p$},", value, p = precision)?;
+                KF::fmt(&mut pad, *key)?;
+                writeln!(pad, ": {:#.p$},", value, p = precision)?;
             }
         } else {
-            write!(f, "Values {{ ")?;
+            f.write_str("Values { ")?;
             for (key, value) in self.values.iter() {
                 KF::fmt(f, *key)?;
                 write!(f, ": {:.p$}, ", value, p = precision)?;
             }
         }
-        write!(f, "}}")
+        f.write_str("}")
     }
 }
 
@@ -248,20 +250,20 @@ impl<'v, KF: KeyFormatter> fmt::Debug for ValuesFormatter<'v, KF> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let precision = f.precision().unwrap_or(3);
         if f.alternate() {
-            writeln!(f, "Values {{")?;
+            f.write_str("Values {\n")?;
+            let mut pad = PadAdapter::new(f);
             for (key, value) in self.values.iter() {
-                write!(f, "   ")?;
-                KF::fmt(f, *key)?;
-                writeln!(f, ": {:#.p$?},", value, p = precision)?;
+                KF::fmt(&mut pad, *key)?;
+                writeln!(pad, ": {:#.p$?},", value, p = precision)?;
             }
         } else {
-            write!(f, "Values {{ ")?;
+            f.write_str("Values { ")?;
             for (key, value) in self.values.iter() {
                 KF::fmt(f, *key)?;
                 write!(f, ": {:.p$?}, ", value, p = precision)?;
             }
         }
-        write!(f, "}}")
+        f.write_str("}")
     }
 }
 

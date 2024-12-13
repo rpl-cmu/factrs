@@ -142,14 +142,14 @@ impl<'f, KF: KeyFormatter> fmt::Debug for FactorFormatter<'f, KF> {
             f.write_str("Factor {\n")?;
             let mut pad = PadAdapter::new(f);
             // Keys
-            write!(pad, "key: [")?;
+            pad.write_str("key: [")?;
             for (i, key) in self.factor.keys().iter().enumerate() {
                 if i > 0 {
-                    write!(pad, ", ")?;
+                    pad.write_str(", ")?;
                 }
                 KF::fmt(&mut pad, *key)?;
             }
-            writeln!(pad, "]")?;
+            pad.write_str("]\n")?;
             // Residual
             writeln!(pad, "res: {:#?}", self.factor.residual)?;
             // Noise
@@ -161,7 +161,7 @@ impl<'f, KF: KeyFormatter> fmt::Debug for FactorFormatter<'f, KF> {
             f.write_str("Factor { ")?;
             for (i, key) in self.factor.keys().iter().enumerate() {
                 if i > 0 {
-                    write!(f, ", ")?;
+                    f.write_str(", ")?;
                 }
                 KF::fmt(f, *key)?;
             }

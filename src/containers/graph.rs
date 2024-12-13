@@ -137,15 +137,15 @@ impl<'g, KF: KeyFormatter> Debug for GraphFormatter<'g, KF> {
             f.write_str("Graph [\n")?;
             let mut pad = PadAdapter::new(f);
             for factor in self.graph.factors.iter() {
-                writeln!(pad, "{:#?}", FactorFormatter::<KF>::new(factor))?;
+                writeln!(pad, "{:#?},", FactorFormatter::<KF>::new(factor))?;
             }
-            write!(f, "]")
+            f.write_str("]")
         } else {
-            write!(f, "Graph [ ")?;
+            f.write_str("Graph [ ")?;
             for factor in self.graph.factors.iter() {
                 write!(f, "{:?}, ", FactorFormatter::<KF>::new(factor))?;
             }
-            write!(f, "]")
+            f.write_str("]")
         }
     }
 }
