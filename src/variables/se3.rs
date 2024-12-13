@@ -264,7 +264,7 @@ impl<T: Numeric> fmt::Debug for SE3<T> {
         let precision = f.precision().unwrap_or(3);
         write!(
             f,
-            "SE3({:.p$?}, t: [{:.p$}, {:.p$}, {:.p$}])",
+            "SE3 {{ r: {:.p$?}, t: [{:.p$}, {:.p$}, {:.p$}] }}",
             self.rot,
             self.xyz[0],
             self.xyz[1],

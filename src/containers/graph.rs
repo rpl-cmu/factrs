@@ -1,6 +1,17 @@
+use pad_adapter::PadAdapter;
+use std::{
+    fmt::{Debug, Write},
+    marker::PhantomData,
+};
+
+// Once "debug_closure_helpers" is stabilized, we won't need this anymore
+// Need custom debug to handle pretty key printing at the moment
+// Pad adapter helps with the pretty printing
+use crate::containers::factor::FactorFormatter;
+
 use faer::sparse::SymbolicSparseColMat;
 
-use super::{Idx, Values, ValuesOrder};
+use super::{DefaultSymbolHandler, Idx, KeyFormatter, Values, ValuesOrder};
 use crate::{containers::Factor, dtype, linear::LinearGraph};
 
 /// Structure to represent a nonlinear factor graph
@@ -27,7 +38,7 @@ use crate::{containers::Factor, dtype, linear::LinearGraph};
 /// let mut graph = Graph::new();
 /// graph.add_factor(factor);
 /// ```
-#[derive(Default, Debug)]
+#[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Graph {
     factors: Vec<Factor>,
@@ -93,6 +104,48 @@ impl Graph {
             order,
             sparsity_pattern,
             sparsity_order,
+        }
+    }
+}
+
+impl Debug for Graph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        GraphFormatter::<DefaultSymbolHandler>::new(self).fmt(f)
+    }
+}
+
+/// Formatter for a graph
+///
+/// Specifically, this can be used if custom symbols are desired. See `tests/custom_key` for examples.
+pub struct GraphFormatter<'g, KF> {
+    graph: &'g Graph,
+    kf: PhantomData<KF>,
+}
+
+impl<'g, KF> GraphFormatter<'g, KF> {
+    pub fn new(graph: &'g Graph) -> Self {
+        Self {
+            graph,
+            kf: Default::default(),
+        }
+    }
+}
+
+impl<'g, KF: KeyFormatter> Debug for GraphFormatter<'g, KF> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            f.write_str("Graph [\n")?;
+            let mut pad = PadAdapter::new(f);
+            for factor in self.graph.factors.iter() {
+                writeln!(pad, "{:#?}", FactorFormatter::<KF>::new(factor))?;
+            }
+            write!(f, "]")
+        } else {
+            write!(f, "Graph [ ")?;
+            for factor in self.graph.factors.iter() {
+                write!(f, "{:?}, ", FactorFormatter::<KF>::new(factor))?;
+            }
+            write!(f, "]")
         }
     }
 }

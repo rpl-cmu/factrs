@@ -1,4 +1,6 @@
-use super::{Symbol, TypedSymbol};
+use pad_adapter::PadAdapter;
+
+use super::{DefaultSymbolHandler, KeyFormatter, Symbol, TypedSymbol};
 use crate::{
     containers::{Key, Values},
     dtype,
@@ -7,6 +9,11 @@ use crate::{
     noise::{NoiseModel, UnitNoise},
     residuals::Residual,
     robust::{RobustCost, L2},
+};
+
+use std::{
+    fmt::{self, Write},
+    marker::PhantomData,
 };
 
 /// Main structure to represent a factor in the graph.
@@ -48,7 +55,6 @@ use crate::{
 /// let factor = FactorBuilder::new1(residual,
 ///     X(0)).noise(noise).robust(robust).build();
 /// ```
-#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Factor {
     keys: Vec<Key>,
@@ -104,6 +110,69 @@ impl Factor {
     /// Get the keys of the factor.
     pub fn keys(&self) -> &[Key] {
         &self.keys
+    }
+}
+
+impl fmt::Debug for Factor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        FactorFormatter::<DefaultSymbolHandler>::new(self).fmt(f)
+    }
+}
+
+/// Formatter for a factor
+///
+/// Specifically, this can be used if custom symbols are desired. See `tests/custom_key` for examples.
+pub struct FactorFormatter<'f, KF> {
+    factor: &'f Factor,
+    kf: PhantomData<KF>,
+}
+
+impl<'f, KF> FactorFormatter<'f, KF> {
+    pub fn new(factor: &'f Factor) -> Self {
+        Self {
+            factor,
+            kf: Default::default(),
+        }
+    }
+}
+
+impl<'f, KF: KeyFormatter> fmt::Debug for FactorFormatter<'f, KF> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if f.alternate() {
+            f.write_str("Factor {\n")?;
+            let mut pad = PadAdapter::new(f);
+            // Keys
+            write!(pad, "key: [")?;
+            for (i, key) in self.factor.keys().iter().enumerate() {
+                if i > 0 {
+                    write!(pad, ", ")?;
+                }
+                KF::fmt(&mut pad, *key)?;
+            }
+            writeln!(pad, "]")?;
+            // Residual
+            writeln!(pad, "res: {:#?}", self.factor.residual)?;
+            // Noise
+            writeln!(pad, "noi: {:#?}", self.factor.noise)?;
+            // Robust
+            writeln!(pad, "rob: {:#?}", self.factor.robust)?;
+            f.write_str("}")?;
+        } else {
+            f.write_str("Factor { ")?;
+            for (i, key) in self.factor.keys().iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                KF::fmt(f, *key)?;
+            }
+            write!(
+                f,
+                "], residual: {:?}, noise: {:?}, robust: {:?} }}",
+                self.factor.residual, self.factor.noise, self.factor.robust
+            )?;
+        }
+
+        Ok(())
     }
 }
 

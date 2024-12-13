@@ -25,6 +25,7 @@ paste = "1.0.15"
 downcast-rs = "1.2.1"
 log = "0.4.22"
 factrs-proc = { version = "0.1.0", path = "./factrs-proc" }
+pad-adapter = "0.1.1"
 
 # numerical 
 faer = { version = "0.19.4", default-features = false, features = [

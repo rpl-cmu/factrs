@@ -1,6 +1,6 @@
 // Similar to gtsam: https://github.com/borglab/gtsam/blob/develop/gtsam/inference/Symbol.cpp
 use std::{
-    fmt::{self},
+    fmt::{self, Write},
     mem::size_of,
 };
 
@@ -33,9 +33,8 @@ pub trait TypedSymbol<V: VariableUmbrella>: Symbol {}
 ///
 /// The average user will likely never have to implement this as [DefaultSymbolHandler] will almost always be sufficient,
 /// unless a custom key is used.
-#[cfg_attr(feature = "serde", typetag::serde(tag = "tag"))]
 pub trait KeyFormatter {
-    fn fmt(&self, key: Key, f: &mut fmt::Formatter) -> fmt::Result;
+    fn fmt(f: &mut dyn Write, key: Key) -> fmt::Result;
 }
 
 // ------------------------- Basic single char symbol ------------------------- //
@@ -48,7 +47,7 @@ const IDX_SIZE: usize = TOTAL_SIZE - CHR_SIZE;
 const CHR_MASK: u64 = (char::MAX as u64) << IDX_SIZE;
 const IDX_MASK: u64 = !CHR_MASK;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DefaultSymbolHandler;
 
@@ -63,16 +62,15 @@ impl DefaultSymbolHandler {
         (chr, idx)
     }
 
-    pub fn format(chr: char, idx: u32, f: &mut std::fmt::Formatter) -> fmt::Result {
+    pub fn format(f: &mut dyn Write, chr: char, idx: u32) -> fmt::Result {
         write!(f, "{}{}", chr, idx)
     }
 }
 
-#[cfg_attr(feature = "serde", typetag::serde)]
 impl KeyFormatter for DefaultSymbolHandler {
-    fn fmt(&self, key: Key, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(f: &mut dyn Write, key: Key) -> fmt::Result {
         let (chr, idx) = Self::key_to_sym(key);
-        Self::format(chr, idx, f)
+        Self::format(f, chr, idx)
     }
 }
 
@@ -113,7 +111,7 @@ macro_rules! assign_symbols {
                 fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                     let chr = stringify!($name).chars().next().unwrap();
                     let idx = self.0;
-                    $crate::containers::DefaultSymbolHandler::format(chr, idx, f)
+                    $crate::containers::DefaultSymbolHandler::format(f, chr, idx)
                 }
             }
 

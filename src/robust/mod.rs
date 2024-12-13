@@ -44,6 +44,8 @@ pub trait RobustCost: Debug {
 #[cfg(feature = "serde")]
 pub use register_robustcost as tag_robust;
 
+// We'll implement a custom debug on a bunch of these to remove pretty printing
+
 // ------------------------- L2 Norm ------------------------- //
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -93,7 +95,7 @@ impl RobustCost for L1 {
 }
 
 // ------------------------- Huber ------------------------- //
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Huber {
     k: dtype,
@@ -132,6 +134,12 @@ impl RobustCost for Huber {
     }
 }
 
+impl Debug for Huber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Huber {{ k: {} }}", self.k)
+    }
+}
+
 // ------------------------- Fair ------------------------- //
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -164,7 +172,7 @@ impl RobustCost for Fair {
 }
 
 // ------------------------- Cauchy ------------------------- //
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cauchy {
     c2: dtype,
@@ -195,8 +203,14 @@ impl RobustCost for Cauchy {
     }
 }
 
+impl Debug for Cauchy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Cauchy {{ c: {} }}", self.c2.sqrt())
+    }
+}
+
 // ------------------------- Geman-McClure ------------------------- //
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GemanMcClure {
     c2: dtype,
@@ -229,8 +243,14 @@ impl RobustCost for GemanMcClure {
     }
 }
 
+impl Debug for GemanMcClure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "GemanMcClure {{ c: {} }}", self.c2.sqrt())
+    }
+}
+
 // ------------------------- Welsch ------------------------- //
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Welsch {
     c2: dtype,
@@ -261,8 +281,14 @@ impl RobustCost for Welsch {
     }
 }
 
+impl Debug for Welsch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Welsch {{ c: {} }}", self.c2.sqrt())
+    }
+}
+
 // ------------------------- Tukey ------------------------- //
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tukey {
     c2: dtype,
@@ -298,6 +324,12 @@ impl RobustCost for Tukey {
         } else {
             0.0
         }
+    }
+}
+
+impl Debug for Tukey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Tukey {{ c: {} }}", self.c2.sqrt())
     }
 }
 

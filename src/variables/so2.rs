@@ -162,7 +162,7 @@ impl<T: Numeric> fmt::Debug for SO2<T> {
         let precision: usize = f.precision().unwrap_or(3);
         write!(
             f,
-            "SO2(a: {:.p$}, b: {:.p$})",
+            "SO2 {{ a: {:.p$}, b: {:.p$} }}",
             self.a,
             self.b,
             p = precision

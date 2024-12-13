@@ -5,10 +5,10 @@ This is mostly just used as a proof of concept to make sure this works
 For example, this could be used for a multi-robot factor graph
 */
 
-use std::fmt;
+use std::fmt::{self, Write};
 
 use factrs::{
-    containers::{Key, KeyFormatter, Symbol, Values},
+    containers::{Key, KeyFormatter, Symbol, Values, ValuesFormatter},
     variables::VectorVar1,
 };
 
@@ -44,16 +44,15 @@ impl DoubleCharHandler {
         (chr1, chr2, idx)
     }
 
-    pub fn format(chr1: char, chr2: char, idx: u32, f: &mut std::fmt::Formatter) -> fmt::Result {
+    pub fn format(f: &mut dyn Write, chr1: char, chr2: char, idx: u32) -> fmt::Result {
         write!(f, "{}{}{}", chr1, chr2, idx)
     }
 }
 
-#[cfg_attr(feature = "serde", typetag::serde)]
 impl KeyFormatter for DoubleCharHandler {
-    fn fmt(&self, key: Key, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(f: &mut dyn Write, key: Key) -> fmt::Result {
         let (chr1, chr2, idx) = Self::key_to_sym(key);
-        Self::format(chr1, chr2, idx, f)
+        Self::format(f, chr1, chr2, idx)
     }
 }
 
@@ -68,7 +67,7 @@ impl From<XY> for Key {
 
 impl fmt::Debug for XY {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        DoubleCharHandler::format('X', 'Y', self.0, f)
+        DoubleCharHandler::format(f, 'X', 'Y', self.0)
     }
 }
 
@@ -85,8 +84,11 @@ fn test_round_trip() {
 
 #[test]
 fn test_values() {
-    let mut values = Values::from_formatter(DoubleCharHandler);
+    let mut values = Values::new();
     values.insert_unchecked(XY(1), VectorVar1::new(1.0));
-    let output = format!("{}", values);
-    assert_eq!(output, "{ XY1: Vector1(1.000), }", "Values formatted wrong");
+    let output = format!("{}", ValuesFormatter::<DoubleCharHandler>::new(&values));
+    assert_eq!(
+        output, "Values { XY1: VectorVar1(1.000), }",
+        "Values formatted wrong"
+    );
 }

@@ -250,7 +250,7 @@ impl<T: Numeric> fmt::Debug for SE2<T> {
         let precision: usize = f.precision().unwrap_or(3);
         write!(
             f,
-            "SE2({:?}, x: {:.p$}, y: {:.p$})",
+            "SE2 {{ rot: {:?}, x: {:.p$}, y: {:.p$} }}",
             self.rot,
             self.xy[0],
             self.xy[1],

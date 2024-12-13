@@ -1,4 +1,6 @@
-use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator};
+use std::{
+    collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator, marker::PhantomData,
+};
 
 use foldhash::HashMap;
 
@@ -31,32 +33,15 @@ use crate::{
 /// let mut values = Values::new();
 /// values.insert(X(0), x);
 /// ```
-
+#[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
     values: HashMap<Key, Box<dyn VariableSafe>>,
-    key_fmtr: Box<dyn KeyFormatter>,
-}
-
-impl Default for Values {
-    fn default() -> Self {
-        Self {
-            values: HashMap::default(),
-            key_fmtr: Box::new(DefaultSymbolHandler),
-        }
-    }
 }
 
 impl Values {
     pub fn new() -> Self {
         Values::default()
-    }
-
-    pub fn from_formatter(fmtr: impl KeyFormatter + 'static) -> Self {
-        Self {
-            values: HashMap::default(),
-            key_fmtr: Box::new(fmtr),
-        }
     }
 
     pub fn len(&self) -> usize {
@@ -209,20 +194,49 @@ impl Values {
     }
 }
 
+impl fmt::Debug for Values {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&ValuesFormatter::<DefaultSymbolHandler>::new(self), f)
+    }
+}
+
 impl fmt::Display for Values {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&ValuesFormatter::<DefaultSymbolHandler>::new(self), f)
+    }
+}
+
+/// Formatter for values
+///
+/// Specifically, this can be used if custom symbols are desired. See `tests/custom_key` for examples.
+pub struct ValuesFormatter<'v, KF> {
+    values: &'v Values,
+    kf: PhantomData<KF>,
+}
+
+impl<'v, KF> ValuesFormatter<'v, KF> {
+    pub fn new(values: &'v Values) -> Self {
+        Self {
+            values,
+            kf: Default::default(),
+        }
+    }
+}
+
+impl<'v, KF: KeyFormatter> fmt::Display for ValuesFormatter<'v, KF> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let precision = f.precision().unwrap_or(3);
         if f.alternate() {
             writeln!(f, "Values {{")?;
             for (key, value) in self.values.iter() {
                 write!(f, "   ")?;
-                self.key_fmtr.fmt(*key, f)?;
+                KF::fmt(f, *key)?;
                 writeln!(f, ": {:#.p$},", value, p = precision)?;
             }
         } else {
             write!(f, "Values {{ ")?;
             for (key, value) in self.values.iter() {
-                self.key_fmtr.fmt(*key, f)?;
+                KF::fmt(f, *key)?;
                 write!(f, ": {:.p$}, ", value, p = precision)?;
             }
         }
@@ -230,20 +244,20 @@ impl fmt::Display for Values {
     }
 }
 
-impl fmt::Debug for Values {
+impl<'v, KF: KeyFormatter> fmt::Debug for ValuesFormatter<'v, KF> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let precision = f.precision().unwrap_or(3);
         if f.alternate() {
             writeln!(f, "Values {{")?;
             for (key, value) in self.values.iter() {
                 write!(f, "   ")?;
-                self.key_fmtr.fmt(*key, f)?;
+                KF::fmt(f, *key)?;
                 writeln!(f, ": {:#.p$?},", value, p = precision)?;
             }
         } else {
             write!(f, "Values {{ ")?;
             for (key, value) in self.values.iter() {
-                self.key_fmtr.fmt(*key, f)?;
+                KF::fmt(f, *key)?;
                 write!(f, ": {:.p$?}, ", value, p = precision)?;
             }
         }

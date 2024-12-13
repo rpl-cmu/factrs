@@ -1,16 +1,16 @@
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use super::{NoiseModel, UnitNoise};
 use crate::{
     dtype,
-    linalg::{Const, Matrix, MatrixView, MatrixX, Vector, VectorView, VectorX},
+    linalg::{Const, Matrix, MatrixView, MatrixViewX, MatrixX, Vector, VectorView, VectorX},
 };
 
 /// A Gaussian noise model.
 ///
 /// This noise model is used to represent Gaussian noise in a factor graph. This
 /// will likely be the most used noise model.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GaussianNoise<const N: usize> {
     sqrt_inf: Matrix<N, N>,
@@ -89,6 +89,86 @@ impl<const N: usize> GaussianNoise<N> {
             .l()
             .transpose();
         Self { sqrt_inf }
+    }
+}
+
+fn is_diagonal(n: usize, m: MatrixViewX) -> bool {
+    for i in 0..n {
+        for j in 0..n {
+            if i != j && m[(i, j)] != 0.0 {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+fn is_isotropic(n: usize, m: MatrixViewX) -> bool {
+    let val = m[(0, 0)];
+    for i in 1..n {
+        if m[(i, i)] != val {
+            return false;
+        }
+    }
+    true
+}
+
+impl<const N: usize> Debug for GaussianNoise<N> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision = f.precision().unwrap_or(3);
+
+        // If any type of diagonal, always print on a single line
+        // Check if is a diagonal matrix
+        if is_diagonal(N, self.sqrt_inf.as_view()) {
+            // Check if all are the same
+            if is_isotropic(N, self.sqrt_inf.as_view()) {
+                return write!(
+                    f,
+                    "GaussianNoise{}(std: {:.p$})",
+                    N,
+                    self.sqrt_inf[0],
+                    p = precision
+                );
+            } else {
+                write!(f, "GaussianNoise{}(std: [", N)?;
+                for i in 0..N {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{:.p$}", self.sqrt_inf[(i, i)], p = precision)?;
+                }
+                write!(f, "])")?;
+            }
+        } else if f.alternate() {
+            writeln!(f, "GaussianNoise{}(sqrt_inf:", N)?;
+            let width = precision + 4;
+            for i in 0..N {
+                write!(f, "    [")?;
+                for j in 0..N {
+                    if j > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(
+                        f,
+                        "{:>w$.p$}",
+                        self.sqrt_inf[(i, j)],
+                        p = precision,
+                        w = width
+                    )?;
+                }
+                writeln!(f, "]")?;
+            }
+            write!(f, ")")?;
+        } else {
+            writeln!(
+                f,
+                "GaussianNoise{}(sqrt_inf: {:.p$?}",
+                N,
+                self.sqrt_inf,
+                p = precision
+            )?;
+        }
+        Ok(())
     }
 }
 

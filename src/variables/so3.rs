@@ -353,7 +353,7 @@ impl<T: Numeric> fmt::Debug for SO3<T> {
         let precision = f.precision().unwrap_or(3);
         write!(
             f,
-            "SO3(x: {:.p$}, y: {:.p$}, z: {:.p$}, w: {:.p$})",
+            "SO3 {{ x: {:.p$}, y: {:.p$}, z: {:.p$}, w: {:.p$} }}",
             self.xyzw[0],
             self.xyzw[1],
             self.xyzw[2],
