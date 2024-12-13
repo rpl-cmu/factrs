@@ -14,7 +14,7 @@ use crate::{
 /// Special Euclidean Group in 3D
 ///
 /// Implementation of SE(3) for 3D transformations.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SE3<T: Numeric = dtype> {
     rot: SO3<T>,
@@ -243,7 +243,34 @@ impl<T: Numeric> ops::Mul for &SE3<T> {
 
 impl<T: Numeric> fmt::Display for SE3<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {:?}", self.rot, self.xyz)
+        let precision = f.precision().unwrap_or(3);
+        let rlog = self.rot.log();
+        write!(
+            f,
+            "SE3(r: [{:.p$}, {:.p$}, {:.p$}], t: [{:.p$}, {:.p$}, {:.p$}])",
+            rlog[0],
+            rlog[1],
+            rlog[2],
+            self.xyz[0],
+            self.xyz[1],
+            self.xyz[2],
+            p = precision
+        )
+    }
+}
+
+impl<T: Numeric> fmt::Debug for SE3<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision = f.precision().unwrap_or(3);
+        write!(
+            f,
+            "SE3 {{ r: {:.p$?}, t: [{:.p$}, {:.p$}, {:.p$}] }}",
+            self.rot,
+            self.xyz[0],
+            self.xyz[1],
+            self.xyz[2],
+            p = precision
+        )
     }
 }
 

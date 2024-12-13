@@ -31,7 +31,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
         let parts = line.split(" ").collect::<Vec<&str>>();
         match parts[0] {
             "VERTEX_SE2" => {
-                let id = parts[1].parse::<u64>().expect("Failed to parse g20");
+                let id = parts[1].parse::<u32>().expect("Failed to parse g20");
                 let x = parts[2].parse::<dtype>().expect("Failed to parse g20");
                 let y = parts[3].parse::<dtype>().expect("Failed to parse g20");
                 let theta = parts[4].parse::<dtype>().expect("Failed to parse g20");
@@ -49,8 +49,8 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
             }
 
             "EDGE_SE2" => {
-                let id_prev = parts[1].parse::<u64>().expect("Failed to parse g20");
-                let id_curr = parts[2].parse::<u64>().expect("Failed to parse g20");
+                let id_prev = parts[1].parse::<u32>().expect("Failed to parse g20");
+                let id_curr = parts[2].parse::<u32>().expect("Failed to parse g20");
                 let x = parts[3].parse::<dtype>().expect("Failed to parse g20");
                 let y = parts[4].parse::<dtype>().expect("Failed to parse g20");
                 let theta = parts[5].parse::<dtype>().expect("Failed to parse g20");
@@ -72,7 +72,7 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
             }
 
             "VERTEX_SE3:QUAT" => {
-                let id = parts[1].parse::<u64>().expect("Failed to parse g20");
+                let id = parts[1].parse::<u32>().expect("Failed to parse g20");
                 let x = parts[2].parse::<dtype>().expect("Failed to parse g20");
                 let y = parts[3].parse::<dtype>().expect("Failed to parse g20");
                 let z = parts[4].parse::<dtype>().expect("Failed to parse g20");
@@ -98,8 +98,8 @@ pub fn load_g20(file: &str) -> (Graph, Values) {
             }
 
             "EDGE_SE3:QUAT" => {
-                let id_prev = parts[1].parse::<u64>().expect("Failed to parse g20");
-                let id_curr = parts[2].parse::<u64>().expect("Failed to parse g20");
+                let id_prev = parts[1].parse::<u32>().expect("Failed to parse g20");
+                let id_curr = parts[2].parse::<u32>().expect("Failed to parse g20");
                 let x = parts[3].parse::<dtype>().expect("Failed to parse g20");
                 let y = parts[4].parse::<dtype>().expect("Failed to parse g20");
                 let z = parts[5].parse::<dtype>().expect("Failed to parse g20");

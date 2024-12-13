@@ -123,10 +123,17 @@ impl<T: Numeric> Variable<T> for ImuBias<T> {
 
 impl<T: Numeric> fmt::Display for ImuBias<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let precision = f.precision().unwrap_or(3);
         write!(
             f,
-            "ImuBias(g: ({:.3}, {:.3}, {:.3}), a: ({:.3}, {:.3}, {:.3}))",
-            self.gyro.x, self.gyro.y, self.gyro.z, self.accel.x, self.accel.y, self.accel.z
+            "ImuBias(g: ({:.p$}, {:.p$}, {:.p$}), a: ({:.p$}, {:.p$}, {:.p$}))",
+            self.gyro.x,
+            self.gyro.y,
+            self.gyro.z,
+            self.accel.x,
+            self.accel.y,
+            self.accel.z,
+            p = precision
         )
     }
 }

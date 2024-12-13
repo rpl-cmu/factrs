@@ -1,8 +1,15 @@
-use std::{collections::hash_map::Entry, default::Default, fmt, iter::IntoIterator};
+use std::{
+    collections::hash_map::Entry, default::Default, fmt, fmt::Write, iter::IntoIterator,
+    marker::PhantomData,
+};
 
 use foldhash::HashMap;
+use pad_adapter::PadAdapter;
 
-use super::{DefaultSymbol, Key, Symbol, TypedSymbol};
+use super::{
+    symbol::{DefaultSymbolHandler, KeyFormatter},
+    Key, Symbol, TypedSymbol,
+};
 use crate::{
     linear::LinearValues,
     variables::{VariableSafe, VariableUmbrella},
@@ -28,8 +35,7 @@ use crate::{
 /// let mut values = Values::new();
 /// values.insert(X(0), x);
 /// ```
-
-#[derive(Clone, Default)]
+#[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Values {
     values: HashMap<Key, Box<dyn VariableSafe>>,
@@ -37,7 +43,7 @@ pub struct Values {
 
 impl Values {
     pub fn new() -> Self {
-        Self::default()
+        Values::default()
     }
 
     pub fn len(&self) -> usize {
@@ -62,7 +68,7 @@ impl Values {
         self.values.insert(symbol.into(), Box::new(value))
     }
 
-    /// Unchecked verison of [Values::insert].
+    /// Unchecked version of [Values::insert].
     pub fn insert_unchecked<S, V>(&mut self, symbol: S, value: V) -> Option<Box<dyn VariableSafe>>
     where
         S: Symbol,
@@ -190,29 +196,74 @@ impl Values {
     }
 }
 
-// TODO: Find a way to make this usable on custom symbols (not just
-// DefaultSymbol)
+impl fmt::Debug for Values {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&ValuesFormatter::<DefaultSymbolHandler>::new(self), f)
+    }
+}
+
 impl fmt::Display for Values {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if f.alternate() {
-            writeln!(f, "{{")?;
-            for (key, value) in self.values.iter() {
-                writeln!(f, "  {:?}: {:?},", DefaultSymbol::from(*key), value)?;
-            }
-            write!(f, "}}")
-        } else {
-            write!(f, "{{")?;
-            for (key, value) in self.values.iter() {
-                write!(f, "{:?}: {:?}, ", DefaultSymbol::from(*key), value)?;
-            }
-            write!(f, "}}")
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&ValuesFormatter::<DefaultSymbolHandler>::new(self), f)
+    }
+}
+
+/// Formatter for values
+///
+/// Specifically, this can be used if custom symbols are desired. See `tests/custom_key` for examples.
+pub struct ValuesFormatter<'v, KF> {
+    values: &'v Values,
+    kf: PhantomData<KF>,
+}
+
+impl<'v, KF> ValuesFormatter<'v, KF> {
+    pub fn new(values: &'v Values) -> Self {
+        Self {
+            values,
+            kf: Default::default(),
         }
     }
 }
 
-impl fmt::Debug for Values {
+impl<'v, KF: KeyFormatter> fmt::Display for ValuesFormatter<'v, KF> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        let precision = f.precision().unwrap_or(3);
+        if f.alternate() {
+            f.write_str("Values {\n")?;
+            let mut pad = PadAdapter::new(f);
+            for (key, value) in self.values.iter() {
+                KF::fmt(&mut pad, *key)?;
+                writeln!(pad, ": {:#.p$},", value, p = precision)?;
+            }
+        } else {
+            f.write_str("Values { ")?;
+            for (key, value) in self.values.iter() {
+                KF::fmt(f, *key)?;
+                write!(f, ": {:.p$}, ", value, p = precision)?;
+            }
+        }
+        f.write_str("}")
+    }
+}
+
+impl<'v, KF: KeyFormatter> fmt::Debug for ValuesFormatter<'v, KF> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let precision = f.precision().unwrap_or(3);
+        if f.alternate() {
+            f.write_str("Values {\n")?;
+            let mut pad = PadAdapter::new(f);
+            for (key, value) in self.values.iter() {
+                KF::fmt(&mut pad, *key)?;
+                writeln!(pad, ": {:#.p$?},", value, p = precision)?;
+            }
+        } else {
+            f.write_str("Values { ")?;
+            for (key, value) in self.values.iter() {
+                KF::fmt(f, *key)?;
+                write!(f, ": {:.p$?}, ", value, p = precision)?;
+            }
+        }
+        f.write_str("}")
     }
 }
 

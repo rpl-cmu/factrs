@@ -24,7 +24,7 @@ fn main() {
 
     // Convert the JSON string back to a Point.
     let deserialized: Values = serde_json::from_str(&serialized).unwrap();
-    println!("deserialized = {:#?}", deserialized);
+    println!("deserialized = {:#}", deserialized);
 
     // ------------------------- Serialize graph ------------------------- //
     let prior = PriorResidual::new(x);
