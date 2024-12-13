@@ -38,7 +38,8 @@ impl<T: Numeric> SO2<T> {
 }
 
 #[factrs::mark]
-impl<T: Numeric> Variable<T> for SO2<T> {
+impl<T: Numeric> Variable for SO2<T> {
+    type T = T;
     type Dim = Const<1>;
     type Alias<TT: Numeric> = SO2<TT>;
 
@@ -97,7 +98,7 @@ impl<T: Numeric> Variable<T> for SO2<T> {
     }
 }
 
-impl<T: Numeric> MatrixLieGroup<T> for SO2<T> {
+impl<T: Numeric> MatrixLieGroup for SO2<T> {
     type TangentDim = Const<1>;
     type MatrixDim = Const<2>;
     type VectorDim = Const<2>;

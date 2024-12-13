@@ -96,7 +96,8 @@ impl<T: Numeric> SO3<T> {
 }
 
 #[factrs::mark]
-impl<T: Numeric> Variable<T> for SO3<T> {
+impl<T: Numeric> Variable for SO3<T> {
+    type T = T;
     type Dim = Const<3>;
     type Alias<TT: Numeric> = SO3<TT>;
 
@@ -204,7 +205,7 @@ impl<T: Numeric> Variable<T> for SO3<T> {
     }
 }
 
-impl<T: Numeric> MatrixLieGroup<T> for SO3<T> {
+impl<T: Numeric> MatrixLieGroup for SO3<T> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<3>;

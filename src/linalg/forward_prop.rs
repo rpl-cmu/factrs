@@ -5,9 +5,8 @@ use super::{
     AllocatorBuffer, Diff, MatrixDim,
 };
 use crate::{
-    dtype,
     linalg::{Const, DefaultAllocator, DiffResult, DimName, Dyn, MatrixX, VectorDim, VectorX},
-    variables::Variable,
+    variables::{Variable, VariableUmbrella},
 };
 
 /// Forward mode differentiator
@@ -46,7 +45,7 @@ macro_rules! forward_maker {
     ($num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_ $num>]<$( $var: Variable<Alias<dtype> = $var>, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
+            fn [<jacobian_ $num>]<$( $var: VariableUmbrella, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>{
                 // Prepare variables
                 let mut curr_dim = 0;

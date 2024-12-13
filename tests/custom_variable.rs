@@ -21,7 +21,8 @@ impl<T: Numeric> MyVar<T> {
 }
 
 #[factrs::mark]
-impl<T: Numeric> Variable<T> for MyVar<T> {
+impl<T: Numeric> Variable for MyVar<T> {
+    type T = T;
     type Dim = factrs::linalg::Const<1>;
     type Alias<TT: Numeric> = MyVar<TT>;
 

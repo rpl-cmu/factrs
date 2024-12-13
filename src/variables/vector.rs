@@ -24,7 +24,8 @@ use crate::{
 pub struct VectorVar<const N: usize, T: Numeric = dtype>(pub Vector<N, T>);
 
 #[factrs::mark]
-impl<const N: usize, T: Numeric> Variable<T> for VectorVar<N, T> {
+impl<const N: usize, T: Numeric> Variable for VectorVar<N, T> {
+    type T = T;
     type Dim = Const<N>;
     type Alias<TT: Numeric> = VectorVar<N, TT>;
 

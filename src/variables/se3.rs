@@ -37,7 +37,8 @@ impl<T: Numeric> SE3<T> {
 }
 
 #[factrs::mark]
-impl<T: Numeric> Variable<T> for SE3<T> {
+impl<T: Numeric> Variable for SE3<T> {
+    type T = T;
     type Dim = Const<6>;
     type Alias<TT: Numeric> = SE3<TT>;
 
@@ -149,7 +150,7 @@ impl<T: Numeric> Variable<T> for SE3<T> {
     }
 }
 
-impl<T: Numeric> MatrixLieGroup<T> for SE3<T> {
+impl<T: Numeric> MatrixLieGroup for SE3<T> {
     type TangentDim = Const<6>;
     type MatrixDim = Const<4>;
     type VectorDim = Const<3>;

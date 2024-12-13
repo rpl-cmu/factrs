@@ -15,12 +15,14 @@ use crate::{
 /// All variables must implement this trait to be used in the optimization
 /// algorithms. See [module level documentation](crate::variables) for more
 /// details.
-pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
+pub trait Variable: Clone + Sized + Display + Debug {
+    /// Datatype of the variable
+    type T: Numeric;
     /// Dimension of the Lie group / Tangent space
     type Dim: DimName;
     const DIM: usize = Self::Dim::USIZE;
     /// Alias for the type for dual conversion
-    type Alias<TT: Numeric>: Variable<TT>;
+    type Alias<TT: Numeric>: Variable<T = TT>;
 
     // Group operations
     /// Identity element of the group
@@ -30,9 +32,9 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// Composition of two group elements
     fn compose(&self, other: &Self) -> Self;
     /// Exponential map (trivial if a vector space)
-    fn exp(delta: VectorViewX<T>) -> Self;
+    fn exp(delta: VectorViewX<Self::T>) -> Self;
     /// Logarithm map (trivial if a vector space)
-    fn log(&self) -> VectorX<T>;
+    fn log(&self) -> VectorX<Self::T>;
 
     /// Conversion to dual space
     ///
@@ -56,7 +58,7 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     ///
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
-    fn oplus(&self, xi: VectorViewX<T>) -> Self {
+    fn oplus(&self, xi: VectorViewX<Self::T>) -> Self {
         if cfg!(feature = "left") {
             self.oplus_left(xi)
         } else {
@@ -64,11 +66,11 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
         }
     }
 
-    fn oplus_right(&self, xi: VectorViewX<T>) -> Self {
+    fn oplus_right(&self, xi: VectorViewX<Self::T>) -> Self {
         self.compose(&Self::exp(xi))
     }
 
-    fn oplus_left(&self, xi: VectorViewX<T>) -> Self {
+    fn oplus_left(&self, xi: VectorViewX<Self::T>) -> Self {
         Self::exp(xi).compose(self)
     }
 
@@ -84,7 +86,7 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     ///
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
-    fn ominus(&self, y: &Self) -> VectorX<T> {
+    fn ominus(&self, y: &Self) -> VectorX<Self::T> {
         if cfg!(feature = "left") {
             self.ominus_left(y)
         } else {
@@ -92,11 +94,11 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
         }
     }
 
-    fn ominus_right(&self, y: &Self) -> VectorX<T> {
+    fn ominus_right(&self, y: &Self) -> VectorX<Self::T> {
         y.inverse().compose(self).log()
     }
 
-    fn ominus_left(&self, y: &Self) -> VectorX<T> {
+    fn ominus_left(&self, y: &Self) -> VectorX<Self::T> {
         self.compose(&y.inverse()).log()
     }
 
@@ -170,7 +172,7 @@ pub trait VariableSafe: Debug + Display + Downcast {
 }
 
 #[cfg_attr(feature = "serde", typetag::serde)]
-impl<T: Variable + 'static> VariableSafe for T {
+impl<V: Variable<T = dtype> + 'static> VariableSafe for V {
     fn clone_box(&self) -> Box<dyn VariableSafe> {
         Box::new((*self).clone())
     }
@@ -193,11 +195,8 @@ pub use register_variablesafe as tag_variable;
 ///
 /// This trait is 100% for convenience. It wraps all types that implements
 /// [VariableSafe] and [Variable] (with proper aliases) into a single trait.
-pub trait VariableUmbrella<T: Numeric = dtype>:
-    VariableSafe + Variable<T, Alias<T> = Self>
-{
-}
-impl<T: Numeric, V: VariableSafe + Variable<T, Alias<T> = V>> VariableUmbrella<T> for V {}
+pub trait VariableUmbrella: VariableSafe + Variable<T = dtype, Alias<dtype> = Self> {}
+impl<V: VariableSafe + Variable<T = dtype, Alias<dtype> = V>> VariableUmbrella for V {}
 
 impl Clone for Box<dyn VariableSafe> {
     fn clone(&self) -> Self {
@@ -212,7 +211,7 @@ use nalgebra as na;
 /// Many variables used in robotics state estimation are specific Lie Groups
 /// that consist of matrix elements. We encapsulate a handful of their
 /// properties here.
-pub trait MatrixLieGroup<T: Numeric = dtype>: Variable<T>
+pub trait MatrixLieGroup: Variable
 where
     na::DefaultAllocator: na::allocator::Allocator<Self::TangentDim, Self::TangentDim>,
     na::DefaultAllocator: na::allocator::Allocator<Self::MatrixDim, Self::MatrixDim>,
@@ -228,23 +227,23 @@ where
     type VectorDim: DimName;
 
     /// Adjoint operator
-    fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, T>;
+    fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, Self::T>;
 
     /// Hat operator
     ///
     /// Converts a vector from $\xi \in \mathbb{R}^n$ to the Lie algebra
     /// $\xi^\wedge \in \mathfrak{g}$
     fn hat(
-        xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, T>,
-    ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, T>;
+        xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, Self::T>,
+    ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, Self::T>;
 
     /// Vee operator
     ///
     /// Inverse of the hat operator. Converts a matrix from the Lie algebra
     /// $\xi^\wedge \in \mathfrak{g}$ to a vector $\xi \in \mathbb{R}^n$
     fn vee(
-        xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, T>,
-    ) -> MatrixDim<Self::TangentDim, Const<1>, T>;
+        xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, Self::T>,
+    ) -> MatrixDim<Self::TangentDim, Const<1>, Self::T>;
 
     /// Hat operator for swapping
     ///
@@ -259,8 +258,8 @@ where
     ///
     /// For example, in SO(3) $\text{hat\\_swap}(p) = -p^\wedge$.
     fn hat_swap(
-        xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, T>,
-    ) -> MatrixDim<Self::VectorDim, Self::TangentDim, T>;
+        xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, Self::T>,
+    ) -> MatrixDim<Self::VectorDim, Self::TangentDim, Self::T>;
 
     /// Transform a vector
     ///
@@ -268,12 +267,12 @@ where
     /// rotation, in SE(3) this is a rigid body transformation.
     fn apply(
         &self,
-        v: MatrixViewDim<'_, Self::VectorDim, Const<1>, T>,
-    ) -> MatrixDim<Self::VectorDim, Const<1>, T>;
+        v: MatrixViewDim<'_, Self::VectorDim, Const<1>, Self::T>,
+    ) -> MatrixDim<Self::VectorDim, Const<1>, Self::T>;
 
     /// Transform group element to a matrix
-    fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, T>;
+    fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, Self::T>;
 
     /// Create a group element from a matrix
-    fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, T>) -> Self;
+    fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, Self::T>) -> Self;
 }
