@@ -118,8 +118,10 @@ pub trait Variable: Clone + Sized + Display + Debug {
         other.inverse().compose(self)
     }
 
-    // TODO: This are both kind of ugly functions still
-    // Would be nice if they weren't static functions, but I couldn't ever get it quite right
+    // TODO: This function is kind of ugly functions still
+    // Would be nice if it wasn't a static function, but I couldn't ever get it quite right
+    // Tried to add bound Self: Variable<T = DualVector<N>>, but it then I couldn't do custom impl
+
     /// Setup group element correctly using the tangent space
     ///
     /// By default this uses the exponential map to propagate dual numbers to
@@ -141,17 +143,16 @@ pub trait Variable: Clone + Sized + Display + Debug {
 
     /// Applies the tangent vector in dual space
     ///
-    /// Takes the results from [dual_setup](Self::dual_setup) and applies the
+    /// Takes the results from [dual_exp](Self::dual_exp) and applies the
     /// tangent vector using the right/left oplus operator.
-    fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual<N: DimName>(&self, idx: usize) -> Self::Alias<DualVector<N>>
     where
-        Self::Alias<dtype>: Variable<Alias<DualVector<N>> = Self::Alias<DualVector<N>>>,
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
-        DualVector<N>: Copy,
+        DualVector<N>: Copy + SupersetOf<Self::T>,
     {
         // Setups tangent vector -> exp, then we compose here
-        let casted: Self::Alias<DualVector<N>> = other.cast::<DualVector<N>>();
+        let casted: Self::Alias<DualVector<N>> = self.cast::<DualVector<N>>();
         let setup: Self::Alias<DualVector<N>> = Self::dual_exp(idx);
         if cfg!(feature = "left") {
             setup.compose(&casted)
@@ -192,21 +193,20 @@ impl<V: Variable<T = dtype> + 'static> VariableSafe for V {
 
 impl_downcast!(VariableSafe);
 
-#[cfg(feature = "serde")]
-pub use register_variablesafe as tag_variable;
-
-/// Umbrella trait for variables
-///
-/// This trait is 100% for convenience. It wraps all types that implements
-/// [VariableSafe] and [Variable] (with proper aliases) into a single trait.
-pub trait VariableUmbrella: VariableSafe + Variable<T = dtype, Alias<dtype> = Self> {}
-impl<V: VariableSafe + Variable<T = dtype, Alias<dtype> = V>> VariableUmbrella for V {}
-
 impl Clone for Box<dyn VariableSafe> {
     fn clone(&self) -> Self {
         self.clone_box()
     }
 }
+#[cfg(feature = "serde")]
+pub use register_variablesafe as tag_variable;
+
+/// Alias for variable with T = dtype
+///
+/// This trait is 100% for convenience. It wraps all types that implements
+/// [VariableSafe] and [Variable] (with proper aliases) into a single trait.
+pub trait VariableDtype: VariableSafe + Variable<T = dtype, Alias<dtype> = Self> {}
+impl<V: VariableSafe + Variable<T = dtype, Alias<dtype> = V>> VariableDtype for V {}
 
 use nalgebra as na;
 

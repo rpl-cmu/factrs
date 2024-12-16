@@ -62,7 +62,7 @@ impl MatrixBlock {
 // ------------------------- Derivatives ------------------------- //
 use paste::paste;
 
-use crate::variables::VariableUmbrella;
+use crate::variables::VariableDtype;
 
 /// A struct to hold the result of a differentiation operation
 #[derive(Debug, Clone)]
@@ -74,7 +74,7 @@ pub struct DiffResult<V, G> {
 macro_rules! fn_maker {
     (grad, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<gradient_ $num>]<$( $var: VariableUmbrella, )* F: Fn($($var::Alias<Self::T>,)*) -> Self::T>
+            fn [<gradient_ $num>]<$( $var: VariableDtype, )* F: Fn($($var::Alias<Self::T>,)*) -> Self::T>
                     (f: F, $($name: &$var,)*) -> DiffResult<dtype, VectorX>{
                     let f_wrapped = |$($name: $var::Alias<Self::T>,)*| vectorx![f($($name.clone(),)*)];
                     let DiffResult { value, diff } = Self::[<jacobian_ $num>](f_wrapped, $($name,)*);
@@ -86,7 +86,7 @@ macro_rules! fn_maker {
 
     (jac, $num:expr, $( ($name:ident: $var:ident) ),*) => {
         paste! {
-            fn [<jacobian_ $num>]<$( $var: VariableUmbrella, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
+            fn [<jacobian_ $num>]<$( $var: VariableDtype, )* F: Fn($($var::Alias<Self::T>,)*) -> VectorX<Self::T>>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX>;
         }
     };

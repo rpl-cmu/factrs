@@ -3,7 +3,7 @@ use paste::paste;
 use crate::{
     dtype,
     linalg::{Diff, DiffResult, MatrixX, VectorX},
-    variables::{Variable, VariableUmbrella},
+    variables::{Variable, VariableDtype},
 };
 
 /// Forward mode differentiator
@@ -41,7 +41,7 @@ macro_rules! numerical_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            fn [<jacobian_$num>]<$( $var: VariableUmbrella, )* F: Fn($($var,)*) -> VectorX>
+            fn [<jacobian_$num>]<$( $var: VariableDtype, )* F: Fn($($var,)*) -> VectorX>
                     (f: F, $($name: &$var,)*) -> DiffResult<VectorX, MatrixX> {
                 let eps = dtype::powi(10.0, -PWR);
 
@@ -113,7 +113,7 @@ macro_rules! numerical_variable_maker {
     ($num:expr, $( ($idx:expr, $name:ident, $var:ident) ),*) => {
         paste! {
             #[allow(unused_assignments)]
-            pub fn [<jacobian_variable_$num>]<$( $var: VariableUmbrella, )* VOut: VariableUmbrella, F: Fn($($var,)*) -> VOut>
+            pub fn [<jacobian_variable_$num>]<$( $var: VariableDtype, )* VOut: VariableDtype, F: Fn($($var,)*) -> VOut>
                     (f: F, $($name: &$var,)*) -> DiffResult<VOut, MatrixX> {
                 let eps = dtype::powi(10.0, -PWR);
 

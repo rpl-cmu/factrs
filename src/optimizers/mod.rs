@@ -61,14 +61,14 @@ pub mod test {
         noise::{NoiseModel, UnitNoise},
         residuals::{BetweenResidual, PriorResidual, Residual},
         symbols::X,
-        variables::VariableUmbrella,
+        variables::VariableDtype,
     };
 
     pub fn optimize_prior<
         O,
         const DIM: usize,
-        #[cfg(feature = "serde")] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
-        #[cfg(not(feature = "serde"))] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static,
+        #[cfg(feature = "serde")] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static,
     >()
     where
         UnitNoise<DIM>: NoiseModel,
@@ -102,8 +102,8 @@ pub mod test {
         O,
         const DIM: usize,
         const DIM_DOUBLE: usize,
-        #[cfg(feature = "serde")] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
-        #[cfg(not(feature = "serde"))] T: VariableUmbrella<Dim = nalgebra::Const<DIM>> + 'static,
+        #[cfg(feature = "serde")] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static,
     >()
     where
         UnitNoise<DIM>: NoiseModel,

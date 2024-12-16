@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use crate::{
     containers::{Key, Values},
     linalg::{Diff, DiffResult, DimName, MatrixX, Numeric, VectorX},
-    variables::{Variable, VariableUmbrella},
+    variables::{Variable, VariableDtype},
 };
 
 type Alias<V, T> = <V as Variable>::Alias<T>;
@@ -39,7 +39,7 @@ macro_rules! residual_maker {
             {
                 $(
                     #[doc=concat!("Type of variable ", $idx)]
-                    type $var: VariableUmbrella;
+                    type $var: VariableDtype;
                 )*
                 /// The total input dimension
                 type DimIn: DimName;

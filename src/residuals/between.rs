@@ -5,7 +5,7 @@ use crate::{
         AllocatorBuffer, DefaultAllocator, DualAllocator, DualVector, ForwardProp, Numeric, VectorX,
     },
     residuals::Residual2,
-    variables::{Variable, VariableUmbrella},
+    variables::{Variable, VariableDtype},
 };
 
 /// Binary factor between variables.
@@ -31,7 +31,7 @@ impl<P: Variable> BetweenResidual<P> {
 }
 
 #[factrs::mark]
-impl<P: VariableUmbrella + 'static> Residual2 for BetweenResidual<P>
+impl<P: VariableDtype + 'static> Residual2 for BetweenResidual<P>
 where
     AllocatorBuffer<DimNameSum<P::Dim, P::Dim>>: Sync + Send,
     DefaultAllocator: DualAllocator<DimNameSum<P::Dim, P::Dim>>,
