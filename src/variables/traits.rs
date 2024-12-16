@@ -6,7 +6,7 @@ use crate::{
     dtype,
     linalg::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, MatrixDim,
-        MatrixViewDim, Numeric, VectorDim, VectorViewX, VectorX,
+        MatrixViewDim, Numeric, SupersetOf, VectorDim, VectorViewX, VectorX,
     },
 };
 
@@ -39,7 +39,7 @@ pub trait Variable: Clone + Sized + Display + Debug {
     /// Conversion to dual space
     ///
     /// Simply convert all interior values of dtype to DD.
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT>;
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT>;
 
     /// Dimension helper
     fn dim(&self) -> usize {
@@ -118,12 +118,14 @@ pub trait Variable: Clone + Sized + Display + Debug {
         other.inverse().compose(self)
     }
 
+    // TODO: This are both kind of ugly functions still
+    // Would be nice if they weren't static functions, but I couldn't ever get it quite right
     /// Setup group element correctly using the tangent space
     ///
     /// By default this uses the exponential map to propagate dual numbers to
     /// the variable to setup the jacobian properly. Can be hardcoded to avoid
     /// the repeated computation.
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
@@ -143,16 +145,18 @@ pub trait Variable: Clone + Sized + Display + Debug {
     /// tangent vector using the right/left oplus operator.
     fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVector<N>>
     where
+        Self::Alias<dtype>: Variable<Alias<DualVector<N>> = Self::Alias<DualVector<N>>>,
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
         DualVector<N>: Copy,
     {
         // Setups tangent vector -> exp, then we compose here
-        let setup = Self::dual_setup(idx);
+        let casted: Self::Alias<DualVector<N>> = other.cast::<DualVector<N>>();
+        let setup: Self::Alias<DualVector<N>> = Self::dual_exp(idx);
         if cfg!(feature = "left") {
-            setup.compose(&Self::dual_convert(other))
+            setup.compose(&casted)
         } else {
-            Self::dual_convert(other).compose(&setup)
+            casted.compose(&setup)
         }
     }
 }

@@ -39,7 +39,7 @@ where
     type DimOut = P::Dim;
 
     fn residual1<T: Numeric>(&self, v: <Self::V1 as Variable>::Alias<T>) -> VectorX<T> {
-        Self::V1::dual_convert::<T>(&self.prior).ominus(&v)
+        self.prior.cast::<T>().ominus(&v)
     }
 }
 

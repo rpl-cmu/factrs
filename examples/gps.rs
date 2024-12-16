@@ -56,7 +56,7 @@ impl Residual1 for GpsResidual {
     // D is a custom numeric type that can be leveraged for autodiff
     fn residual1<T: Numeric>(&self, v: SE2<T>) -> VectorX<T> {
         // Convert measurement from dtype to T
-        let p_meas = VectorVar2::<T>::dual_convert(&self.meas);
+        let p_meas = self.meas.cast();
         // Convert p to VectorVar2 as well
         let p = VectorVar2::from(v.xy().into_owned());
 

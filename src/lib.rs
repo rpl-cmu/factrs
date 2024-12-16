@@ -127,7 +127,7 @@ pub mod symbols {
 /// ```
 pub mod traits {
     pub use crate::{
-        linalg::{Diff, DualConvert},
+        linalg::Diff,
         optimizers::{GraphOptimizer, Optimizer},
         residuals::Residual,
         variables::Variable,

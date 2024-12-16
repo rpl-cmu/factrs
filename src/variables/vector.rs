@@ -7,7 +7,7 @@ use crate::{
     dtype,
     linalg::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Numeric,
-        Vector, VectorDim, VectorViewX, VectorX,
+        SupersetOf, Vector, VectorDim, VectorViewX, VectorX,
     },
     variables::Variable,
 };
@@ -49,12 +49,12 @@ impl<const N: usize, T: Numeric> Variable for VectorVar<N, T> {
         VectorX::from_iterator(Self::DIM, self.0.iter().cloned())
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
-        VectorVar(other.0.map(|x| x.into()))
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
+        VectorVar(self.0.cast())
     }
 
-    // Mostly unncessary, but avoids having to convert VectorX to static vector
-    fn dual_setup<NN: DimName>(idx: usize) -> Self::Alias<DualVector<NN>>
+    // Mostly unnecessary, but avoids having to convert VectorX to static vector
+    fn dual_exp<NN: DimName>(idx: usize) -> Self::Alias<DualVector<NN>>
     where
         AllocatorBuffer<NN>: Sync + Send,
         DefaultAllocator: DualAllocator<NN>,

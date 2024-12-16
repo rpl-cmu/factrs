@@ -1,11 +1,9 @@
 use std::{fmt, ops};
 
-use nalgebra::Const;
-
 use super::Variable;
 use crate::{
     dtype,
-    linalg::{DualVector, Numeric, Vector3, VectorDim},
+    linalg::{Const, DualVector, Numeric, SupersetOf, Vector3, VectorDim},
     residuals::{Accel, Gyro},
 };
 
@@ -93,14 +91,14 @@ impl<T: Numeric> Variable for ImuBias<T> {
         ]
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
         ImuBias {
-            gyro: other.gyro.map(|x| x.into()),
-            accel: other.accel.map(|x| x.into()),
+            gyro: self.gyro.cast(),
+            accel: self.accel.cast(),
         }
     }
 
-    fn dual_setup<N: nalgebra::DimName>(idx: usize) -> Self::Alias<crate::linalg::DualVector<N>>
+    fn dual_exp<N: nalgebra::DimName>(idx: usize) -> Self::Alias<crate::linalg::DualVector<N>>
     where
         crate::linalg::AllocatorBuffer<N>: Sync + Send,
         nalgebra::DefaultAllocator: crate::linalg::DualAllocator<N>,

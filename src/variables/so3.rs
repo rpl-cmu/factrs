@@ -1,12 +1,11 @@
 use std::{fmt, ops};
 
-use super::VectorVar4;
 use crate::{
     dtype,
     linalg::{
         vectorx, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
-        DualVector, Matrix3, MatrixView, Numeric, Vector3, Vector4, VectorDim, VectorView3,
-        VectorViewX, VectorX,
+        DualVector, Matrix3, MatrixView, Numeric, SupersetOf, Vector3, Vector4, VectorDim,
+        VectorView3, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
 };
@@ -172,13 +171,13 @@ impl<T: Numeric> Variable for SO3<T> {
         }
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
         SO3 {
-            xyzw: VectorVar4::<dtype>::dual_convert(&other.xyzw.into()).into(),
+            xyzw: self.xyzw.cast(),
         }
     }
 
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,

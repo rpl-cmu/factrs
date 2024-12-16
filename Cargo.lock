@@ -845,6 +845,7 @@ dependencies = [
  "rerun",
  "serde",
  "serde_json",
+ "simba",
  "typetag",
 ]
 

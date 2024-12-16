@@ -310,7 +310,7 @@ impl Residual6 for ImuPreintegrationResidual {
         b2: ImuBias<T>,
     ) -> VectorX<T> {
         // Add dual types to all of our fields
-        let delta = ImuDelta::<T>::dual_convert(&self.delta);
+        let delta = &self.delta.cast();
 
         // Pull out the measurements
         let start = ImuState {

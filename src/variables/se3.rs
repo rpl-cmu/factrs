@@ -5,8 +5,8 @@ use crate::{
     dtype,
     linalg::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, Matrix3,
-        Matrix3x6, Matrix4, Matrix6, MatrixView, Numeric, Vector3, Vector6, VectorView3,
-        VectorView6, VectorViewX, VectorX,
+        Matrix3x6, Matrix4, Matrix6, MatrixView, Numeric, SupersetOf, Vector3, Vector6,
+        VectorView3, VectorView6, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable, SO3},
 };
@@ -130,22 +130,22 @@ impl<T: Numeric> Variable for SE3<T> {
         xi
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
         SE3 {
-            rot: SO3::<T>::dual_convert(&other.rot),
-            xyz: VectorVar3::<T>::dual_convert(&other.xyz.into()).into(),
+            rot: self.rot.cast(),
+            xyz: self.xyz.cast(),
         }
     }
 
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
         DualVector<N>: Copy,
     {
         SE3 {
-            rot: SO3::<dtype>::dual_setup(idx),
-            xyz: VectorVar3::<dtype>::dual_setup(idx + 3).into(),
+            rot: SO3::<dtype>::dual_exp(idx),
+            xyz: VectorVar3::<dtype>::dual_exp(idx + 3).into(),
         }
     }
 }

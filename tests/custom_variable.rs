@@ -2,7 +2,7 @@ use std::fmt;
 
 use factrs::{
     dtype,
-    linalg::{Numeric, Vector1},
+    linalg::{Numeric, SupersetOf, Vector1},
     traits::Variable,
 };
 
@@ -51,9 +51,9 @@ impl<T: Numeric> Variable for MyVar<T> {
         factrs::linalg::vectorx![self.val.x]
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
         MyVar {
-            val: other.val.map(|x| x.into()),
+            val: self.val.cast(),
         }
     }
 }
