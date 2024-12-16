@@ -46,6 +46,7 @@ typetag = { version = "0.2.18", optional = true, path = "./factrs-typetag" }
 rerun = { version = "0.20", optional = true, default-features = false, features = [
     "sdk",
 ] }
+simba = { version = "0.9.0", default-features = false }
 
 [features]
 # Run everything with f32 instead of the default f64

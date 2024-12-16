@@ -12,7 +12,7 @@ use super::{
 };
 use crate::{
     linear::LinearValues,
-    variables::{VariableSafe, VariableUmbrella},
+    variables::{VariableDtype, VariableSafe},
 };
 
 // Since we won't be passing dual numbers through any of this,
@@ -63,7 +63,7 @@ impl Values {
     pub fn insert<S, V>(&mut self, symbol: S, value: V) -> Option<Box<dyn VariableSafe>>
     where
         S: TypedSymbol<V>,
-        V: VariableUmbrella,
+        V: VariableDtype,
     {
         self.values.insert(symbol.into(), Box::new(value))
     }
@@ -72,7 +72,7 @@ impl Values {
     pub fn insert_unchecked<S, V>(&mut self, symbol: S, value: V) -> Option<Box<dyn VariableSafe>>
     where
         S: Symbol,
-        V: VariableUmbrella,
+        V: VariableDtype,
     {
         self.values.insert(symbol.into(), Box::new(value))
     }
@@ -104,7 +104,7 @@ impl Values {
     pub fn get<S, V>(&self, symbol: S) -> Option<&V>
     where
         S: TypedSymbol<V>,
-        V: VariableUmbrella,
+        V: VariableDtype,
     {
         self.values
             .get(&symbol.into())
@@ -115,7 +115,7 @@ impl Values {
     pub fn get_unchecked<S, V>(&self, symbol: S) -> Option<&V>
     where
         S: Symbol,
-        V: VariableUmbrella,
+        V: VariableDtype,
     {
         self.values
             .get(&symbol.into())
@@ -126,7 +126,7 @@ impl Values {
     pub fn get_mut<S, V>(&mut self, symbol: S) -> Option<&mut V>
     where
         S: TypedSymbol<V>,
-        V: VariableUmbrella,
+        V: VariableDtype,
     {
         self.values
             .get_mut(&symbol.into())
@@ -137,7 +137,7 @@ impl Values {
     pub fn get_unchecked_mut<S, V>(&mut self, symbol: S) -> Option<&mut V>
     where
         S: Symbol,
-        V: VariableUmbrella,
+        V: VariableDtype,
     {
         self.values
             .get_mut(&symbol.into())
@@ -147,7 +147,7 @@ impl Values {
     pub fn remove<S, V>(&mut self, symbol: S) -> Option<V>
     where
         S: TypedSymbol<V>,
-        V: VariableUmbrella,
+        V: VariableDtype,
     {
         self.values
             .remove(&symbol.into())

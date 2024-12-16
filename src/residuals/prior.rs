@@ -3,7 +3,7 @@ use crate::{
         AllocatorBuffer, DefaultAllocator, DualAllocator, DualVector, ForwardProp, Numeric, VectorX,
     },
     residuals::Residual1,
-    variables::{Variable, VariableUmbrella},
+    variables::{Variable, VariableDtype},
 };
 
 /// Unary factor for a prior on a variable.
@@ -19,7 +19,7 @@ pub struct PriorResidual<P> {
     prior: P,
 }
 
-impl<P: VariableUmbrella> PriorResidual<P> {
+impl<P: VariableDtype> PriorResidual<P> {
     pub fn new(prior: P) -> Self {
         Self { prior }
     }
@@ -28,7 +28,7 @@ impl<P: VariableUmbrella> PriorResidual<P> {
 #[factrs::mark]
 impl<P> Residual1 for PriorResidual<P>
 where
-    P: VariableUmbrella + 'static,
+    P: VariableDtype + 'static,
     AllocatorBuffer<P::Dim>: Sync + Send,
     DefaultAllocator: DualAllocator<P::Dim>,
     DualVector<P::Dim>: Copy,
@@ -39,7 +39,7 @@ where
     type DimOut = P::Dim;
 
     fn residual1<T: Numeric>(&self, v: <Self::V1 as Variable>::Alias<T>) -> VectorX<T> {
-        Self::V1::dual_convert::<T>(&self.prior).ominus(&v)
+        self.prior.cast::<T>().ominus(&v)
     }
 }
 
@@ -67,8 +67,8 @@ mod test {
     const TOL: f32 = 1e-2;
 
     fn test_prior_jacobian<
-        #[cfg(feature = "serde")] P: VariableUmbrella + 'static + typetag::Tagged,
-        #[cfg(not(feature = "serde"))] P: VariableUmbrella + 'static,
+        #[cfg(feature = "serde")] P: VariableDtype + 'static + typetag::Tagged,
+        #[cfg(not(feature = "serde"))] P: VariableDtype + 'static,
     >(
         prior: P,
     ) where

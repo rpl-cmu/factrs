@@ -6,7 +6,7 @@ use rerun::{
 use crate::{
     containers::Values,
     optimizers::OptObserver,
-    variables::{MatrixLieGroup, VariableUmbrella, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
+    variables::{MatrixLieGroup, VariableDtype, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
 };
 /*
 Each of our fact.rs types can be turned into a handful of rerun types. These include,
@@ -384,7 +384,7 @@ impl<'a> FromIterator<&'a SE3> for Points3D {
 // ------------------------- Streamer ------------------------- //
 pub struct RerunObserver<V, R>
 where
-    V: VariableUmbrella + 'static,
+    V: VariableDtype + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
@@ -396,7 +396,7 @@ where
 
 impl<V, R> RerunObserver<V, R>
 where
-    V: VariableUmbrella + 'static,
+    V: VariableDtype + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {
@@ -412,7 +412,7 @@ where
 
 impl<V, R> OptObserver for RerunObserver<V, R>
 where
-    V: VariableUmbrella + 'static,
+    V: VariableDtype + 'static,
     R: AsComponents,
     for<'a> R: FromIterator<&'a V>,
 {

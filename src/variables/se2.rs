@@ -5,8 +5,8 @@ use crate::{
     dtype,
     linalg::{
         vectorx, AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector,
-        Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric, Vector2, Vector3, VectorView2,
-        VectorView3, VectorViewX, VectorX,
+        Matrix2, Matrix2x3, Matrix3, MatrixView, Numeric, SupersetOf, Vector2, Vector3,
+        VectorView2, VectorView3, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable, SO2},
 };
@@ -52,7 +52,8 @@ impl<T: Numeric> SE2<T> {
 }
 
 #[factrs::mark]
-impl<T: Numeric> Variable<T> for SE2<T> {
+impl<T: Numeric> Variable for SE2<T> {
+    type T = T;
     type Dim = Const<3>;
     type Alias<TT: Numeric> = SE2<TT>;
 
@@ -131,27 +132,27 @@ impl<T: Numeric> Variable<T> for SE2<T> {
         vectorx![theta, xy[0], xy[1]]
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
         SE2 {
-            rot: SO2::<T>::dual_convert(&other.rot),
-            xy: VectorVar2::<T>::dual_convert(&other.xy.into()).into(),
+            rot: self.rot.cast(),
+            xy: self.xy.cast(),
         }
     }
 
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
         DualVector<N>: Copy,
     {
         SE2 {
-            rot: SO2::<dtype>::dual_setup(idx),
-            xy: VectorVar2::<dtype>::dual_setup(idx + 1).into(),
+            rot: SO2::<dtype>::dual_exp(idx),
+            xy: VectorVar2::<dtype>::dual_exp(idx + 1).into(),
         }
     }
 }
 
-impl<T: Numeric> MatrixLieGroup<T> for SE2<T> {
+impl<T: Numeric> MatrixLieGroup for SE2<T> {
     type TangentDim = Const<3>;
     type MatrixDim = Const<3>;
     type VectorDim = Const<2>;

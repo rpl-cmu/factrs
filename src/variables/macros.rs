@@ -50,7 +50,7 @@ macro_rules! assert_variable_eq {
 macro_rules! test_variable {
     ($var:ident) => {
         // Return a misc element for our tests
-        fn element<T: Variable>(scale: $crate::dtype) -> T {
+        fn element<T: $crate::variables::VariableDtype>(scale: $crate::dtype) -> T {
             let xi = $crate::linalg::VectorX::from_fn(T::DIM, |_, i| {
                 scale * ((i + 1) as $crate::dtype) / 10.0
             });

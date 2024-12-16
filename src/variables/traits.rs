@@ -6,7 +6,7 @@ use crate::{
     dtype,
     linalg::{
         AllocatorBuffer, Const, DefaultAllocator, DimName, DualAllocator, DualVector, MatrixDim,
-        MatrixViewDim, Numeric, VectorDim, VectorViewX, VectorX,
+        MatrixViewDim, Numeric, SupersetOf, VectorDim, VectorViewX, VectorX,
     },
 };
 
@@ -15,12 +15,14 @@ use crate::{
 /// All variables must implement this trait to be used in the optimization
 /// algorithms. See [module level documentation](crate::variables) for more
 /// details.
-pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
+pub trait Variable: Clone + Sized + Display + Debug {
+    /// Datatype of the variable
+    type T: Numeric;
     /// Dimension of the Lie group / Tangent space
     type Dim: DimName;
     const DIM: usize = Self::Dim::USIZE;
     /// Alias for the type for dual conversion
-    type Alias<TT: Numeric>: Variable<TT>;
+    type Alias<TT: Numeric>: Variable<T = TT>;
 
     // Group operations
     /// Identity element of the group
@@ -30,14 +32,14 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// Composition of two group elements
     fn compose(&self, other: &Self) -> Self;
     /// Exponential map (trivial if a vector space)
-    fn exp(delta: VectorViewX<T>) -> Self;
+    fn exp(delta: VectorViewX<Self::T>) -> Self;
     /// Logarithm map (trivial if a vector space)
-    fn log(&self) -> VectorX<T>;
+    fn log(&self) -> VectorX<Self::T>;
 
     /// Conversion to dual space
     ///
     /// Simply convert all interior values of dtype to DD.
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT>;
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT>;
 
     /// Dimension helper
     fn dim(&self) -> usize {
@@ -56,7 +58,7 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     ///
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
-    fn oplus(&self, xi: VectorViewX<T>) -> Self {
+    fn oplus(&self, xi: VectorViewX<Self::T>) -> Self {
         if cfg!(feature = "left") {
             self.oplus_left(xi)
         } else {
@@ -64,11 +66,11 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
         }
     }
 
-    fn oplus_right(&self, xi: VectorViewX<T>) -> Self {
+    fn oplus_right(&self, xi: VectorViewX<Self::T>) -> Self {
         self.compose(&Self::exp(xi))
     }
 
-    fn oplus_left(&self, xi: VectorViewX<T>) -> Self {
+    fn oplus_left(&self, xi: VectorViewX<Self::T>) -> Self {
         Self::exp(xi).compose(self)
     }
 
@@ -84,7 +86,7 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
     /// $$
     ///
     /// [^@solaMicroLieTheory2021]: Solà, Joan, et al. “A Micro Lie Theory for State Estimation in Robotics.” Arxiv:1812.01537, Dec. 2021
-    fn ominus(&self, y: &Self) -> VectorX<T> {
+    fn ominus(&self, y: &Self) -> VectorX<Self::T> {
         if cfg!(feature = "left") {
             self.ominus_left(y)
         } else {
@@ -92,11 +94,11 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
         }
     }
 
-    fn ominus_right(&self, y: &Self) -> VectorX<T> {
+    fn ominus_right(&self, y: &Self) -> VectorX<Self::T> {
         y.inverse().compose(self).log()
     }
 
-    fn ominus_left(&self, y: &Self) -> VectorX<T> {
+    fn ominus_left(&self, y: &Self) -> VectorX<Self::T> {
         self.compose(&y.inverse()).log()
     }
 
@@ -116,12 +118,16 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
         other.inverse().compose(self)
     }
 
+    // TODO: This function is kind of ugly functions still
+    // Would be nice if it wasn't a static function, but I couldn't ever get it quite right
+    // Tried to add bound Self: Variable<T = DualVector<N>>, but it then I couldn't do custom impl
+
     /// Setup group element correctly using the tangent space
     ///
     /// By default this uses the exponential map to propagate dual numbers to
     /// the variable to setup the jacobian properly. Can be hardcoded to avoid
     /// the repeated computation.
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
@@ -137,20 +143,21 @@ pub trait Variable<T: Numeric = dtype>: Clone + Sized + Display + Debug {
 
     /// Applies the tangent vector in dual space
     ///
-    /// Takes the results from [dual_setup](Self::dual_setup) and applies the
+    /// Takes the results from [dual_exp](Self::dual_exp) and applies the
     /// tangent vector using the right/left oplus operator.
-    fn dual<N: DimName>(other: &Self::Alias<dtype>, idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual<N: DimName>(&self, idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
-        DualVector<N>: Copy,
+        DualVector<N>: Copy + SupersetOf<Self::T>,
     {
         // Setups tangent vector -> exp, then we compose here
-        let setup = Self::dual_setup(idx);
+        let casted: Self::Alias<DualVector<N>> = self.cast::<DualVector<N>>();
+        let setup: Self::Alias<DualVector<N>> = Self::dual_exp(idx);
         if cfg!(feature = "left") {
-            setup.compose(&Self::dual_convert(other))
+            setup.compose(&casted)
         } else {
-            Self::dual_convert(other).compose(&setup)
+            casted.compose(&setup)
         }
     }
 }
@@ -170,7 +177,7 @@ pub trait VariableSafe: Debug + Display + Downcast {
 }
 
 #[cfg_attr(feature = "serde", typetag::serde)]
-impl<T: Variable + 'static> VariableSafe for T {
+impl<V: Variable<T = dtype> + 'static> VariableSafe for V {
     fn clone_box(&self) -> Box<dyn VariableSafe> {
         Box::new((*self).clone())
     }
@@ -186,24 +193,20 @@ impl<T: Variable + 'static> VariableSafe for T {
 
 impl_downcast!(VariableSafe);
 
-#[cfg(feature = "serde")]
-pub use register_variablesafe as tag_variable;
-
-/// Umbrella trait for variables
-///
-/// This trait is 100% for convenience. It wraps all types that implements
-/// [VariableSafe] and [Variable] (with proper aliases) into a single trait.
-pub trait VariableUmbrella<T: Numeric = dtype>:
-    VariableSafe + Variable<T, Alias<T> = Self>
-{
-}
-impl<T: Numeric, V: VariableSafe + Variable<T, Alias<T> = V>> VariableUmbrella<T> for V {}
-
 impl Clone for Box<dyn VariableSafe> {
     fn clone(&self) -> Self {
         self.clone_box()
     }
 }
+#[cfg(feature = "serde")]
+pub use register_variablesafe as tag_variable;
+
+/// Alias for variable with T = dtype
+///
+/// This trait is 100% for convenience. It wraps all types that implements
+/// [VariableSafe] and [Variable] (with proper aliases) into a single trait.
+pub trait VariableDtype: VariableSafe + Variable<T = dtype, Alias<dtype> = Self> {}
+impl<V: VariableSafe + Variable<T = dtype, Alias<dtype> = V>> VariableDtype for V {}
 
 use nalgebra as na;
 
@@ -212,7 +215,7 @@ use nalgebra as na;
 /// Many variables used in robotics state estimation are specific Lie Groups
 /// that consist of matrix elements. We encapsulate a handful of their
 /// properties here.
-pub trait MatrixLieGroup<T: Numeric = dtype>: Variable<T>
+pub trait MatrixLieGroup: Variable
 where
     na::DefaultAllocator: na::allocator::Allocator<Self::TangentDim, Self::TangentDim>,
     na::DefaultAllocator: na::allocator::Allocator<Self::MatrixDim, Self::MatrixDim>,
@@ -228,23 +231,23 @@ where
     type VectorDim: DimName;
 
     /// Adjoint operator
-    fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, T>;
+    fn adjoint(&self) -> MatrixDim<Self::TangentDim, Self::TangentDim, Self::T>;
 
     /// Hat operator
     ///
     /// Converts a vector from $\xi \in \mathbb{R}^n$ to the Lie algebra
     /// $\xi^\wedge \in \mathfrak{g}$
     fn hat(
-        xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, T>,
-    ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, T>;
+        xi: MatrixViewDim<'_, Self::TangentDim, Const<1>, Self::T>,
+    ) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, Self::T>;
 
     /// Vee operator
     ///
     /// Inverse of the hat operator. Converts a matrix from the Lie algebra
     /// $\xi^\wedge \in \mathfrak{g}$ to a vector $\xi \in \mathbb{R}^n$
     fn vee(
-        xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, T>,
-    ) -> MatrixDim<Self::TangentDim, Const<1>, T>;
+        xi: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, Self::T>,
+    ) -> MatrixDim<Self::TangentDim, Const<1>, Self::T>;
 
     /// Hat operator for swapping
     ///
@@ -259,8 +262,8 @@ where
     ///
     /// For example, in SO(3) $\text{hat\\_swap}(p) = -p^\wedge$.
     fn hat_swap(
-        xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, T>,
-    ) -> MatrixDim<Self::VectorDim, Self::TangentDim, T>;
+        xi: MatrixViewDim<'_, Self::VectorDim, Const<1>, Self::T>,
+    ) -> MatrixDim<Self::VectorDim, Self::TangentDim, Self::T>;
 
     /// Transform a vector
     ///
@@ -268,12 +271,12 @@ where
     /// rotation, in SE(3) this is a rigid body transformation.
     fn apply(
         &self,
-        v: MatrixViewDim<'_, Self::VectorDim, Const<1>, T>,
-    ) -> MatrixDim<Self::VectorDim, Const<1>, T>;
+        v: MatrixViewDim<'_, Self::VectorDim, Const<1>, Self::T>,
+    ) -> MatrixDim<Self::VectorDim, Const<1>, Self::T>;
 
     /// Transform group element to a matrix
-    fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, T>;
+    fn to_matrix(&self) -> MatrixDim<Self::MatrixDim, Self::MatrixDim, Self::T>;
 
     /// Create a group element from a matrix
-    fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, T>) -> Self;
+    fn from_matrix(mat: MatrixViewDim<'_, Self::MatrixDim, Self::MatrixDim, Self::T>) -> Self;
 }

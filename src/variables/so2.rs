@@ -4,7 +4,7 @@ use crate::{
     dtype,
     linalg::{
         vectorx, AllocatorBuffer, Const, DefaultAllocator, Derivative, DimName, DualAllocator,
-        DualVector, Matrix1, Matrix2, MatrixView, Numeric, Vector1, Vector2, VectorDim,
+        DualVector, Matrix1, Matrix2, MatrixView, Numeric, SupersetOf, Vector1, Vector2, VectorDim,
         VectorView1, VectorView2, VectorViewX, VectorX,
     },
     variables::{MatrixLieGroup, Variable},
@@ -38,7 +38,8 @@ impl<T: Numeric> SO2<T> {
 }
 
 #[factrs::mark]
-impl<T: Numeric> Variable<T> for SO2<T> {
+impl<T: Numeric> Variable for SO2<T> {
+    type T = T;
     type Dim = Const<1>;
     type Alias<TT: Numeric> = SO2<TT>;
 
@@ -72,14 +73,14 @@ impl<T: Numeric> Variable<T> for SO2<T> {
         vectorx![self.b.atan2(self.a)]
     }
 
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
-        Self::Alias::<TT> {
-            a: other.a.into(),
-            b: other.b.into(),
+    fn cast<TT: Numeric + SupersetOf<Self::T>>(&self) -> Self::Alias<TT> {
+        SO2 {
+            a: TT::from_subset(&self.a),
+            b: TT::from_subset(&self.b),
         }
     }
 
-    fn dual_setup<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
+    fn dual_exp<N: DimName>(idx: usize) -> Self::Alias<DualVector<N>>
     where
         AllocatorBuffer<N>: Sync + Send,
         DefaultAllocator: DualAllocator<N>,
@@ -97,7 +98,7 @@ impl<T: Numeric> Variable<T> for SO2<T> {
     }
 }
 
-impl<T: Numeric> MatrixLieGroup<T> for SO2<T> {
+impl<T: Numeric> MatrixLieGroup for SO2<T> {
     type TangentDim = Const<1>;
     type MatrixDim = Const<2>;
     type VectorDim = Const<2>;

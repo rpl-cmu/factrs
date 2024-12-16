@@ -3,8 +3,8 @@ use core::fmt;
 use super::{AccelUnbiased, Gravity, GyroUnbiased, ImuState};
 use crate::{
     dtype,
-    linalg::{Matrix, Matrix3, Numeric, Vector3},
-    traits::{DualConvert, Variable},
+    linalg::{Matrix, Matrix3, Numeric, SupersetOf, Vector3},
+    traits::Variable,
     variables::{ImuBias, MatrixLieGroup, SO3},
 };
 
@@ -155,20 +155,17 @@ impl<T: Numeric> ImuDelta<T> {
 
         A
     }
-}
 
-impl<T: Numeric> DualConvert for ImuDelta<T> {
-    type Alias<TT: Numeric> = ImuDelta<TT>;
-    fn dual_convert<TT: Numeric>(other: &Self::Alias<dtype>) -> Self::Alias<TT> {
+    pub fn cast<TT: Numeric + SupersetOf<T>>(&self) -> ImuDelta<TT> {
         ImuDelta {
-            dt: other.dt.into(),
-            xi_theta: Vector3::<T>::dual_convert(&other.xi_theta),
-            xi_vel: Vector3::<T>::dual_convert(&other.xi_vel),
-            xi_pos: Vector3::<T>::dual_convert(&other.xi_pos),
-            bias_init: ImuBias::<T>::dual_convert(&other.bias_init),
-            h_bias_accel: Matrix::<9, 3, T>::dual_convert(&other.h_bias_accel),
-            h_bias_gyro: Matrix::<9, 3, T>::dual_convert(&other.h_bias_gyro),
-            gravity: Gravity(Vector3::<T>::dual_convert(&other.gravity.0)),
+            dt: TT::from_subset(&self.dt),
+            xi_theta: self.xi_theta.cast(),
+            xi_vel: self.xi_vel.cast(),
+            xi_pos: self.xi_pos.cast(),
+            bias_init: self.bias_init.cast(),
+            h_bias_accel: self.h_bias_accel.cast(),
+            h_bias_gyro: self.h_bias_gyro.cast(),
+            gravity: Gravity(self.gravity.0.cast()),
         }
     }
 }
