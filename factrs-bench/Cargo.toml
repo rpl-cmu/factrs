@@ -3,11 +3,16 @@ name = "factrs-bench"
 version = "0.1.0"
 edition = "2024"
 
-[dev-dependencies]
-diol = "0.8.3"
-factrs = { version = "0.1.0", path = ".." }
+[dependencies]
 tiny-solver = "0.12.0"
 nalgebra = { version = "0.33.2", features = ["compare"] }
+factrs = { version = "0.1.0", path = ".." }
+
+[dev-dependencies]
+diol = { version = "0.8.3", default-features = false }
+
+[build-dependencies]
+cc = "1.2.4"
 
 [[bench]]
 name = "g2o"

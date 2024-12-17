@@ -13,8 +13,14 @@ rust-version = "1.81"
 exclude = ["examples/data/*"]
 
 [workspace]
-members = [ "factrs-bench","factrs-proc"]
+members = ["factrs-bench", "factrs-proc"]
 exclude = ["factrs-typetag"]
+
+# [profile.release]
+# lto = "thin"
+
+[profile.dev.package.faer]
+opt-level = 3
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "assets/katex-header.html"]
@@ -48,6 +54,7 @@ rerun = { version = "0.20", optional = true, default-features = false, features 
 ] }
 simba = { version = "0.9.0", default-features = false }
 dyn-clone = "1.0.17"
+
 
 [features]
 # Run everything with f32 instead of the default f64
