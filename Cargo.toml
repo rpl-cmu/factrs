@@ -13,7 +13,7 @@ rust-version = "1.81"
 exclude = ["examples/data/*"]
 
 [workspace]
-members = ["factrs-proc"]
+members = [ "factrs-bench","factrs-proc"]
 exclude = ["factrs-typetag"]
 
 [package.metadata.docs.rs]
@@ -47,6 +47,7 @@ rerun = { version = "0.20", optional = true, default-features = false, features 
     "sdk",
 ] }
 simba = { version = "0.9.0", default-features = false }
+dyn-clone = "1.0.17"
 
 [features]
 # Run everything with f32 instead of the default f64
