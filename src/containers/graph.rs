@@ -131,7 +131,7 @@ impl<'g, KF> GraphFormatter<'g, KF> {
     }
 }
 
-impl<'g, KF: KeyFormatter> Debug for GraphFormatter<'g, KF> {
+impl<KF: KeyFormatter> Debug for GraphFormatter<'_, KF> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
             f.write_str("Graph [\n")?;

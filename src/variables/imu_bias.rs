@@ -154,7 +154,7 @@ impl<T: Numeric> ops::Sub for ImuBias<T> {
     }
 }
 
-impl<'a, T: Numeric> ops::Sub for &'a ImuBias<T> {
+impl<T: Numeric> ops::Sub for &ImuBias<T> {
     type Output = ImuBias<T>;
 
     fn sub(self, rhs: Self) -> ImuBias<T> {

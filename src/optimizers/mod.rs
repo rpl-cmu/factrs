@@ -35,9 +35,7 @@
 //! using the [test_optimizer](crate::test_optimizer) macro to run a handful of
 //! simple tests over a few different variable types to ensure correctness.
 mod traits;
-pub use traits::{
-    GraphOptimizer, OptError, OptObserver, OptObserverVec, OptParams, OptResult, Optimizer,
-};
+pub use traits::{OptError, OptObserver, OptObserverVec, OptParams, OptResult, Optimizer};
 
 mod macros;
 
@@ -58,7 +56,6 @@ pub mod test {
         containers::{FactorBuilder, Graph, Values},
         dtype,
         linalg::{AllocatorBuffer, Const, DualAllocator, DualVector, VectorX},
-        noise::{NoiseModel, UnitNoise},
         residuals::{BetweenResidual, PriorResidual, Residual},
         symbols::X,
         variables::VariableDtype,
@@ -69,11 +66,11 @@ pub mod test {
         const DIM: usize,
         #[cfg(feature = "serde")] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
         #[cfg(not(feature = "serde"))] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static,
-    >()
-    where
-        UnitNoise<DIM>: NoiseModel,
+    >(
+        new: &dyn Fn(Graph) -> O,
+    ) where
         PriorResidual<T>: Residual,
-        O: Optimizer<Input = Values> + GraphOptimizer,
+        O: Optimizer<Input = Values>,
     {
         let t = VectorX::from_fn(T::DIM, |_, i| ((i + 1) as dtype) / 10.0);
         let p = T::exp(t.as_view());
@@ -86,7 +83,7 @@ pub mod test {
         let factor = FactorBuilder::new1_unchecked(res, X(0)).build();
         graph.add_factor(factor);
 
-        let mut opt = O::new(graph);
+        let mut opt = new(graph);
         values = opt.optimize(values).expect("Optimization failed");
 
         let out: &T = values.get_unchecked(X(0)).expect("Missing X(0)");
@@ -104,12 +101,12 @@ pub mod test {
         const DIM_DOUBLE: usize,
         #[cfg(feature = "serde")] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static + typetag::Tagged,
         #[cfg(not(feature = "serde"))] T: VariableDtype<Dim = nalgebra::Const<DIM>> + 'static,
-    >()
-    where
-        UnitNoise<DIM>: NoiseModel,
+    >(
+        new: &dyn Fn(Graph) -> O,
+    ) where
         PriorResidual<T>: Residual,
         BetweenResidual<T>: Residual,
-        O: Optimizer<Input = Values> + GraphOptimizer,
+        O: Optimizer<Input = Values>,
         Const<DIM>: ToTypenum,
         AllocatorBuffer<DimNameSum<Const<DIM>, Const<DIM>>>: Sync + Send,
         DefaultAllocator: DualAllocator<DimNameSum<Const<DIM>, Const<DIM>>>,
@@ -136,7 +133,7 @@ pub mod test {
         let factor = FactorBuilder::new2_unchecked(res, X(0), X(1)).build();
         graph.add_factor(factor);
 
-        let mut opt = O::new(graph);
+        let mut opt = new(graph);
         values = opt.optimize(values).expect("Optimization failed");
 
         let out1: &T = values.get_unchecked(X(0)).expect("Missing X(0)");

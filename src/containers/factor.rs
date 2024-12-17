@@ -136,7 +136,7 @@ impl<'f, KF> FactorFormatter<'f, KF> {
     }
 }
 
-impl<'f, KF: KeyFormatter> fmt::Debug for FactorFormatter<'f, KF> {
+impl<KF: KeyFormatter> fmt::Debug for FactorFormatter<'_, KF> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if f.alternate() {
             f.write_str("Factor {\n")?;

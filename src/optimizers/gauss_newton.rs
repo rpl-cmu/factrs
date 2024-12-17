@@ -1,6 +1,6 @@
 use faer_ext::IntoNalgebra;
 
-use super::{GraphOptimizer, OptObserverVec, OptParams, OptResult, Optimizer};
+use super::{OptObserverVec, OptParams, OptResult, Optimizer};
 use crate::{
     containers::{Graph, GraphOrder, Values, ValuesOrder},
     linalg::DiffResult,
@@ -26,8 +26,8 @@ pub struct GaussNewton<S: LinearSolver = CholeskySolver> {
     graph_order: Option<GraphOrder>,
 }
 
-impl<S: LinearSolver> GraphOptimizer for GaussNewton<S> {
-    fn new(graph: Graph) -> Self {
+impl<S: LinearSolver> GaussNewton<S> {
+    pub fn new(graph: Graph) -> Self {
         Self {
             graph,
             solver: S::default(),
@@ -37,7 +37,7 @@ impl<S: LinearSolver> GraphOptimizer for GaussNewton<S> {
         }
     }
 
-    fn graph(&self) -> &Graph {
+    pub fn graph(&self) -> &Graph {
         &self.graph
     }
 }

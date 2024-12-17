@@ -4,8 +4,7 @@ use super::{AccelUnbiased, Gravity, GyroUnbiased, ImuState};
 use crate::{
     dtype,
     linalg::{Matrix, Matrix3, Numeric, SupersetOf, Vector3},
-    traits::Variable,
-    variables::{ImuBias, MatrixLieGroup, SO3},
+    variables::{ImuBias, MatrixLieGroup, Variable, SO3},
 };
 
 /// Struct to hold the preintegrated Imu delta
@@ -187,9 +186,8 @@ mod test {
 
     use super::*;
     use crate::{
-        linalg::{DualVector, ForwardProp, Vector, VectorX},
+        linalg::{Diff, DualVector, ForwardProp, Vector, VectorX},
         residuals::{Accel, Gyro},
-        traits::*,
         variables::VectorVar,
     };
 

@@ -225,7 +225,7 @@ impl<'v, KF> ValuesFormatter<'v, KF> {
     }
 }
 
-impl<'v, KF: KeyFormatter> fmt::Display for ValuesFormatter<'v, KF> {
+impl<KF: KeyFormatter> fmt::Display for ValuesFormatter<'_, KF> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let precision = f.precision().unwrap_or(3);
         if f.alternate() {
@@ -246,7 +246,7 @@ impl<'v, KF: KeyFormatter> fmt::Display for ValuesFormatter<'v, KF> {
     }
 }
 
-impl<'v, KF: KeyFormatter> fmt::Debug for ValuesFormatter<'v, KF> {
+impl<KF: KeyFormatter> fmt::Debug for ValuesFormatter<'_, KF> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let precision = f.precision().unwrap_or(3);
         if f.alternate() {

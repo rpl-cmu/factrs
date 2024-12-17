@@ -5,8 +5,7 @@ use crate::{
     linalg::{Const, ForwardProp, Matrix, Matrix3, VectorX},
     noise::GaussianNoise,
     residuals::Residual6,
-    traits::*,
-    variables::{ImuBias, MatrixLieGroup, VectorVar3, SE3, SO3},
+    variables::{ImuBias, MatrixLieGroup, Variable, VectorVar3, SE3, SO3},
 };
 // ------------------------- Covariances ------------------------- //
 
@@ -350,17 +349,16 @@ impl Residual6 for ImuPreintegrationResidual {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::{
         assert_variable_eq, assign_symbols,
         containers::{Graph, Values},
         fac,
         linalg::Vector3,
-        optimizers::GaussNewton,
+        optimizers::{GaussNewton, Optimizer},
         residuals::{Accel, Gyro, PriorResidual},
         variables::{ImuBias, VectorVar3, SE3},
     };
-
-    use super::*;
 
     assign_symbols!(X: SE3; V: VectorVar3; B: ImuBias);
 

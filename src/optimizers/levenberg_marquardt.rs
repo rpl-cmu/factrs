@@ -3,7 +3,7 @@ use std::ops::Mul;
 use faer::{scale, sparse::SparseColMat};
 use faer_ext::IntoNalgebra;
 
-use super::{GraphOptimizer, OptError, OptObserverVec, OptParams, OptResult, Optimizer};
+use super::{OptError, OptObserverVec, OptParams, OptResult, Optimizer};
 use crate::{
     containers::{Graph, GraphOrder, Values, ValuesOrder},
     dtype,
@@ -51,8 +51,8 @@ pub struct LevenMarquardt<S: LinearSolver = CholeskySolver> {
     graph_order: Option<GraphOrder>,
 }
 
-impl<S: LinearSolver> GraphOptimizer for LevenMarquardt<S> {
-    fn new(graph: Graph) -> Self {
+impl<S: LinearSolver> LevenMarquardt<S> {
+    pub fn new(graph: Graph) -> Self {
         Self {
             graph,
             solver: S::default(),
@@ -64,7 +64,7 @@ impl<S: LinearSolver> GraphOptimizer for LevenMarquardt<S> {
         }
     }
 
-    fn graph(&self) -> &Graph {
+    pub fn graph(&self) -> &Graph {
         &self.graph
     }
 }

@@ -10,20 +10,17 @@ A simple 2D pose slam example with "GPS" measurements
 */
 
 #![allow(unused_imports)]
-use factrs::{
-    assign_symbols,
-    containers::{Graph, Values},
-    dtype, fac,
-    linalg::{Const, ForwardProp, Numeric, NumericalDiff, VectorX},
-    noise::GaussianNoise,
-    optimizers::GaussNewton,
-    residuals::{BetweenResidual, Residual1},
-    traits::{GraphOptimizer, Optimizer, Variable},
-};
-
 // Our state will be represented by SE2 -> theta, x, y
 // VectorVar2 is a newtype around Vector2 for optimization purposes
 use factrs::variables::{VectorVar2, SE2};
+use factrs::{
+    assign_symbols,
+    core::{BetweenResidual, GaussNewton, GaussianNoise, Graph, Values},
+    dtype, fac,
+    linalg::{Const, ForwardProp, Numeric, NumericalDiff, VectorX},
+    residuals::Residual1,
+    traits::*,
+};
 
 #[derive(Clone, Debug)]
 // Enable serialization if it's desired
@@ -45,10 +42,11 @@ impl GpsResidual {
 impl Residual1 for GpsResidual {
     // Use forward propagation for differentiation
     type Differ = ForwardProp<<Self as Residual1>::DimIn>;
-    // Alternatively, could use numerical differentiation (6 => 10^-6 as denominator)
-    // type Differ = NumericalDiff<6>;
+    // Alternatively, could use numerical differentiation (6 => 10^-6 as
+    // denominator) type Differ = NumericalDiff<6>;
 
-    // The input variable type, input dimension of variable(s), and output dimension of residual
+    // The input variable type, input dimension of variable(s), and output dimension
+    // of residual
     type V1 = SE2;
     type DimIn = Const<3>;
     type DimOut = Const<2>;
@@ -64,8 +62,8 @@ impl Residual1 for GpsResidual {
     }
 
     // You can also hand-code the jacobian by hand if extra efficiency is desired.
-    // fn residual1_jacobian(&self, values: &Values, keys: &[Key]) -> DiffResult<VectorX, MatrixX> {
-    //     let p: &SE2 = values
+    // fn residual1_jacobian(&self, values: &Values, keys: &[Key]) ->
+    // DiffResult<VectorX, MatrixX> {     let p: &SE2 = values
     //         .get_unchecked(keys[0])
     //         .expect("got wrong variable type");
     //     let s = p.theta().sin();
@@ -76,8 +74,9 @@ impl Residual1 for GpsResidual {
     //         diff,
     //     }
     // }
-    // As a note - the above jacobian is only valid if running with the "left" feature disabled
-    // Switching to the left feature will change the jacobian used
+    // As a note - the above jacobian is only valid if running with the "left"
+    // feature disabled Switching to the left feature will change the jacobian
+    // used
 }
 
 // Here we assign X to always represent SE2 variables
@@ -111,11 +110,12 @@ fn main() {
 
     // These will all compile-time error
     // values.insert(X(5), VectorVar2::identity()); // wrong variable type
-    // let f = fac![GpsResidual::new(0.0, 0.0), (X(0), X(1))]; // wrong number of keys
-    // let n = GaussianNoise::<5>::from_scalar_sigma(0.1);
-    // let f = fac![GpsResidual::new(0.0, 0.0), X(0), n]; // wrong noise-model dimension
-    // assign_symbols!(Y : VectorVar2);
-    // let f = fac![GpsResidual::new(0.0, 0.0), Y(0), 0.1 as std]; // wrong variable type
+    // let f = fac![GpsResidual::new(0.0, 0.0), (X(0), X(1))]; // wrong number of
+    // keys let n = GaussianNoise::<5>::from_scalar_sigma(0.1);
+    // let f = fac![GpsResidual::new(0.0, 0.0), X(0), n]; // wrong noise-model
+    // dimension assign_symbols!(Y : VectorVar2);
+    // let f = fac![GpsResidual::new(0.0, 0.0), Y(0), 0.1 as std]; // wrong variable
+    // type
 
     // optimize
     let mut opt: GaussNewton = GaussNewton::new(graph);

@@ -1,17 +1,16 @@
+#[cfg(feature = "rerun")]
+use std::net::{SocketAddr, SocketAddrV4};
 use std::{env, time::Instant};
-
-use factrs::{
-    optimizers::{GaussNewton, GraphOptimizer, Optimizer},
-    utils::load_g20,
-    variables::*,
-};
 
 #[cfg(feature = "rerun")]
 use factrs::rerun::RerunObserver;
+use factrs::{
+    core::{GaussNewton, SE2, SE3},
+    traits::Optimizer,
+    utils::load_g20,
+};
 #[cfg(feature = "rerun")]
 use rerun::{Arrows2D, Arrows3D, Points2D, Points3D};
-#[cfg(feature = "rerun")]
-use std::net::{SocketAddr, SocketAddrV4};
 
 // Setups rerun and a callback for iteratively sending to rerun
 // Must run with --features rerun for it to work

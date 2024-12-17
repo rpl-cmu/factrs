@@ -127,10 +127,26 @@ pub mod symbols {
 /// ```
 pub mod traits {
     pub use crate::{
-        linalg::Diff,
-        optimizers::{GraphOptimizer, Optimizer},
-        residuals::Residual,
-        variables::Variable,
+        linalg::Diff, noise::NoiseModel, optimizers::Optimizer, residuals::Residual,
+        robust::RobustCost, variables::Variable,
+    };
+}
+
+/// Helper module to group together common types
+///
+/// Specifically, this contains everything that would be needed to implement a
+/// simple pose graph. While we recommend against it, it can be all imported
+/// using
+/// ```
+/// use factrs::core::*;
+/// ```
+pub mod core {
+    pub use crate::{
+        containers::{Factor, Graph, Values},
+        noise::{GaussianNoise, UnitNoise},
+        optimizers::{GaussNewton, LevenMarquardt},
+        residuals::{BetweenResidual, PriorResidual},
+        variables::{VectorVar, VectorVar1, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
     };
 }
 
@@ -139,8 +155,7 @@ pub mod rerun;
 
 #[cfg(feature = "serde")]
 pub mod serde {
-    pub use crate::noise::tag_noise;
-    pub use crate::residuals::tag_residual;
-    pub use crate::robust::tag_robust;
-    pub use crate::variables::tag_variable;
+    pub use crate::{
+        noise::tag_noise, residuals::tag_residual, robust::tag_robust, variables::tag_variable,
+    };
 }
