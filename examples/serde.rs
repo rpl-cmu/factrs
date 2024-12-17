@@ -1,10 +1,5 @@
-use factrs::{
-    assign_symbols,
-    containers::{Graph, Values},
-    fac,
-    residuals::{BetweenResidual, PriorResidual},
-    robust::GemanMcClure,
-    variables::{SE2, SO2},
+use factrs::core::{
+    assign_symbols, fac, BetweenResidual, GemanMcClure, Graph, PriorResidual, Values, SE2, SO2,
 };
 
 assign_symbols!(X: SO2; Y: SE2);

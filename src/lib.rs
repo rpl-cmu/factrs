@@ -135,17 +135,20 @@ pub mod traits {
 /// Helper module to group together common types
 ///
 /// Specifically, this contains everything that would be needed to implement a
-/// simple pose graph. While we recommend against it, it can be all imported
-/// using
+/// simple pose graph. While we recommend against it, for quick usage it can be
+/// glob imported as
 /// ```
 /// use factrs::core::*;
 /// ```
 pub mod core {
     pub use crate::{
+        assign_symbols,
         containers::{Factor, Graph, Values},
+        fac,
         noise::{GaussianNoise, UnitNoise},
         optimizers::{GaussNewton, LevenMarquardt},
         residuals::{BetweenResidual, PriorResidual},
+        robust::{GemanMcClure, Huber, L2},
         variables::{VectorVar, VectorVar1, VectorVar2, VectorVar3, SE2, SE3, SO2, SO3},
     };
 }
