@@ -58,6 +58,9 @@ if(BENCH_BUILD_BENCH)
     add_library(depends_bench src/gtsam.cpp)
     target_link_libraries(depends_bench PUBLIC gtsam)
     target_include_directories(depends_bench PUBLIC ../)
+
+    add_executable(test src/test.cpp)
+    target_link_libraries(test PRIVATE depends_bench)
 endif()
 
 install(TARGETS gtsam DESTINATION .)

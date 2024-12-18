@@ -1,7 +1,7 @@
 [package]
 name = "factrs-bench"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 tiny-solver = "0.12.0"
@@ -20,5 +20,9 @@ cxx-build = "1.0"
 cpp = []
 
 [[bench]]
-name = "g2o"
+name = "g2o-2d"
+harness = false
+
+[[bench]]
+name = "g2o-3d"
 harness = false
