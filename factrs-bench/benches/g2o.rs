@@ -22,6 +22,26 @@ fn tinysolver(bencher: Bencher, file: &str) {
     });
 }
 
+// ------------------------- Gtsam ------------------------- //
+// https://github.com/sarah-quinones/faer-rs/blob/v0.17.0/faer-bench/src/main.rs
+// TODO: Figure out how to load / pass the file to the C++ function
+// TODO: We have to be careful as we don't want to accidentally measure the time
+// it takes to load the file
+// #[cfg(feature = "cpp")]
+// mod gtsam {
+//     unsafe extern "C" {
+//         fn gtsam(file: *const std::os::raw::c_char);
+//     }
+// }
+
+// ------------------------- Ceres ------------------------- //
+// #[cfg(feature = "cpp")]
+// mod ceres {
+//     unsafe extern "C" {
+//         fn ceres(file: *const std::os::raw::c_char);
+//     }
+// }
+
 fn main() -> std::io::Result<()> {
     let mut bench = Bench::new(BenchConfig::from_args()?);
     bench.register_many(list![factrs, tinysolver], ["../examples/data/M3500.g2o"]);
