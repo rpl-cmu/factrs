@@ -9,8 +9,8 @@ edition = "2024"
 # factrs = { version = "0.1.0", path = ".." }
 cxx = { version = "1.0", features = ["c++17"] }
 
-# [dev-dependencies]
-# diol = { version = "0.8.3", default-features = false }
+[dev-dependencies]
+diol = { version = "0.8.3", default-features = false }
 
 [build-dependencies]
 cmake = "0.1.52"

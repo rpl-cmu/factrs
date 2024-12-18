@@ -1,13 +1,21 @@
+#[cfg(feature = "cpp")]
 fn main() {
-    #[cfg(feature = "cpp")]
-    let dst = cmake::build(".");
+    // Handle dependencies via CMake fetch
+    // Turn off dependency warnings cuz we don't care
+    let dst = cmake::Config::new(".").cxxflag("-w").build();
 
-    #[cfg(feature = "cpp")]
+    println!("cargo:rustc-link-search=native={}", dst.display());
+    println!("cargo:rustc-link-lib=static=gtsam");
+
+    // Build our simple cpp scripts
     cxx_build::bridge("src/lib.rs")
         .file("src/gtsam.cpp")
         .std("c++17")
         .include(format!("{}/include", dst.display()))
         .include(format!("{}/include/gtsam/3rdparty/Eigen", dst.display()))
+        .flag("-Wno-deprecated-copy")
+        .flag("-Wno-unused-parameter")
+        .flag("-Wno-deprecated-declarations")
         .compile("cpp_benches");
 
     // Tell Cargo that if the given file changes, to rerun this build script.
@@ -15,9 +23,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/gtsam.cpp");
     println!("cargo:rerun-if-changed=include/gtsam.h");
-
-    #[cfg(feature = "cpp")]
-    println!("cargo:rustc-link-search=native={}", dst.display());
-    #[cfg(feature = "cpp")]
-    println!("cargo:rustc-link-lib=static=gtsam");
 }
+
+#[cfg(not(feature = "cpp"))]
+fn main() {}
