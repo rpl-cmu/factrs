@@ -15,3 +15,5 @@ struct GraphValues {
 std::shared_ptr<GraphValues> load_g2o(const std::string &file, bool is3D);
 
 void run(const std::shared_ptr<GraphValues> &gv);
+
+void hello();

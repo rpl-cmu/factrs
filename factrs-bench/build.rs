@@ -5,7 +5,7 @@ fn main() {
     let dst = cmake::Config::new(".").cxxflag("-w").build();
 
     println!("cargo:rustc-link-search=native={}", dst.display());
-    println!("cargo:rustc-link-lib=static=gtsam");
+    println!("cargo:rustc-link-lib=dylib=gtsam");
 
     // Build our simple cpp scripts
     cxx_build::bridge("src/lib.rs")

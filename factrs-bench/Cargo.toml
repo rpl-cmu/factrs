@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# tiny-solver = "0.12.0"
-# nalgebra = { version = "0.33", features = ["compare"] }
-# factrs = { version = "0.1.0", path = ".." }
+tiny-solver = "0.12.0"
+nalgebra = { version = "0.33", features = ["compare"] }
+factrs = { version = "0.1.0", path = ".." }
 cxx = { version = "1.0", features = ["c++17"] }
 
 [dev-dependencies]

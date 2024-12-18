@@ -1,4 +1,4 @@
-// pub mod tiny_solver;
+pub mod tiny_solver;
 // mod sophus;
 #[cfg(feature = "cpp")]
 #[cxx::bridge]
@@ -11,5 +11,7 @@ pub mod gtsam {
         fn load_g2o(file: &CxxString, is3D: bool) -> SharedPtr<GraphValues>;
 
         fn run(gv: &SharedPtr<GraphValues>);
+
+        fn hello();
     }
 }
