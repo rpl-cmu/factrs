@@ -1,4 +1,4 @@
-use diol::prelude::{Bench, BenchConfig, Bencher, black_box, list};
+use diol::prelude::{black_box, list, Bench, BenchConfig, Bencher};
 // ------------------------- factrs ------------------------- //
 use factrs::{core::GaussNewton, traits::Optimizer, utils::load_g20};
 fn factrs(bencher: Bencher, file: &str) {
@@ -19,7 +19,7 @@ fn gtsam(bencher: Bencher, file: &str) {
     println!("Back in rust land!");
     bencher.bench(|| {
         println!("Running GTSAM");
-        factrs_bench::gtsam::run(&gv);
+        factrs_bench::gtsam::run(gv.as_ref().unwrap());
     });
 }
 
@@ -30,10 +30,13 @@ fn main() -> std::io::Result<()> {
     let to_run = list![factrs];
 
     let mut bench = Bench::new(BenchConfig::from_args()?);
-    bench.register_many(to_run, [
-        "../examples/data/sphere2500.g2o",
-        "../examples/data/parking-garage.g2o",
-    ]);
+    bench.register_many(
+        to_run,
+        [
+            "../examples/data/sphere2500.g2o",
+            "../examples/data/parking-garage.g2o",
+        ],
+    );
     bench.run()?;
 
     Ok(())

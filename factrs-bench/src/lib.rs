@@ -8,9 +8,9 @@ pub mod gtsam {
 
         type GraphValues;
 
-        fn load_g2o(file: &CxxString, is3D: bool) -> SharedPtr<GraphValues>;
+        fn load_g2o(file: &CxxString, is3D: bool) -> UniquePtr<GraphValues>;
 
-        fn run(gv: &SharedPtr<GraphValues>);
+        fn run(gv: &GraphValues);
 
         fn hello();
     }
