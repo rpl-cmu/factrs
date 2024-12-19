@@ -1,4 +1,4 @@
-use diol::prelude::{Bench, BenchConfig, Bencher, black_box, list};
+use diol::prelude::{black_box, list, Bench, BenchConfig, Bencher};
 // ------------------------- factrs ------------------------- //
 use factrs::{core::GaussNewton, traits::Optimizer, utils::load_g20};
 fn factrs(bencher: Bencher, file: &str) {
@@ -22,21 +22,7 @@ fn tinysolver(bencher: Bencher, file: &str) {
     });
 }
 
-// ------------------------- Gtsam ------------------------- //
-// https://github.com/sarah-quinones/faer-rs/blob/v0.17.0/faer-bench/src/main.rs
-#[cfg(feature = "cpp")]
-fn gtsam(bencher: Bencher, file: &str) {
-    cxx::let_cxx_string!(cfile = file);
-    let gv = factrs_bench::gtsam::load_g2o(&*cfile, false);
-    bencher.bench(|| {
-        factrs_bench::gtsam::run(&gv);
-    });
-}
-
 fn main() -> std::io::Result<()> {
-    #[cfg(feature = "cpp")]
-    let to_run = list![factrs, tinysolver, gtsam];
-    #[cfg(not(feature = "cpp"))]
     let to_run = list![factrs, tinysolver];
 
     let mut bench = Bench::new(BenchConfig::from_args()?);

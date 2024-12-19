@@ -10,23 +10,7 @@ fn factrs(bencher: Bencher, file: &str) {
     });
 }
 
-// ------------------------- Gtsam ------------------------- //
-// https://github.com/sarah-quinones/faer-rs/blob/v0.17.0/faer-bench/src/main.rs
-#[cfg(feature = "cpp")]
-fn gtsam(bencher: Bencher, file: &str) {
-    cxx::let_cxx_string!(cfile = file);
-    let gv = factrs_bench::gtsam::load_g2o(&*cfile, true);
-    println!("Back in rust land!");
-    bencher.bench(|| {
-        println!("Running GTSAM");
-        factrs_bench::gtsam::run(gv.as_ref().unwrap());
-    });
-}
-
 fn main() -> std::io::Result<()> {
-    #[cfg(feature = "cpp")]
-    let to_run = list![gtsam];
-    #[cfg(not(feature = "cpp"))]
     let to_run = list![factrs];
 
     let mut bench = Bench::new(BenchConfig::from_args()?);
