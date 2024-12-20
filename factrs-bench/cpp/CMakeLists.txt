@@ -6,6 +6,9 @@ project(factrs-benchmark-deps
 )
 include(FetchContent)
 
+set(CMAKE_BUILD_TYPE RELEASE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ------------------------- Include Eigen ------------------------- #
 # set(BUILD_TESTING OFF CACHE BOOL "")
 # set(EIGEN_BUILD_TESTING OFF CACHE BOOL "")
@@ -42,6 +45,7 @@ set(GTSAM_BUILD_EXAMPLES_ALWAYS OFF CACHE BOOL "")
 
 # TODO: Figure out how to get tbb working
 set(GTSAM_WITH_TBB OFF CACHE BOOL "")
+add_compile_options(-Wno-deprecated-declarations)
 
 FetchContent_Declare(
     GTSAM
@@ -53,14 +57,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(GTSAM)
 
-option(BENCH_BUILD_BENCH OFF)
-if(BENCH_BUILD_BENCH)
-    add_library(depends_bench src/gtsam.cpp)
-    target_link_libraries(depends_bench PUBLIC gtsam)
-    target_include_directories(depends_bench PUBLIC ../)
+# target_compile_options(gtsam PRIVATE -Wno-deprecated-declarations)
 
-    add_executable(test src/test.cpp)
-    target_link_libraries(test PRIVATE depends_bench)
-endif()
-
-install(TARGETS gtsam DESTINATION .)
+add_executable(bench_gtsam bench_gtsam.cpp)
+target_link_libraries(bench_gtsam PRIVATE gtsam)
